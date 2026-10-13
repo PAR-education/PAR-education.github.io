@@ -358,7 +358,7 @@ export const modules = {
     title: "Korisnici i uloge",
     group: "Račun",
     description:
-      "Prvo izradite račun u Firebase Authentication, zatim mu dodijelite profil s istim UID-om.",
+      "Pregled registracija, odobravanje pristupa i dodjela korisničkih uloga.",
     columns: ["name", "email", "role", "active", "departmentId"],
     fields: [
       text("name", "Ime i prezime"),

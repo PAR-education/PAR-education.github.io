@@ -7,12 +7,12 @@ Tests ran locally against the modular implementation. Live Firebase and GitHub P
 | Check                          | Result                                                                                                 |
 | ------------------------------ | ------------------------------------------------------------------------------------------------------ |
 | `npm run check`                | All application/tool/test JavaScript parses; static page asset paths resolve; no inline event handlers |
-| `npm test`                     | **10 passed, 0 failed**                                                                                |
-| Firestore emulator rules suite | **10 passed, 0 failed**                                                                                |
+| `npm test`                     | **12 passed, 0 failed**                                                                                |
+| Firestore emulator rules suite | **12 passed, 0 failed**                                                                                |
 
 Tools: Node.js 24.19.0, Firebase SDK 13.0.0, Firebase CLI 15.33.0, rules-unit-testing 6.0.0, Firestore emulator 1.22.0 and portable Java 21. The JRE came from Adoptium's official endpoint and its SHA-256 matched the release metadata. It is in the ignored `.reference` directory, not installed system-wide or shipped with the app.
 
-The first rules run used `npm run test:rules`. The final run used `node --test tests/firestore.test.mjs` against the already-running local emulator. Expected PERMISSION_DENIED output belongs to tests intentionally asserting that forbidden operations fail.
+Rules were checked both with `npm run test:rules` and directly against a running local emulator. The registration follow-up used `npm run test:rules` with the new restricted self-provisioning policy. Expected PERMISSION_DENIED output belongs to tests intentionally asserting that forbidden operations fail.
 
 Unit coverage: recognized active profiles, role boundaries, query scopes, prototype-property names, HTML escaping, form/range/URL/option/date validation, catalog consistency, selected-record print escaping, CSV formula/quote/newline escaping, tuition rounding/calendar rollover, isolated demo query ownership and duplicate requests.
 
@@ -53,3 +53,11 @@ npm run test:rules
 ```
 
 For browser login checks use the separate Auth/Firestore emulator commands in README.md. The fixture/rules setup scripts are pinned to local `demo-par-education` emulators.
+
+## Registration follow-up verification
+
+Added two unit checks for inactive profile construction and registration field/confirmation validation, and two rules checks for restricted self-provisioning, forged identity and forbidden activation. All 12 unit and 12 rules tests pass.
+
+Browser checks using local Auth/Firestore emulators: mismatched password confirmation was rejected; registration created the account and profile with the supplied full name; the unapproved account could not bypass the homepage guard; an independent administrator session filtered pending registrations, chose the instructor role and approved the account; the user's waiting session automatically entered the workspace with the instructor's navigation.
+
+The Auth-only account migration was also verified: a login for an existing Authentication account without a Firestore document automatically created an inactive profile, which appeared in the administrator's pending-account filter.

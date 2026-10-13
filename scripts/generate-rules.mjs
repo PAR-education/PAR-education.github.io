@@ -71,6 +71,11 @@ service cloud.firestore {
     function created(d) {
       return d.createdAt == request.time && d.updatedAt == request.time && d.createdBy == request.auth.uid;
     }
+    function pendingSelf(uid, d) {
+      return signedIn() && uid == request.auth.uid
+        && d.role == 'student' && d.active == false && d.departmentId == ''
+        && d.email == request.auth.token.email && created(d);
+    }
     function updated(d) {
       return d.updatedAt == request.time && d.createdAt == resource.data.createdAt
         && d.createdBy == resource.data.createdBy;
@@ -92,7 +97,7 @@ ${schemas}
     match /users/{uid} {
       allow get: if signedIn() && (request.auth.uid == uid || admin());
       allow list: if admin();
-      allow create: if admin() && valid_users(request.resource.data)
+      allow create: if (pendingSelf(uid, request.resource.data) || admin()) && valid_users(request.resource.data)
         && request.resource.data.active is bool && request.resource.data.updatedAt == request.time;
       allow update: if admin() && valid_users(request.resource.data)
         && request.resource.data.active is bool && request.resource.data.updatedAt == request.time

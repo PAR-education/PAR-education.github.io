@@ -13,6 +13,8 @@ import { modules } from "../src/modules/catalog.js";
 import { DemoRecords } from "../src/services/demo.js";
 import { tuitionInstallments } from "../src/utils/tuition.js";
 import { csvContent, printReport } from "../src/components/export.js";
+import { pendingProfile } from "../src/auth/profile.js";
+import { validateRegistration } from "../src/auth/registration.js";
 test("Only recognized roles with an active profile can enter", () => {
   for (const role of Object.keys(roles))
     assert.equal(isActiveProfile({ role, active: true }), true);
@@ -25,6 +27,65 @@ test("Only recognized roles with an active profile can enter", () => {
     { role: "superadmin", active: true },
   ])
     assert.equal(isActiveProfile(profile), false);
+});
+test("New profiles always wait for approval and never copy a requested role", () => {
+  const profile = pendingProfile({
+    uid: "user",
+    email: "person@example.test",
+    displayName: " Person ",
+    role: "admin",
+    active: true,
+  });
+  assert.deepEqual(profile, {
+    name: "Person",
+    email: "person@example.test",
+    role: "student",
+    active: false,
+    departmentId: "",
+  });
+  assert.equal(
+    pendingProfile({ uid: "user", email: "person@example.test" }).name,
+    "person",
+  );
+  assert.equal(isActiveProfile(profile), false);
+  assert.throws(() => pendingProfile({ uid: "user" }));
+});
+test("Registration validates name, email, password length and confirmation", () => {
+  assert.deepEqual(
+    validateRegistration(
+      " User Name ",
+      " user@example.test ",
+      "Long-test-123!",
+      "Long-test-123!",
+    ),
+    {
+      name: "User Name",
+      email: "user@example.test",
+      password: "Long-test-123!",
+    },
+  );
+  assert.throws(() =>
+    validateRegistration(
+      "",
+      "user@example.test",
+      "Long-test-123!",
+      "Long-test-123!",
+    ),
+  );
+  assert.throws(() =>
+    validateRegistration("User", "invalid", "Long-test-123!", "Long-test-123!"),
+  );
+  assert.throws(() =>
+    validateRegistration("User", "user@example.test", "short", "short"),
+  );
+  assert.throws(() =>
+    validateRegistration(
+      "User",
+      "user@example.test",
+      "Long-test-123!",
+      "different",
+    ),
+  );
 });
 test("Students cannot manage profiles, finances, people or grades", () => {
   for (const name of ["users", "students", "employees", "finances", "grades"])

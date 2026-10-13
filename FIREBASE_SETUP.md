@@ -19,11 +19,13 @@ These commands deploy only the database rules/index configuration, not the GitHu
 
 ## 2. Create the first administrator account
 
-1. Firebase Console → Authentication → Users → Add user.
-2. Enter the administrator's email and a strong password. Copy the newly created **UID**.
-3. Firestore → Data → Start collection: `users`.
-4. Document ID: the **exact Authentication UID**, not the email address.
-5. Add these typed fields:
+1. Publish the current rules and push the updated application files to GitHub Pages.
+2. Open the site and use **Registriraj se**, or log in with your existing Authentication account.
+3. The application automatically creates `users/<your Authentication UID>` with `active: false`. Firestore now shows the `users` collection.
+4. In Firebase Console → Firestore → Data, open your own document and change `role` to string **`admin`**, and `active` to boolean **`true`**. You can set `departmentId` to `uprava`.
+5. Your waiting login screen detects the approval and enters the workspace. This is the only administrator activation that must be done through the Console.
+
+The complete profile fields are:
 
 | Field          | Firestore type | Example/value                    |
 | -------------- | -------------- | -------------------------------- |
@@ -33,7 +35,7 @@ These commands deploy only the database rules/index configuration, not the GitHu
 | `active`       | **boolean**    | **true**                         |
 | `departmentId` | string         | `uprava`                         |
 
-The bootstrap profile is created through the trusted console, which does not rely on browser security-rule permissions. Do **not** temporarily open the rules to bootstrap. No timestamp fields are needed when you create this initial profile in the console.
+Initial administrator privileges are granted through the trusted Console. The application can only create its own inactive student profile and cannot activate itself or select a privileged role. Do **not** temporarily open the rules to bootstrap. If using an older version of the app, the same profile can still be created manually in a `users` collection with the exact Auth UID as the document ID.
 
 Open the deployed site's `index.html` and log in. You should enter `homepage.html` and see “Korisnici i uloge”. A missing or inactive profile shows a pending-access message on the login page. The displayed UID helps the administrator find the correct document.
 
@@ -50,11 +52,14 @@ Enter hostnames only; no `https://` and no path. The screenshot shows `PAR-educa
 
 ## 4. Provision additional accounts
 
-An administrator can manage **profiles and roles** in the app. Creating/deleting Authentication accounts or changing passwords requires the Firebase Console or a separately deployed trusted Admin SDK backend; it is intentionally unavailable to browser JavaScript.
+Users can create their own Authentication account using **Registriraj se** on the login page. They supply name, email, password and password confirmation. The profile is created automatically, but it cannot access ERP data until approved. Administrators manage profiles and roles, not other people's Authentication passwords.
 
-1. Create the account in Authentication and copy its UID.
-2. App → Korisnici i uloge → Novi zapis.
-3. Paste the UID and enter name, email, role, active state and department.
+1. User registers on the login page and sees **Čeka odobrenje**.
+2. Administrator → **Korisnici i uloge** → Pristup filter → **Neaktivni / čeka odobrenje**.
+3. Open the user's details → **Odaberi ulogu i odobri**. Select the appropriate role/department, confirm the **Aktivan račun** checkbox and save.
+4. The user's waiting session automatically enters the workspace after approval. Alternatively they can log in later. Rejected/unapproved accounts remain inactive and cannot read ERP data.
+
+Administrators may still preprovision accounts through the Console. A missing profile will be created automatically at first login, or an administrator can create it in the application's profile form using the exact UID. There is no public role selector, automatic first-user administrator or client-side self-activation.
 
 Supported role IDs (use exactly these spellings):
 

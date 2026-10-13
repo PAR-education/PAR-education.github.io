@@ -1,17 +1,63 @@
-import { observeSession, login, logout, resetPassword } from "./auth/auth.js";
+import {
+  observeSession,
+  login,
+  register,
+  logout,
+  resetPassword,
+} from "./auth/auth.js";
 import { errorMessage, theme, toggleTheme, pageURL } from "./utils/helpers.js";
+const $ = (id) => document.getElementById(id);
 theme();
-document.getElementById("theme").addEventListener("click", toggleTheme);
-const form = document.getElementById("login-form");
-const submit = document.getElementById("login-submit");
-const status = document.getElementById("login-status");
+$("theme").addEventListener("click", toggleTheme);
+let mode = "login";
 let busy = false;
+let ready = false;
+let sessionUser = null;
+let profileLoading = false;
 function show(message, error = false) {
-  status.textContent = message;
-  status.classList.toggle("error", error);
+  $("login-status").textContent = message;
+  $("login-status").classList.toggle("error", error);
 }
-document.getElementById("show-password").addEventListener("click", (event) => {
-  const input = document.getElementById("password");
+function renderControls() {
+  $("auth-description").textContent = sessionUser
+    ? "Pristup se aktivira nakon administratorskog odobrenja."
+    : mode === "register"
+      ? "Izradite svoj korisnički račun."
+      : "Unesite podatke svojeg PAR računa.";
+  $("login-form").hidden = !!sessionUser || mode !== "login";
+  $("register-form").hidden = !!sessionUser || mode !== "register";
+  $("auth-switch").hidden = !!sessionUser;
+  $("logout-pending").hidden = !sessionUser;
+  $("login-submit").disabled =
+    !ready || busy || profileLoading || !!sessionUser;
+  $("register-submit").disabled =
+    !ready || busy || profileLoading || !!sessionUser;
+  $("switch-auth").disabled = busy;
+  $("switch-auth").textContent =
+    mode === "login" ? "Registriraj se" : "Prijavi se";
+  $("auth-switch-label").textContent =
+    mode === "login" ? "Nemate račun?" : "Već imate račun?";
+  $("login-title").textContent = sessionUser
+    ? profileLoading
+      ? "Priprema profila"
+      : "Čeka odobrenje"
+    : mode === "login"
+      ? "Prijava u sustav"
+      : "Registracija";
+}
+$("switch-auth").addEventListener("click", () => {
+  if (busy || sessionUser) return;
+  mode = mode === "login" ? "register" : "login";
+  renderControls();
+  show(
+    mode === "register"
+      ? "Izradite račun. Pristup odobrava administrator."
+      : "Prijavite se svojom e-adresom i lozinkom.",
+  );
+  $(mode === "register" ? "register-name" : "email").focus();
+});
+$("show-password").addEventListener("click", (event) => {
+  const input = $("password");
   input.type = input.type === "password" ? "text" : "password";
   const visible = input.type === "text";
   event.currentTarget.textContent = visible ? "Sakrij" : "Prikaži";
@@ -21,76 +67,92 @@ document.getElementById("show-password").addEventListener("click", (event) => {
     visible ? "Sakrij lozinku" : "Prikaži lozinku",
   );
 });
-form.addEventListener("submit", async (event) => {
+async function submitAuth(event, action) {
   event.preventDefault();
-  if (busy || !form.reportValidity()) return;
+  if (!ready || busy || sessionUser || !event.currentTarget.reportValidity())
+    return;
   busy = true;
-  submit.disabled = true;
-  show("Prijava u tijeku…");
+  renderControls();
+  show(mode === "register" ? "Registracija u tijeku…" : "Prijava u tijeku…");
   try {
-    await login(
-      form.email.value,
-      form.password.value,
-      document.getElementById("remember").checked,
-    );
-    form.password.value = "";
+    await action();
   } catch (error) {
     show(errorMessage(error), true);
   } finally {
     busy = false;
-    submit.disabled = false;
+    renderControls();
+  }
+}
+$("login-form").addEventListener("submit", (event) =>
+  submitAuth(event, async () => {
+    await login($("email").value, $("password").value, $("remember").checked);
+    $("password").value = "";
+  }),
+);
+$("register-form").addEventListener("submit", (event) =>
+  submitAuth(event, async () => {
+    await register(
+      $("register-name").value,
+      $("register-email").value,
+      $("register-password").value,
+      $("register-confirm").value,
+    );
+    $("register-password").value = "";
+    $("register-confirm").value = "";
+  }),
+);
+$("reset-password").addEventListener("click", async (event) => {
+  if (!$("email").reportValidity()) {
+    $("email").focus();
+    return;
+  }
+  event.currentTarget.disabled = true;
+  try {
+    await resetPassword($("email").value);
+    show(
+      "Ako je račun dostupan, primit ćete poruku s uputama za obnovu lozinke.",
+    );
+  } catch (error) {
+    show(errorMessage(error), true);
+  } finally {
+    $("reset-password").disabled = false;
   }
 });
-document
-  .getElementById("reset-password")
-  .addEventListener("click", async (event) => {
-    const email = document.getElementById("email");
-    if (!email.reportValidity()) {
-      email.focus();
-      return;
-    }
-    event.currentTarget.disabled = true;
-    try {
-      await resetPassword(email.value);
-      show(
-        "Ako je račun dostupan, primit ćete poruku s uputama za obnovu lozinke.",
-      );
-    } catch (error) {
-      show(errorMessage(error), true);
-    } finally {
-      document.getElementById("reset-password").disabled = false;
-    }
-  });
-document
-  .getElementById("logout-pending")
-  .addEventListener("click", async () => {
-    try {
-      await logout();
-    } catch (error) {
-      show(errorMessage(error), true);
-    }
-  });
-observeSession(
-  ({ user, profile, loading }) => {
-    submit.disabled = busy || loading || !!user;
-    form.hidden = !!user;
-    document.getElementById("logout-pending").hidden = !user;
-    if (loading) show("Provjera dodijeljene uloge…");
-    else if (user && profile) location.replace(pageURL("./homepage.html"));
-    else if (user)
-      show(
-        "Račun je prijavljen, ali nema aktivan profil. Administrator treba dodijeliti ulogu u users/" +
-          user.uid +
-          ".",
-        true,
-      );
-    else show("Prijavite se svojom e-adresom i lozinkom.");
-  },
-  (error) => {
-    form.hidden = false;
-    submit.disabled = false;
+$("logout-pending").addEventListener("click", async () => {
+  try {
+    await logout();
+  } catch (error) {
     show(errorMessage(error), true);
-  },
-).catch((error) => {
-  show(errorMessage(error), true);
+  }
 });
+function sessionError(error) {
+  profileLoading = false;
+  renderControls();
+  show(
+    error.code === "permission-denied" && sessionUser
+      ? "Račun je prijavljen, ali profil nije moguće spremiti ili učitati. Potrebno je objaviti ažurirana Firestore pravila."
+      : errorMessage(error),
+    true,
+  );
+}
+observeSession(({ user, profile, loading }) => {
+  ready = true;
+  sessionUser = user;
+  profileLoading = loading;
+  renderControls();
+  if (loading) show("Priprema korisničkog profila…");
+  else if (user && profile) location.replace(pageURL("./homepage.html"));
+  else if (user)
+    show(
+      "Profil je spremljen i čeka odobrenje administratora. Vaš UID: " +
+        user.uid +
+        ".",
+    );
+  else
+    show(
+      mode === "register"
+        ? "Izradite račun. Pristup odobrava administrator."
+        : "Prijavite se svojom e-adresom i lozinkom.",
+    );
+}, sessionError).catch(sessionError);
+renderControls();

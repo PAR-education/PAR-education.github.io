@@ -37,7 +37,9 @@
       <section class="login-card" aria-labelledby="login-title">
         <p class="eyebrow">KORISNIČKI PRISTUP</p>
         <h2 id="login-title">Prijava u sustav</h2>
-        <p class="muted">Unesite podatke svojeg PAR računa.</p>
+        <p id="auth-description" class="muted">
+          Unesite podatke svojeg PAR računa.
+        </p>
         <div id="login-status" class="notice" role="status" aria-live="polite">
           Provjera prijave…
         </div>
@@ -89,12 +91,78 @@
             Prijavi se <span aria-hidden="true">→</span>
           </button>
         </form>
+        <form id="register-form" hidden>
+          <div class="field">
+            <label for="register-name">Ime i prezime</label
+            ><input
+              id="register-name"
+              name="name"
+              autocomplete="name"
+              required
+              maxlength="200"
+            />
+          </div>
+          <div class="field">
+            <label for="register-email">E-adresa</label
+            ><input
+              id="register-email"
+              name="email"
+              type="email"
+              autocomplete="username"
+              required
+              maxlength="200"
+            />
+          </div>
+          <div class="field">
+            <label for="register-password">Lozinka</label
+            ><input
+              id="register-password"
+              name="password"
+              type="password"
+              autocomplete="new-password"
+              required
+              minlength="8"
+              aria-describedby="password-hint"
+            /><small id="password-hint" class="muted"
+              >Najmanje 8 znakova.</small
+            >
+          </div>
+          <div class="field">
+            <label for="register-confirm">Ponovi lozinku</label
+            ><input
+              id="register-confirm"
+              name="confirm"
+              type="password"
+              autocomplete="new-password"
+              required
+              minlength="8"
+            />
+          </div>
+          <p class="muted">
+            Nakon registracije administrator odobrava pristup i dodjeljuje
+            ulogu.
+          </p>
+          <button
+            id="register-submit"
+            class="button primary full"
+            type="submit"
+            disabled
+          >
+            Registriraj se
+          </button>
+        </form>
+        <div id="auth-switch" class="login-options" style="margin-top: 18px">
+          <span id="auth-switch-label" class="muted">Nemate račun?</span
+          ><button id="switch-auth" type="button" class="text-button">
+            Registriraj se
+          </button>
+        </div>
         <button id="logout-pending" class="button full" hidden>
           Odjavi se
         </button>
         <p class="login-help">
-          Nemate račun ili pristup? Obratite se administratoru. Ulogu i pristup
-          dodjeljuje Veleučilište.
+          Ulogu i pristup dodjeljuje administrator. Registrirani račun nema
+          pristup sustavu dok ne bude odobren.
         </p>
       </section>
     </main>

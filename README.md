@@ -8,7 +8,7 @@ Vanilla JavaScript ES modules, Croatian UI, Firebase Authentication and Cloud Fi
 2. Push these files to your GitHub repository. In Settings → Pages, choose Deploy from a branch, your publishing branch and `/ (root)`.
 3. Open your Pages URL. Root domains and project paths such as `/par/` both work because assets and redirects are relative.
 
-No Firebase service-account key belongs in this repository. No accounts or roles are created automatically. New accounts without an active administrator-assigned profile cannot enter the workspace.
+No Firebase service-account key belongs in this repository. Public registration creates an Authentication account and an inactive student profile; the user cannot choose a role or enter the workspace before an administrator approves them. Existing Auth accounts also receive a missing inactive profile on their first login. The first administrator must still be activated once through the trusted Firebase Console.
 
 ## Local development
 
@@ -25,21 +25,21 @@ Open `http://127.0.0.1:4173/` or `http://127.0.0.1:4173/par/`. Firebase SDKs are
 
 ## Architecture
 
-| Path                                | Purpose                                                                            |
-| ----------------------------------- | ---------------------------------------------------------------------------------- |
-| `index.html`, `src/login.js`        | Email/password login, reset, remember-session option, pending access state         |
-| `homepage.html`, `src/main.js`      | Guarded workspace, navigation, tables, forms and dashboard                         |
-| `src/auth/`                         | Session observation, protected profile validation, UI permissions and query scopes |
-| `src/config/firebase.js`            | Public web configuration, SDK loader, strictly local emulator switch               |
-| `src/modules/catalog.js`            | Module descriptions, fields, validators and table columns                          |
-| `src/services/records.js`           | Firestore queries, CRUD, transactional bookings and tuition installments           |
-| `src/components/`                   | Accessible dialogs, escaped print reports, CSV export                              |
-| `src/utils/`                        | Validation, escaping, themes and tuition math                                      |
-| `src/data/`, `src/services/demo.js` | Anonymized demo fixtures and original office evaluation questions                  |
-| `assets/css/main.css`               | Responsive light/dark design system                                                |
-| `firebase/firestore.rules`          | Authoritative access and document validation                                       |
-| `scripts/generate-rules.mjs`        | Rule generator; regenerate after changing catalog fields or policies               |
-| `tests/`                            | Unit tests and real Firestore rules emulator tests                                 |
+| Path                                | Purpose                                                                                  |
+| ----------------------------------- | ---------------------------------------------------------------------------------------- |
+| `index.html`, `src/login.js`        | Email/password login, registration, reset, remember-session option, pending access state |
+| `homepage.html`, `src/main.js`      | Guarded workspace, navigation, tables, forms and dashboard                               |
+| `src/auth/`                         | Session observation, protected profile validation, UI permissions and query scopes       |
+| `src/config/firebase.js`            | Public web configuration, SDK loader, strictly local emulator switch                     |
+| `src/modules/catalog.js`            | Module descriptions, fields, validators and table columns                                |
+| `src/services/records.js`           | Firestore queries, CRUD, transactional bookings and tuition installments                 |
+| `src/components/`                   | Accessible dialogs, escaped print reports, CSV export                                    |
+| `src/utils/`                        | Validation, escaping, themes and tuition math                                            |
+| `src/data/`, `src/services/demo.js` | Anonymized demo fixtures and original office evaluation questions                        |
+| `assets/css/main.css`               | Responsive light/dark design system                                                      |
+| `firebase/firestore.rules`          | Authoritative access and document validation                                             |
+| `scripts/generate-rules.mjs`        | Rule generator; regenerate after changing catalog fields or policies                     |
+| `tests/`                            | Unit tests and real Firestore rules emulator tests                                       |
 
 The pasted source is retained locally at `.reference/original.html`, which is gitignored. It is not a public deployment artifact. `scripts/extract-baseline.mjs` is a one-time migration utility requiring that local reference; it is not part of normal development or deployment.
 

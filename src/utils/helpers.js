@@ -22,6 +22,12 @@ export function errorMessage(error) {
       "auth/wrong-password": "E-adresa ili lozinka nije ispravna.",
       "auth/user-not-found": "E-adresa ili lozinka nije ispravna.",
       "auth/invalid-email": "Unesite ispravnu e-adresu.",
+      "auth/email-already-in-use":
+        "Račun s tom e-adresom već postoji. Prijavite se ili obnovite lozinku.",
+      "auth/weak-password":
+        "Lozinka ne zadovoljava pravila sigurnosti. Odaberite dulju i složeniju lozinku.",
+      "auth/password-does-not-meet-requirements":
+        "Lozinka ne zadovoljava pravila sigurnosti Firebase projekta.",
       "auth/user-disabled": "Račun je onemogućen. Obratite se administratoru.",
       "auth/too-many-requests": "Previše pokušaja. Pokušajte ponovno kasnije.",
       "auth/network-request-failed": "Veza nije dostupna. Provjerite internet.",

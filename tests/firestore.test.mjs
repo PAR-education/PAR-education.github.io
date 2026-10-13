@@ -162,6 +162,69 @@ test("Users cannot self-assign roles or activate themselves", async () => {
   );
   await assertSucceeds(getDoc(doc(database("missing"), "users", "missing")));
 });
+test("New account can create only its own inactive profile and cannot activate it", async () => {
+  const db = env
+    .authenticatedContext("new-account", { email: "new@example.test" })
+    .firestore();
+  const profile = {
+    name: "New user",
+    email: "new@example.test",
+    role: "student",
+    active: false,
+    departmentId: "",
+    ...meta(),
+    createdBy: "new-account",
+  };
+  await assertSucceeds(setDoc(doc(db, "users", "new-account"), profile));
+  await assertFails(getDoc(doc(db, "courses", "c1")));
+  await assertFails(
+    updateDoc(doc(db, "users", "new-account"), {
+      role: "admin",
+      active: true,
+      updatedAt: serverTimestamp(),
+    }),
+  );
+  await assertFails(
+    updateDoc(doc(db, "users", "new-account"), {
+      active: true,
+      updatedAt: serverTimestamp(),
+    }),
+  );
+});
+test("Pending self-provisioning cannot forge identity, approval, department or privileged role", async () => {
+  const db = env
+    .authenticatedContext("new-account", { email: "new@example.test" })
+    .firestore();
+  const profile = {
+    name: "New user",
+    email: "new@example.test",
+    role: "student",
+    active: false,
+    departmentId: "",
+    ...meta(),
+    createdBy: "new-account",
+  };
+  for (const change of [
+    { role: "admin" },
+    { role: "profesor" },
+    { active: true },
+    { departmentId: "business" },
+    { email: "other@example.test" },
+    { extraPermission: true },
+    { createdBy: "admin" },
+  ]) {
+    await assertFails(
+      setDoc(doc(db, "users", "new-account"), { ...profile, ...change }),
+    );
+  }
+  await assertFails(setDoc(doc(db, "users", "someone-else"), profile));
+  await assertFails(
+    setDoc(
+      doc(env.unauthenticatedContext().firestore(), "users", "new-account"),
+      profile,
+    ),
+  );
+});
 test("Admin can provision users but cannot disable own admin profile", async () => {
   await assertSucceeds(
     setDoc(doc(database("admin"), "users", "new-user"), {

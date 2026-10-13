@@ -1,5 +1,12 @@
 # Changes — 13 October 2026
 
+Registration follow-up:
+
+- Added **Registriraj se** to the login page, name/email/password confirmation validation and real Firebase account creation.
+- First registration/login creates a missing inactive profile without overwriting existing approvals. This also fixes Auth-only accounts that previously had no `users` document.
+- Added the administrator pending-account filter and **Odaberi ulogu i odobri** action. Approved users receive the selected role and their waiting session automatically opens the workspace.
+- Security rules permit only self-creation of an inactive, nonprivileged profile with matching Auth email. Self-activation, privileged-role selection and another person's profile creation remain denied.
+
 - Replaced role-select demo login with Firebase email/password, reset support, session persistence, active role profiles and protected homepage initialization.
 - Split the monolith into static pages, a readable design system, ES modules, auth, catalog, services, components and utilities. Removed runtime Tailwind, icon, chart, QR and PDF dependencies from production.
 - Added server-side Firestore role/ownership/department/instructor rules, schema checks and default denial; prevented self-promotion and self-deactivation by administrators.

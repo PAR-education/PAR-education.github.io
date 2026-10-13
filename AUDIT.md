@@ -77,3 +77,7 @@ Completed: isolate source/fixtures; establish auth/profile guard and security ru
 Before live use: publish the rules, create the first administrator, provision real users, confirm the Pages hostname and verify live authentication/password reset. Define institutional approval/capacity, academic permissions, privacy/retention and official document policies. Add pagination for large collections and a trusted backend for Authentication account administration, uploads, integrations and scheduled notifications.
 
 Security rules protect database records, not HTML files. GitHub Pages is public and cannot provide server-side protection of the static workspace shell. No sensitive production data is embedded in that shell. The UI must not be interpreted as proof of database authorization; rules are the boundary.
+
+## Registration follow-up
+
+Added public Firebase registration with password confirmation and an automatically created inactive user profile. Existing Auth-only accounts are repaired on first login. Only administrators can approve accounts or change roles. Updated security rules allow only own inactive profile creation with matching token email and server timestamps. The administrator user module includes a pending-account filter and an explicit approval action. Browser verification covered registration, guard denial before approval, assigned instructor role after approval, and Auth-only profile creation.

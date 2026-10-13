@@ -278,9 +278,12 @@ function canEdit(name, record) {
 function drawModule() {
   const config = modules[active];
   const statusField = config.fields.find((field) => field.key === "status");
-  const filters = statusField
-    ? `<label>Status <select id="status-filter"><option value="">Svi statusi</option>${statusField.options.map((option) => `<option value="${e(option)}">${e(option)}</option>`).join("")}</select></label>`
-    : "";
+  const filters =
+    active === "users"
+      ? '<label>Pristup <select id="status-filter"><option value="">Svi računi</option><option value="pending">Neaktivni / čeka odobrenje</option><option value="active">Aktivni</option></select></label>'
+      : statusField
+        ? `<label>Status <select id="status-filter"><option value="">Svi statusi</option>${statusField.options.map((option) => `<option value="${e(option)}">${e(option)}</option>`).join("")}</select></label>`
+        : "";
   const monthly =
     active === "workEntries"
       ? '<label class="month-filter">Mjesec <input type="month" id="month-filter"></label>'
@@ -351,7 +354,12 @@ function drawTable() {
   const config = modules[active];
   shownRows = rows.filter(
     (row) =>
-      (!statusFilter || row.status === statusFilter) &&
+      (!statusFilter ||
+        (active === "users"
+          ? statusFilter === "active"
+            ? row.active === true
+            : row.active !== true
+          : row.status === statusFilter)) &&
       (!month || row.date?.startsWith(month)) &&
       (!search ||
         config.fields.some((field) =>
@@ -408,6 +416,16 @@ function showDetails(name, record) {
     button.className = "button";
     button.textContent = "Školarina";
     button.addEventListener("click", () => showTuition(record));
+    $("dialog-body").querySelector(".detail-actions").append(button);
+  }
+  if (role === "admin" && name === "users" && record.active !== true) {
+    const button = document.createElement("button");
+    button.className = "button primary";
+    button.textContent = "Odaberi ulogu i odobri";
+    button.addEventListener("click", () => {
+      closeDialog();
+      showForm(name, { ...record, active: true });
+    });
     $("dialog-body").querySelector(".detail-actions").append(button);
   }
   $("print-record").addEventListener("click", () => {
