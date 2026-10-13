@@ -1,0 +1,2187 @@
+{
+  "students": [
+    {
+      "id": 1,
+      "name": "Ogledni student 1",
+      "jmbag": "DEMO-00001",
+      "year": 2,
+      "status": "Izvanredni",
+      "email": "student1@example.test",
+      "gpa": 2.88,
+      "ects": 34,
+      "img": "",
+      "enrolled": [1, 2, 3, 4, 5],
+      "risk": true,
+      "tuitionBase": 3500,
+      "tuitionModel": "installments_2",
+      "tuitionDiscount": 0
+    },
+    {
+      "id": 2,
+      "name": "Ogledni student 2",
+      "jmbag": "DEMO-00002",
+      "year": 3,
+      "status": "Redovni",
+      "email": "student2@example.test",
+      "gpa": 2.96,
+      "ects": 38,
+      "img": "",
+      "enrolled": [1, 2, 3, 4, 5],
+      "risk": true,
+      "tuitionBase": 3500,
+      "tuitionModel": "installments_2",
+      "tuitionDiscount": 0
+    },
+    {
+      "id": 3,
+      "name": "Ogledni student 3",
+      "jmbag": "DEMO-00003",
+      "year": 1,
+      "status": "Izvanredni",
+      "email": "student3@example.test",
+      "gpa": 3.04,
+      "ects": 42,
+      "img": "",
+      "enrolled": [1, 2, 3, 4, 5],
+      "risk": false,
+      "tuitionBase": 3500,
+      "tuitionModel": "installments_2",
+      "tuitionDiscount": 0
+    },
+    {
+      "id": 4,
+      "name": "Ogledni student 4",
+      "jmbag": "DEMO-00004",
+      "year": 2,
+      "status": "Redovni",
+      "email": "student4@example.test",
+      "gpa": 3.12,
+      "ects": 46,
+      "img": "",
+      "enrolled": [1, 2, 3, 4, 5],
+      "risk": false,
+      "tuitionBase": 3500,
+      "tuitionModel": "installments_2",
+      "tuitionDiscount": 0
+    },
+    {
+      "id": 5,
+      "name": "Ogledni student 5",
+      "jmbag": "DEMO-00005",
+      "year": 3,
+      "status": "Izvanredni",
+      "email": "student5@example.test",
+      "gpa": 3.2,
+      "ects": 50,
+      "img": "",
+      "enrolled": [1, 2, 3, 4, 5],
+      "risk": false,
+      "tuitionBase": 3500,
+      "tuitionModel": "installments_2",
+      "tuitionDiscount": 0
+    },
+    {
+      "id": 6,
+      "name": "Ogledni student 6",
+      "jmbag": "DEMO-00006",
+      "year": 1,
+      "status": "Redovni",
+      "email": "student6@example.test",
+      "gpa": 3.28,
+      "ects": 54,
+      "img": "",
+      "enrolled": [1, 2, 3, 4, 5],
+      "risk": false,
+      "tuitionBase": 3500,
+      "tuitionModel": "installments_2",
+      "tuitionDiscount": 0
+    },
+    {
+      "id": 7,
+      "name": "Ogledni student 7",
+      "jmbag": "DEMO-00007",
+      "year": 2,
+      "status": "Izvanredni",
+      "email": "student7@example.test",
+      "gpa": 3.36,
+      "ects": 58,
+      "img": "",
+      "enrolled": [1, 2, 3, 4, 5],
+      "risk": false,
+      "tuitionBase": 3500,
+      "tuitionModel": "installments_2",
+      "tuitionDiscount": 0
+    },
+    {
+      "id": 8,
+      "name": "Ogledni student 8",
+      "jmbag": "DEMO-00008",
+      "year": 3,
+      "status": "Redovni",
+      "email": "student8@example.test",
+      "gpa": 3.44,
+      "ects": 62,
+      "img": "",
+      "enrolled": [1, 2, 3, 4, 5],
+      "risk": false,
+      "tuitionBase": 3500,
+      "tuitionModel": "installments_2",
+      "tuitionDiscount": 0
+    },
+    {
+      "id": 9,
+      "name": "Ogledni student 9",
+      "jmbag": "DEMO-00009",
+      "year": 1,
+      "status": "Izvanredni",
+      "email": "student9@example.test",
+      "gpa": 3.52,
+      "ects": 66,
+      "img": "",
+      "enrolled": [1, 2, 3, 4, 5],
+      "risk": false,
+      "tuitionBase": 3500,
+      "tuitionModel": "installments_2",
+      "tuitionDiscount": 0
+    },
+    {
+      "id": 10,
+      "name": "Ogledni student 10",
+      "jmbag": "DEMO-00010",
+      "year": 2,
+      "status": "Redovni",
+      "email": "student10@example.test",
+      "gpa": 3.6,
+      "ects": 70,
+      "img": "",
+      "enrolled": [1, 2, 3, 4, 5],
+      "risk": false,
+      "tuitionBase": 3500,
+      "tuitionModel": "installments_2",
+      "tuitionDiscount": 0
+    },
+    {
+      "id": 11,
+      "name": "Ogledni student 11",
+      "jmbag": "DEMO-00011",
+      "year": 3,
+      "status": "Izvanredni",
+      "email": "student11@example.test",
+      "gpa": 3.68,
+      "ects": 74,
+      "img": "",
+      "enrolled": [1, 2, 3, 4, 5],
+      "risk": false,
+      "tuitionBase": 3500,
+      "tuitionModel": "installments_2",
+      "tuitionDiscount": 0
+    },
+    {
+      "id": 12,
+      "name": "Ogledni student 12",
+      "jmbag": "DEMO-00012",
+      "year": 1,
+      "status": "Redovni",
+      "email": "student12@example.test",
+      "gpa": 3.76,
+      "ects": 78,
+      "img": "",
+      "enrolled": [1, 2, 3, 4, 5],
+      "risk": false,
+      "tuitionBase": 3500,
+      "tuitionModel": "installments_2",
+      "tuitionDiscount": 0
+    },
+    {
+      "id": 13,
+      "name": "Ogledni student 13",
+      "jmbag": "DEMO-00013",
+      "year": 2,
+      "status": "Izvanredni",
+      "email": "student13@example.test",
+      "gpa": 3.84,
+      "ects": 82,
+      "img": "",
+      "enrolled": [1, 2, 3, 4, 5],
+      "risk": false,
+      "tuitionBase": 3500,
+      "tuitionModel": "installments_2",
+      "tuitionDiscount": 0
+    },
+    {
+      "id": 14,
+      "name": "Ogledni student 14",
+      "jmbag": "DEMO-00014",
+      "year": 3,
+      "status": "Redovni",
+      "email": "student14@example.test",
+      "gpa": 3.92,
+      "ects": 86,
+      "img": "",
+      "enrolled": [1, 2, 3, 4, 5],
+      "risk": false,
+      "tuitionBase": 3500,
+      "tuitionModel": "installments_2",
+      "tuitionDiscount": 0
+    },
+    {
+      "id": 15,
+      "name": "Ogledni student 15",
+      "jmbag": "DEMO-00015",
+      "year": 1,
+      "status": "Izvanredni",
+      "email": "student15@example.test",
+      "gpa": 4,
+      "ects": 90,
+      "img": "",
+      "enrolled": [1, 2, 3, 4, 5],
+      "risk": false,
+      "tuitionBase": 3500,
+      "tuitionModel": "installments_2",
+      "tuitionDiscount": 0
+    },
+    {
+      "id": 16,
+      "name": "Ogledni student 16",
+      "jmbag": "DEMO-00016",
+      "year": 2,
+      "status": "Redovni",
+      "email": "student16@example.test",
+      "gpa": 4.08,
+      "ects": 94,
+      "img": "",
+      "enrolled": [1, 2, 3, 4, 5],
+      "risk": false,
+      "tuitionBase": 3500,
+      "tuitionModel": "installments_2",
+      "tuitionDiscount": 0
+    },
+    {
+      "id": 17,
+      "name": "Ogledni student 17",
+      "jmbag": "DEMO-00017",
+      "year": 3,
+      "status": "Izvanredni",
+      "email": "student17@example.test",
+      "gpa": 4.16,
+      "ects": 98,
+      "img": "",
+      "enrolled": [1, 2, 3, 4, 5],
+      "risk": false,
+      "tuitionBase": 3500,
+      "tuitionModel": "installments_2",
+      "tuitionDiscount": 0
+    },
+    {
+      "id": 18,
+      "name": "Ogledni student 18",
+      "jmbag": "DEMO-00018",
+      "year": 1,
+      "status": "Redovni",
+      "email": "student18@example.test",
+      "gpa": 4.24,
+      "ects": 102,
+      "img": "",
+      "enrolled": [1, 2, 3, 4, 5],
+      "risk": false,
+      "tuitionBase": 3500,
+      "tuitionModel": "installments_2",
+      "tuitionDiscount": 0
+    },
+    {
+      "id": 19,
+      "name": "Ogledni student 19",
+      "jmbag": "DEMO-00019",
+      "year": 2,
+      "status": "Izvanredni",
+      "email": "student19@example.test",
+      "gpa": 4.32,
+      "ects": 106,
+      "img": "",
+      "enrolled": [1, 2, 3, 4, 5],
+      "risk": false,
+      "tuitionBase": 3500,
+      "tuitionModel": "installments_2",
+      "tuitionDiscount": 0
+    },
+    {
+      "id": 20,
+      "name": "Ogledni student 20",
+      "jmbag": "DEMO-00020",
+      "year": 3,
+      "status": "Redovni",
+      "email": "student20@example.test",
+      "gpa": 4.4,
+      "ects": 110,
+      "img": "",
+      "enrolled": [1, 2, 3, 4, 5],
+      "risk": false,
+      "tuitionBase": 3500,
+      "tuitionModel": "installments_2",
+      "tuitionDiscount": 0
+    },
+    {
+      "id": 21,
+      "name": "Ogledni student 21",
+      "jmbag": "DEMO-00021",
+      "year": 1,
+      "status": "Izvanredni",
+      "email": "student21@example.test",
+      "gpa": 4.48,
+      "ects": 114,
+      "img": "",
+      "enrolled": [1, 2, 3, 4, 5],
+      "risk": false,
+      "tuitionBase": 3500,
+      "tuitionModel": "installments_2",
+      "tuitionDiscount": 0
+    },
+    {
+      "id": 22,
+      "name": "Ogledni student 22",
+      "jmbag": "DEMO-00022",
+      "year": 2,
+      "status": "Redovni",
+      "email": "student22@example.test",
+      "gpa": 4.56,
+      "ects": 118,
+      "img": "",
+      "enrolled": [1, 2, 3, 4, 5],
+      "risk": false,
+      "tuitionBase": 3500,
+      "tuitionModel": "installments_2",
+      "tuitionDiscount": 0
+    },
+    {
+      "id": 23,
+      "name": "Ogledni student 23",
+      "jmbag": "DEMO-00023",
+      "year": 3,
+      "status": "Izvanredni",
+      "email": "student23@example.test",
+      "gpa": 4.64,
+      "ects": 122,
+      "img": "",
+      "enrolled": [1, 2, 3, 4, 5],
+      "risk": false,
+      "tuitionBase": 3500,
+      "tuitionModel": "installments_2",
+      "tuitionDiscount": 0
+    },
+    {
+      "id": 24,
+      "name": "Ogledni student 24",
+      "jmbag": "DEMO-00024",
+      "year": 1,
+      "status": "Redovni",
+      "email": "student24@example.test",
+      "gpa": 4.72,
+      "ects": 126,
+      "img": "",
+      "enrolled": [1, 2, 3, 4, 5],
+      "risk": false,
+      "tuitionBase": 3500,
+      "tuitionModel": "installments_2",
+      "tuitionDiscount": 0
+    },
+    {
+      "id": 25,
+      "name": "Ogledni student 25",
+      "jmbag": "DEMO-00025",
+      "year": 2,
+      "status": "Izvanredni",
+      "email": "student25@example.test",
+      "gpa": 4.8,
+      "ects": 130,
+      "img": "",
+      "enrolled": [1, 2, 3, 4, 5],
+      "risk": false,
+      "tuitionBase": 3500,
+      "tuitionModel": "installments_2",
+      "tuitionDiscount": 0
+    },
+    {
+      "id": 26,
+      "name": "Ogledni student 26",
+      "jmbag": "DEMO-00026",
+      "year": 3,
+      "status": "Redovni",
+      "email": "student26@example.test",
+      "gpa": 4.88,
+      "ects": 134,
+      "img": "",
+      "enrolled": [1, 2, 3, 4, 5],
+      "risk": false,
+      "tuitionBase": 3500,
+      "tuitionModel": "installments_2",
+      "tuitionDiscount": 0
+    },
+    {
+      "id": 27,
+      "name": "Ogledni student 27",
+      "jmbag": "DEMO-00027",
+      "year": 1,
+      "status": "Izvanredni",
+      "email": "student27@example.test",
+      "gpa": 2.86,
+      "ects": 138,
+      "img": "",
+      "enrolled": [1, 2, 3, 4, 5],
+      "risk": true,
+      "tuitionBase": 3500,
+      "tuitionModel": "installments_2",
+      "tuitionDiscount": 0
+    },
+    {
+      "id": 28,
+      "name": "Ogledni student 28",
+      "jmbag": "DEMO-00028",
+      "year": 2,
+      "status": "Redovni",
+      "email": "student28@example.test",
+      "gpa": 2.94,
+      "ects": 142,
+      "img": "",
+      "enrolled": [1, 2, 3, 4, 5],
+      "risk": true,
+      "tuitionBase": 3500,
+      "tuitionModel": "installments_2",
+      "tuitionDiscount": 0
+    },
+    {
+      "id": 29,
+      "name": "Ogledni student 29",
+      "jmbag": "DEMO-00029",
+      "year": 3,
+      "status": "Izvanredni",
+      "email": "student29@example.test",
+      "gpa": 3.02,
+      "ects": 146,
+      "img": "",
+      "enrolled": [1, 2, 3, 4, 5],
+      "risk": false,
+      "tuitionBase": 3500,
+      "tuitionModel": "installments_2",
+      "tuitionDiscount": 0
+    },
+    {
+      "id": 30,
+      "name": "Ogledni student 30",
+      "jmbag": "DEMO-00030",
+      "year": 1,
+      "status": "Redovni",
+      "email": "student30@example.test",
+      "gpa": 3.1,
+      "ects": 150,
+      "img": "",
+      "enrolled": [1, 2, 3, 4, 5],
+      "risk": false,
+      "tuitionBase": 3500,
+      "tuitionModel": "installments_2",
+      "tuitionDiscount": 0
+    }
+  ],
+  "employees": [
+    {
+      "id": 1,
+      "name": "Ogledni zaposlenik 1",
+      "role": "Dekanica",
+      "dept": "Uprava",
+      "type": "Uprava",
+      "email": "zaposlenik1@example.test",
+      "goUsed": 12,
+      "sickLeave": 0,
+      "travelOrders": 15,
+      "projects": ["Eu4Dual", "CreativeAIHub"],
+      "travelOrdersList": ["Brusseles - EU Commission (12.03.)"],
+      "papers": {
+        "drafting": [
+          "Analiza trendova u obrazovanju (Ogledni zaposlenik 1)",
+          "Digitalna transformacija"
+        ],
+        "review": ["Dualno obrazovanje u RH (2026.)"],
+        "published": [
+          "Znanstveni rad: Uloga inovacija u poslovanju, Zbornik PAR 2026."
+        ]
+      }
+    },
+    {
+      "id": 2,
+      "name": "Ogledni zaposlenik 2",
+      "role": "Pročelnik",
+      "dept": "Katedra inovacije",
+      "type": "Nastavnik",
+      "email": "zaposlenik2@example.test",
+      "goUsed": 18,
+      "sickLeave": 5,
+      "travelOrders": 8,
+      "projects": ["CreativeStartup"],
+      "travelOrdersList": ["Split - Gostovanje (22.04.)"],
+      "papers": {
+        "drafting": [
+          "Analiza trendova u obrazovanju (Ogledni zaposlenik 2)",
+          "Digitalna transformacija"
+        ],
+        "review": ["Dualno obrazovanje u RH (2026.)"],
+        "published": [
+          "Znanstveni rad: Uloga inovacija u poslovanju, Zbornik PAR 2026."
+        ]
+      }
+    },
+    {
+      "id": 3,
+      "name": "Ogledni zaposlenik 3",
+      "role": "Predavač",
+      "dept": "Katedra IT",
+      "type": "Nastavnik",
+      "email": "zaposlenik3@example.test",
+      "goUsed": 0,
+      "sickLeave": 12,
+      "travelOrders": 0,
+      "projects": ["CreativeAIHub"],
+      "travelOrdersList": [],
+      "papers": {
+        "drafting": [
+          "Analiza trendova u obrazovanju (Ogledni zaposlenik 3)",
+          "Digitalna transformacija"
+        ],
+        "review": ["Dualno obrazovanje u RH (2026.)"],
+        "published": [
+          "Znanstveni rad: Uloga inovacija u poslovanju, Zbornik PAR 2026."
+        ]
+      }
+    },
+    {
+      "id": 4,
+      "name": "Ogledni zaposlenik 4",
+      "role": "LabTech",
+      "dept": "IT Služba",
+      "type": "Administracija",
+      "email": "zaposlenik4@example.test",
+      "goUsed": 8,
+      "sickLeave": 0,
+      "travelOrders": 2,
+      "projects": ["Eu4Dual", "SmartCampusRijeka"],
+      "travelOrdersList": ["Zagreb - Nabava (02.02.)"],
+      "papers": {
+        "drafting": [
+          "Analiza trendova u obrazovanju (Ogledni zaposlenik 4)",
+          "Digitalna transformacija"
+        ],
+        "review": ["Dualno obrazovanje u RH (2026.)"],
+        "published": [
+          "Znanstveni rad: Uloga inovacija u poslovanju, Zbornik PAR 2026."
+        ]
+      }
+    },
+    {
+      "id": 5,
+      "name": "Ogledni zaposlenik 5",
+      "role": "Voditeljica referade",
+      "dept": "Stručne službe",
+      "type": "Administracija",
+      "email": "zaposlenik5@example.test",
+      "goUsed": 14,
+      "sickLeave": 2,
+      "travelOrders": 1,
+      "projects": [],
+      "travelOrdersList": ["Zagreb - Edukacija (15.05.)"],
+      "papers": {
+        "drafting": [
+          "Analiza trendova u obrazovanju (Ogledni zaposlenik 5)",
+          "Digitalna transformacija"
+        ],
+        "review": ["Dualno obrazovanje u RH (2026.)"],
+        "published": [
+          "Znanstveni rad: Uloga inovacija u poslovanju, Zbornik PAR 2026."
+        ]
+      }
+    },
+    {
+      "id": 6,
+      "name": "Ogledni zaposlenik 6",
+      "role": "Predavač",
+      "dept": "Katedra za menadžment",
+      "type": "Nastavnik",
+      "email": "zaposlenik6@example.test",
+      "goUsed": 5,
+      "sickLeave": 0,
+      "travelOrders": 3,
+      "projects": ["CreativeStartup", "WomenInTechPAR"],
+      "travelOrdersList": ["Ljubljana - Konferencija (10.06.)"],
+      "papers": {
+        "drafting": [
+          "Analiza trendova u obrazovanju (Ogledni zaposlenik 6)",
+          "Digitalna transformacija"
+        ],
+        "review": ["Dualno obrazovanje u RH (2026.)"],
+        "published": [
+          "Znanstveni rad: Uloga inovacija u poslovanju, Zbornik PAR 2026."
+        ]
+      }
+    },
+    {
+      "id": 7,
+      "name": "Ogledni zaposlenik 7",
+      "role": "Predavač",
+      "dept": "Katedra za marketing",
+      "type": "Nastavnik",
+      "email": "zaposlenik7@example.test",
+      "goUsed": 0,
+      "sickLeave": 0,
+      "travelOrders": 0,
+      "projects": [],
+      "travelOrdersList": [],
+      "papers": {
+        "drafting": [],
+        "review": [],
+        "published": []
+      }
+    },
+    {
+      "id": 8,
+      "name": "Ogledni zaposlenik 8",
+      "role": "Predavač",
+      "dept": "Katedra za financije",
+      "type": "Nastavnik",
+      "email": "zaposlenik8@example.test",
+      "goUsed": 5,
+      "sickLeave": 2,
+      "travelOrders": 1,
+      "projects": [],
+      "travelOrdersList": [],
+      "papers": {
+        "drafting": [],
+        "review": [],
+        "published": []
+      }
+    },
+    {
+      "id": 9,
+      "name": "Ogledni zaposlenik 9",
+      "role": "Viši predavač",
+      "dept": "Katedra za menadžment",
+      "type": "Nastavnik",
+      "email": "zaposlenik9@example.test",
+      "goUsed": 10,
+      "sickLeave": 0,
+      "travelOrders": 0,
+      "projects": [],
+      "travelOrdersList": [],
+      "papers": {
+        "drafting": [],
+        "review": [],
+        "published": []
+      }
+    }
+  ],
+  "projects": [
+    {
+      "id": 1,
+      "name": "Eu4Dual",
+      "duration": "36 mjeseci",
+      "fundingLine": "Erasmus+",
+      "budget": "€ 1,200,000",
+      "startDate": "01.09.2023",
+      "endDate": "31.08.2026",
+      "partners": ["DHBW Heilbronn (DE)", "Mondragon UAS (ES)"],
+      "description": "Razvoj standarda mikrokredencijala za dualno obrazovanje.",
+      "wps": ["WP1: Upravljanje", "WP2: Dualni okvir"],
+      "professors": ["Ogledna osoba 1"],
+      "students": ["Ogledna osoba 1"]
+    },
+    {
+      "id": 2,
+      "name": "CreativeStartup",
+      "duration": "24 mjeseca",
+      "fundingLine": "ESF+",
+      "budget": "€ 450,000",
+      "startDate": "01.01.2025",
+      "endDate": "31.12.2026",
+      "partners": ["Inkubator Rijeka", "STEP RI"],
+      "description": "Poticanje studentskog poduzetništva kroz kreativni inkubator.",
+      "wps": ["WP1: Vođenje projekta"],
+      "professors": ["Ogledna osoba 1"],
+      "students": ["Ogledna osoba 1"]
+    },
+    {
+      "id": 3,
+      "name": "CreativeAIHub",
+      "duration": "36 mjeseci",
+      "fundingLine": "Horizon Europe",
+      "budget": "€ 890,000",
+      "startDate": "01.06.2024",
+      "endDate": "31.05.2027",
+      "partners": ["AI Institute Austria"],
+      "description": "Implementacija umjetne inteligencije u visokoškolsku edukaciju.",
+      "wps": ["WP1: AI Lab Setup"],
+      "professors": ["Ogledna osoba 1"],
+      "students": ["Ogledna osoba 1"]
+    },
+    {
+      "id": 4,
+      "name": "DualCareerSport",
+      "duration": "24 mjeseca",
+      "fundingLine": "Erasmus+ Sport",
+      "budget": "€ 350,000",
+      "startDate": "01.10.2024",
+      "endDate": "30.09.2026",
+      "partners": ["Hrvatski olimpijski odbor"],
+      "description": "Podrška vrhunskim sportašima tijekom akademske karijere.",
+      "wps": ["WP1: Edukativni moduli"],
+      "professors": ["Ogledna osoba 1"],
+      "students": ["Ogledna osoba 1"]
+    },
+    {
+      "id": 5,
+      "name": "GreenEduPAR",
+      "duration": "30 mjeseci",
+      "fundingLine": "INTERREG",
+      "budget": "€ 620,000",
+      "startDate": "01.03.2025",
+      "endDate": "31.08.2027",
+      "partners": ["University of Trieste"],
+      "description": "Zelene tranzicije i održivi razvoj u poslovanju.",
+      "wps": ["WP1: Analiza otiska"],
+      "professors": ["Ogledna osoba 1"],
+      "students": ["Ogledna osoba 1"]
+    },
+    {
+      "id": 6,
+      "name": "WomenInTechPAR",
+      "duration": "18 mjeseci",
+      "fundingLine": "ESF+",
+      "budget": "€ 280,000",
+      "startDate": "01.05.2025",
+      "endDate": "31.10.2026",
+      "partners": ["Udruga Mladih Poduzetnika"],
+      "description": "Osnaživanje ženskog poduzetništva u STEM i IT sektorima.",
+      "wps": ["WP1: Mentorski program"],
+      "professors": ["Ogledna osoba 1"],
+      "students": ["Ogledna osoba 1"]
+    },
+    {
+      "id": 7,
+      "name": "SmartCampusRijeka",
+      "duration": "24 mjeseca",
+      "fundingLine": "NPOO",
+      "budget": "€ 510,000",
+      "startDate": "01.01.2026",
+      "endDate": "31.12.2027",
+      "partners": ["Grad Rijeka", "Ericsson Nikola Tesla"],
+      "description": "Digitalizacija kampusnih resursa i pametne dvorane.",
+      "wps": ["WP1: IoT Mreža"],
+      "professors": ["Ogledna osoba 1"],
+      "students": ["Ogledna osoba 1"]
+    }
+  ],
+  "courses": [
+    {
+      "id": 1,
+      "title": "Osnove ekonomije",
+      "ects": 6,
+      "prof": "Ogledni nastavnik",
+      "sem": "Zimski",
+      "tip": "Obvezni",
+      "opterećenje": "30P + 30S",
+      "day": "Pon",
+      "timeStart": 8,
+      "timeEnd": 10,
+      "dvorana": "Dvorana PAR",
+      "description": "Kolegij upoznaje studente s osnovnim ekonomskim pojmovima, funkcioniranjem mikroekonomije i makroekonomije.",
+      "outcomes": [
+        "Definirati osnovne ekonomske pojmove.",
+        "Analizirati utjecaj makroekonomskih agregata."
+      ],
+      "literature": ["Samuelson, P. A. (2011). Ekonomija. MATE."]
+    },
+    {
+      "id": 2,
+      "title": "Menadžment",
+      "ects": 7,
+      "prof": "Ogledni nastavnik",
+      "sem": "Zimski",
+      "tip": "Obvezni",
+      "opterećenje": "45P + 15S",
+      "day": "Uto",
+      "timeStart": 10,
+      "timeEnd": 12,
+      "dvorana": "Dvorana 1",
+      "description": "Usvajanje temeljnih teorijskih i praktičnih znanja iz područja menadžmenta i vođenja.",
+      "outcomes": [
+        "Razumjeti funkcije menadžmenta.",
+        "Primijeniti metode planiranja."
+      ],
+      "literature": ["Buble, M. (2006). Osnove menadžmenta. Sinergija."]
+    },
+    {
+      "id": 3,
+      "title": "Poduzetništvo i inovacije",
+      "ects": 6,
+      "prof": "Ogledni zaposlenik 2",
+      "sem": "Ljetni",
+      "tip": "Obvezni",
+      "opterećenje": "30P + 30V",
+      "day": "Sri",
+      "timeStart": 12,
+      "timeEnd": 14,
+      "dvorana": "Inkubator",
+      "description": "Prepoznavanje poslovnih prilika i implementacija inovacija koristeći Business Model Canvas.",
+      "outcomes": ["Kritički procijeniti ideju.", "Izraditi poslovni plan."],
+      "literature": ["Kuratko, D. F. (2016). Entrepreneurship."]
+    },
+    {
+      "id": 4,
+      "title": "Računovodstvo",
+      "ects": 6,
+      "prof": "Ogledni zaposlenik 8",
+      "sem": "Zimski",
+      "tip": "Obvezni",
+      "opterećenje": "30P + 30V",
+      "day": "Čet",
+      "timeStart": 8,
+      "timeEnd": 10,
+      "dvorana": "Dvorana 2",
+      "description": "Temeljna znanja o računovodstvenom praćenju poslovnih događaja i financijskim izvješćima.",
+      "outcomes": ["Knjižiti promjene na računima."],
+      "literature": ["Gulin, D. (2011). Računovodstvo."]
+    },
+    {
+      "id": 5,
+      "title": "Digitalni marketing",
+      "ects": 6,
+      "prof": "Ogledni zaposlenik 7",
+      "sem": "Ljetni",
+      "tip": "Obvezni",
+      "opterećenje": "30P + 30V",
+      "day": "Pet",
+      "timeStart": 10,
+      "timeEnd": 12,
+      "dvorana": "IT Lab 1",
+      "description": "SEO optimizacija, oglašavanje na društvenim mrežama, content marketing i Google Analytics.",
+      "outcomes": ["Kreirati digitalnu kampanju."],
+      "literature": ["Chaffey, D. (2019). Digital Marketing."]
+    },
+    {
+      "id": 6,
+      "title": "Strateški menadžment",
+      "ects": 6,
+      "prof": "Ogledni zaposlenik 2",
+      "sem": "Zimski",
+      "tip": "Obvezni",
+      "opterećenje": "30P + 30V",
+      "day": "Uto",
+      "timeStart": 14,
+      "timeEnd": 16,
+      "dvorana": "Dvorana 2",
+      "description": "Formuliranje, implementacija i evaluacija poslovne strategije u dinamičnom okruženju.",
+      "outcomes": ["SWOT i PESTLE analiza."],
+      "literature": ["David, F. R. (2011). Strategic Management."]
+    },
+    {
+      "id": 7,
+      "title": "Krizni menadžment",
+      "ects": 5,
+      "prof": "Ogledni zaposlenik 9",
+      "sem": "Ljetni",
+      "tip": "Izborni",
+      "opterećenje": "30P + 15V",
+      "day": "Sri",
+      "timeStart": 16,
+      "timeEnd": 18,
+      "dvorana": "Dvorana 1",
+      "description": "Faze razvoja krize, krizno komuniciranje i upravljanje kontinuitetom poslovanja.",
+      "outcomes": ["Izraditi plan kriznog komuniciranja."],
+      "literature": ["Coombs, W. T. (2014). Ongoing Crisis Communication."]
+    },
+    {
+      "id": 8,
+      "title": "Menadžment sportskih događaja",
+      "ects": 5,
+      "prof": "Ogledni nastavnik",
+      "sem": "Ljetni",
+      "tip": "Izborni",
+      "opterećenje": "30P + 15S",
+      "day": "Pon",
+      "timeStart": 16,
+      "timeEnd": 18,
+      "dvorana": "Dvorana 1",
+      "description": "Upravljanje sportskim i turističkim događajima od koncepcije do provedbe.",
+      "outcomes": ["Planirati sponzorstva i logistiku."],
+      "literature": ["Masterman, G. (2014). Strategic Sports Event Mng."]
+    },
+    {
+      "id": 9,
+      "title": "EU fondovi i projektni menadžment",
+      "ects": 6,
+      "prof": "Ogledni nastavnik",
+      "sem": "Zimski",
+      "tip": "Obvezni",
+      "opterećenje": "30P + 30V",
+      "day": "Čet",
+      "timeStart": 12,
+      "timeEnd": 14,
+      "dvorana": "Dvorana PAR",
+      "description": "Priprema projektne dokumentacije i upravljanje EU projektima (PCM, logička matrica).",
+      "outcomes": ["Izraditi logičku matricu."],
+      "literature": ["Priručnik za upravljanje projektnim ciklusom (EK)."]
+    },
+    {
+      "id": 10,
+      "title": "Menadžment ljudskih potencijala",
+      "ects": 6,
+      "prof": "Ogledni zaposlenik 6",
+      "sem": "Zimski",
+      "tip": "Obvezni",
+      "opterećenje": "30P + 30S",
+      "day": "Pet",
+      "timeStart": 14,
+      "timeEnd": 16,
+      "dvorana": "Dvorana 2",
+      "description": "Regrutacija, selekcija, razvoj karijere, motivacija i nagrađivanje zaposlenika.",
+      "outcomes": ["Dizajnirati sustav nagrađivanja."],
+      "literature": ["Dessler, G. (2016). Human Resource Management."]
+    }
+  ],
+  "finances": [
+    {
+      "id": "RN-2026-1",
+      "studentId": 1,
+      "student": "Ogledni student 1",
+      "type": "Upisnina",
+      "amount": "€ 635.00",
+      "status": "Dugovanje",
+      "due": "15.08.2026"
+    },
+    {
+      "id": "RN-2026-2",
+      "studentId": 2,
+      "student": "Ogledni student 2",
+      "type": "Školarina 1. rata",
+      "amount": "€ 670.00",
+      "status": "Dugovanje",
+      "due": "15.08.2026"
+    },
+    {
+      "id": "RN-2026-3",
+      "studentId": 3,
+      "student": "Ogledni student 3",
+      "type": "Upisnina",
+      "amount": "€ 705.00",
+      "status": "Plaćeno",
+      "due": "15.08.2026"
+    },
+    {
+      "id": "RN-2026-4",
+      "studentId": 4,
+      "student": "Ogledni student 4",
+      "type": "Školarina 1. rata",
+      "amount": "€ 740.00",
+      "status": "Dugovanje",
+      "due": "15.08.2026"
+    },
+    {
+      "id": "RN-2026-5",
+      "studentId": 5,
+      "student": "Ogledni student 5",
+      "type": "Upisnina",
+      "amount": "€ 775.00",
+      "status": "Dugovanje",
+      "due": "15.08.2026"
+    },
+    {
+      "id": "RN-2026-6",
+      "studentId": 6,
+      "student": "Ogledni student 6",
+      "type": "Školarina 1. rata",
+      "amount": "€ 810.00",
+      "status": "Plaćeno",
+      "due": "15.08.2026"
+    },
+    {
+      "id": "RN-2026-7",
+      "studentId": 7,
+      "student": "Ogledni student 7",
+      "type": "Upisnina",
+      "amount": "€ 845.00",
+      "status": "Dugovanje",
+      "due": "15.08.2026"
+    },
+    {
+      "id": "RN-2026-8",
+      "studentId": 8,
+      "student": "Ogledni student 8",
+      "type": "Školarina 1. rata",
+      "amount": "€ 880.00",
+      "status": "Dugovanje",
+      "due": "15.08.2026"
+    },
+    {
+      "id": "RN-2026-9",
+      "studentId": 9,
+      "student": "Ogledni student 9",
+      "type": "Upisnina",
+      "amount": "€ 915.00",
+      "status": "Plaćeno",
+      "due": "15.08.2026"
+    },
+    {
+      "id": "RN-2026-10",
+      "studentId": 10,
+      "student": "Ogledni student 10",
+      "type": "Školarina 1. rata",
+      "amount": "€ 950.00",
+      "status": "Dugovanje",
+      "due": "15.08.2026"
+    },
+    {
+      "id": "RN-2026-11",
+      "studentId": 11,
+      "student": "Ogledni student 11",
+      "type": "Upisnina",
+      "amount": "€ 985.00",
+      "status": "Dugovanje",
+      "due": "15.08.2026"
+    },
+    {
+      "id": "RN-2026-12",
+      "studentId": 12,
+      "student": "Ogledni student 12",
+      "type": "Školarina 1. rata",
+      "amount": "€ 1020.00",
+      "status": "Plaćeno",
+      "due": "15.08.2026"
+    }
+  ],
+  "grades": [
+    {
+      "id": 1,
+      "student": "Ogledni student 1",
+      "course": "Osnove ekonomije",
+      "grade": 5,
+      "date": "10.07.2026"
+    },
+    {
+      "id": 2,
+      "student": "Ogledni student 1",
+      "course": "Menadžment",
+      "grade": 4,
+      "date": "12.07.2026"
+    },
+    {
+      "id": 3,
+      "student": "Ogledna osoba",
+      "course": "Poduzetništvo i inovacije",
+      "grade": 5,
+      "date": "15.07.2026"
+    },
+    {
+      "id": 4,
+      "student": "Ogledni student 2",
+      "course": "Računovodstvo",
+      "grade": 3,
+      "date": "18.07.2026"
+    },
+    {
+      "id": 5,
+      "student": "Ogledni student 3",
+      "course": "Digitalni marketing",
+      "grade": 4,
+      "date": "20.07.2026"
+    },
+    {
+      "id": 6,
+      "student": "Ogledni student 4",
+      "course": "Strateški menadžment",
+      "grade": 5,
+      "date": "22.07.2026"
+    },
+    {
+      "id": 7,
+      "student": "Ogledni student 5",
+      "course": "Krizni menadžment",
+      "grade": 2,
+      "date": "25.07.2026"
+    },
+    {
+      "id": 8,
+      "student": "Ogledni student 6",
+      "course": "Menadžment sportskih događaja",
+      "grade": 4,
+      "date": "28.07.2026"
+    },
+    {
+      "id": 9,
+      "student": "Ogledni student 7",
+      "course": "EU fondovi i projektni menadžment",
+      "grade": 5,
+      "date": "01.08.2026"
+    },
+    {
+      "id": 10,
+      "student": "Ogledni student 8",
+      "course": "Menadžment ljudskih potencijala",
+      "grade": 3,
+      "date": "03.08.2026"
+    }
+  ],
+  "vacations": [
+    {
+      "id": 1,
+      "employee": "Ogledni zaposlenik 1",
+      "period": "15.08 - 30.08",
+      "status": "Odobreno",
+      "days": 10
+    },
+    {
+      "id": 2,
+      "employee": "Ogledni zaposlenik 2",
+      "period": "01.09 - 10.09",
+      "status": "Na čekanju",
+      "days": 8
+    },
+    {
+      "id": 3,
+      "employee": "Ogledni zaposlenik 7",
+      "period": "20.08 - 25.08",
+      "status": "Na čekanju",
+      "days": 5
+    },
+    {
+      "id": 4,
+      "employee": "Ogledni zaposlenik 8",
+      "period": "05.09 - 15.09",
+      "status": "Na čekanju",
+      "days": 10
+    },
+    {
+      "id": 5,
+      "employee": "Ogledni zaposlenik 9",
+      "period": "12.08 - 18.08",
+      "status": "Na čekanju",
+      "days": 6
+    }
+  ],
+  "requests": [
+    {
+      "id": 1,
+      "student": "Ogledni student 1",
+      "type": "Prijepis ocjena",
+      "date": "05.08.2026 09:12",
+      "status": "Riješeno",
+      "priority": "Visok",
+      "history": [
+        {
+          "d": "05.08.2026 09:12",
+          "t": "Zaprimljeno."
+        },
+        {
+          "d": "05.08.2026 14:02",
+          "t": "Odobreno."
+        }
+      ],
+      "details": "Zahtjev za prijepisom ocjena za ERASMUS+."
+    },
+    {
+      "id": 2,
+      "student": "Ogledna osoba",
+      "type": "Potvrda o statusu studenta",
+      "date": "08.08.2026 11:30",
+      "status": "U obradi",
+      "priority": "Srednji",
+      "history": [
+        {
+          "d": "08.08.2026 11:30",
+          "t": "Zaprimljeno."
+        }
+      ],
+      "details": "Potvrda o statusu redovnog studenta."
+    },
+    {
+      "id": 3,
+      "student": "Ogledni student 2",
+      "type": "Prijepis ocjena",
+      "date": "10.08.2026 08:15",
+      "status": "Na čekanju",
+      "priority": "Srednji",
+      "history": [
+        {
+          "d": "10.08.2026 08:15",
+          "t": "Zaprimljeno."
+        }
+      ],
+      "details": "Zahtjev za prijepisom ocjena radi stipendije."
+    },
+    {
+      "id": 4,
+      "student": "Ogledni student 3",
+      "type": "Potvrda o statusu studenta",
+      "date": "10.08.2026 09:20",
+      "status": "Na čekanju",
+      "priority": "Nizak",
+      "history": [
+        {
+          "d": "10.08.2026 09:20",
+          "t": "Zaprimljeno."
+        }
+      ],
+      "details": "Potvrda za studentski pokaz."
+    },
+    {
+      "id": 5,
+      "student": "Ogledni student 4",
+      "type": "Prijepis ocjena",
+      "date": "11.08.2026 10:05",
+      "status": "Na čekanju",
+      "priority": "Srednji",
+      "history": [
+        {
+          "d": "11.08.2026 10:05",
+          "t": "Zaprimljeno."
+        }
+      ],
+      "details": "Prijepis za smještaj u domu."
+    },
+    {
+      "id": 6,
+      "student": "Ogledni student 5",
+      "type": "Potvrda o statusu studenta",
+      "date": "12.08.2026 12:40",
+      "status": "Na čekanju",
+      "priority": "Srednji",
+      "history": [
+        {
+          "d": "12.08.2026 12:40",
+          "t": "Zaprimljeno."
+        }
+      ],
+      "details": "Potvrda za studentski servis."
+    }
+  ],
+  "documents": [
+    {
+      "id": 1,
+      "title": "Pravilnik o studiranju 2026",
+      "type": "PDF",
+      "date": "01.08.2026",
+      "size": "1.2 MB",
+      "uploader": "Uprava"
+    }
+  ],
+  "calendarEvents": [],
+  "exams": [
+    {
+      "id": 1,
+      "course": "Osnove ekonomije",
+      "date": "10.09.2026",
+      "time": "10:00",
+      "room": "Dvorana PAR",
+      "capacity": 30,
+      "enrolledStudents": [
+        {
+          "id": 1,
+          "name": "Ogledni student 1",
+          "jmbag": "DEMO-ONLY",
+          "year": 2,
+          "status": "Izvanredni",
+          "email": "demo@example.test",
+          "gpa": 2.88,
+          "ects": 34,
+          "img": "https://placehold.co/100x100/1e3a8a/ffffff?text=AH",
+          "enrolled": [1, 2, 3, 4, 5],
+          "risk": true,
+          "tuitionBase": 3500,
+          "tuitionModel": "installments_2",
+          "tuitionDiscount": 0
+        },
+        {
+          "id": 2,
+          "name": "Ogledni student 2",
+          "jmbag": "DEMO-ONLY",
+          "year": 3,
+          "status": "Redovni",
+          "email": "demo@example.test",
+          "gpa": 2.96,
+          "ects": 38,
+          "img": "https://placehold.co/100x100/1e3a8a/ffffff?text=IJ",
+          "enrolled": [1, 2, 3, 4, 5],
+          "risk": true,
+          "tuitionBase": 3500,
+          "tuitionModel": "installments_2",
+          "tuitionDiscount": 0
+        },
+        {
+          "id": 3,
+          "name": "Ogledni student 3",
+          "jmbag": "DEMO-ONLY",
+          "year": 1,
+          "status": "Izvanredni",
+          "email": "demo@example.test",
+          "gpa": 3.04,
+          "ects": 42,
+          "img": "https://placehold.co/100x100/1e3a8a/ffffff?text=FB",
+          "enrolled": [1, 2, 3, 4, 5],
+          "risk": false,
+          "tuitionBase": 3500,
+          "tuitionModel": "installments_2",
+          "tuitionDiscount": 0
+        },
+        {
+          "id": 6,
+          "name": "Ogledni student 6",
+          "jmbag": "DEMO-ONLY",
+          "year": 1,
+          "status": "Redovni",
+          "email": "demo@example.test",
+          "gpa": 3.28,
+          "ects": 54,
+          "img": "https://placehold.co/100x100/1e3a8a/ffffff?text=MP",
+          "enrolled": [1, 2, 3, 4, 5],
+          "risk": false,
+          "tuitionBase": 3500,
+          "tuitionModel": "installments_2",
+          "tuitionDiscount": 0
+        }
+      ],
+      "prof": "Ogledni nastavnik"
+    },
+    {
+      "id": 2,
+      "course": "Menadžment",
+      "date": "12.09.2026",
+      "time": "12:00",
+      "room": "Dvorana 1",
+      "capacity": 25,
+      "enrolledStudents": [
+        {
+          "id": 4,
+          "name": "Ogledni student 4",
+          "jmbag": "DEMO-ONLY",
+          "year": 2,
+          "status": "Redovni",
+          "email": "demo@example.test",
+          "gpa": 3.12,
+          "ects": 46,
+          "img": "https://placehold.co/100x100/1e3a8a/ffffff?text=LK",
+          "enrolled": [1, 2, 3, 4, 5],
+          "risk": false,
+          "tuitionBase": 3500,
+          "tuitionModel": "installments_2",
+          "tuitionDiscount": 0
+        },
+        {
+          "id": 5,
+          "name": "Ogledni student 5",
+          "jmbag": "DEMO-ONLY",
+          "year": 3,
+          "status": "Izvanredni",
+          "email": "demo@example.test",
+          "gpa": 3.2,
+          "ects": 50,
+          "img": "https://placehold.co/100x100/1e3a8a/ffffff?text=IV",
+          "enrolled": [1, 2, 3, 4, 5],
+          "risk": false,
+          "tuitionBase": 3500,
+          "tuitionModel": "installments_2",
+          "tuitionDiscount": 0
+        },
+        {
+          "id": 7,
+          "name": "Ogledni student 7",
+          "jmbag": "DEMO-ONLY",
+          "year": 2,
+          "status": "Izvanredni",
+          "email": "demo@example.test",
+          "gpa": 3.36,
+          "ects": 58,
+          "img": "https://placehold.co/100x100/1e3a8a/ffffff?text=LN",
+          "enrolled": [1, 2, 3, 4, 5],
+          "risk": false,
+          "tuitionBase": 3500,
+          "tuitionModel": "installments_2",
+          "tuitionDiscount": 0
+        }
+      ],
+      "prof": "Ogledni nastavnik"
+    },
+    {
+      "id": 3,
+      "course": "Digitalni marketing",
+      "date": "14.09.2026",
+      "time": "14:00",
+      "room": "IT Lab 1",
+      "capacity": 20,
+      "enrolledStudents": [
+        {
+          "id": 8,
+          "name": "Ogledni student 8",
+          "jmbag": "DEMO-ONLY",
+          "year": 3,
+          "status": "Redovni",
+          "email": "demo@example.test",
+          "gpa": 3.44,
+          "ects": 62,
+          "img": "https://placehold.co/100x100/1e3a8a/ffffff?text=PV",
+          "enrolled": [1, 2, 3, 4, 5],
+          "risk": false,
+          "tuitionBase": 3500,
+          "tuitionModel": "installments_2",
+          "tuitionDiscount": 0
+        },
+        {
+          "id": 9,
+          "name": "Ogledni student 9",
+          "jmbag": "DEMO-ONLY",
+          "year": 1,
+          "status": "Izvanredni",
+          "email": "demo@example.test",
+          "gpa": 3.52,
+          "ects": 66,
+          "img": "https://placehold.co/100x100/1e3a8a/ffffff?text=DK",
+          "enrolled": [1, 2, 3, 4, 5],
+          "risk": false,
+          "tuitionBase": 3500,
+          "tuitionModel": "installments_2",
+          "tuitionDiscount": 0
+        },
+        {
+          "id": 10,
+          "name": "Ogledni student 10",
+          "jmbag": "DEMO-ONLY",
+          "year": 2,
+          "status": "Redovni",
+          "email": "demo@example.test",
+          "gpa": 3.6,
+          "ects": 70,
+          "img": "https://placehold.co/100x100/1e3a8a/ffffff?text=ER",
+          "enrolled": [1, 2, 3, 4, 5],
+          "risk": false,
+          "tuitionBase": 3500,
+          "tuitionModel": "installments_2",
+          "tuitionDiscount": 0
+        },
+        {
+          "id": 11,
+          "name": "Ogledni student 11",
+          "jmbag": "DEMO-ONLY",
+          "year": 3,
+          "status": "Izvanredni",
+          "email": "demo@example.test",
+          "gpa": 3.68,
+          "ects": 74,
+          "img": "https://placehold.co/100x100/1e3a8a/ffffff?text=TG",
+          "enrolled": [1, 2, 3, 4, 5],
+          "risk": false,
+          "tuitionBase": 3500,
+          "tuitionModel": "installments_2",
+          "tuitionDiscount": 0
+        },
+        {
+          "id": 12,
+          "name": "Ogledni student 12",
+          "jmbag": "DEMO-ONLY",
+          "year": 1,
+          "status": "Redovni",
+          "email": "demo@example.test",
+          "gpa": 3.76,
+          "ects": 78,
+          "img": "https://placehold.co/100x100/1e3a8a/ffffff?text=JT",
+          "enrolled": [1, 2, 3, 4, 5],
+          "risk": false,
+          "tuitionBase": 3500,
+          "tuitionModel": "installments_2",
+          "tuitionDiscount": 0
+        }
+      ],
+      "prof": "Ogledni zaposlenik 7"
+    },
+    {
+      "id": 4,
+      "course": "Računovodstvo",
+      "date": "16.09.2026",
+      "time": "09:00",
+      "room": "Dvorana 2",
+      "capacity": 35,
+      "enrolledStudents": [
+        {
+          "id": 13,
+          "name": "Ogledni student 13",
+          "jmbag": "DEMO-ONLY",
+          "year": 2,
+          "status": "Izvanredni",
+          "email": "demo@example.test",
+          "gpa": 3.84,
+          "ects": 82,
+          "img": "https://placehold.co/100x100/1e3a8a/ffffff?text=NM",
+          "enrolled": [1, 2, 3, 4, 5],
+          "risk": false,
+          "tuitionBase": 3500,
+          "tuitionModel": "installments_2",
+          "tuitionDiscount": 0
+        },
+        {
+          "id": 14,
+          "name": "Ogledni student 14",
+          "jmbag": "DEMO-ONLY",
+          "year": 3,
+          "status": "Redovni",
+          "email": "demo@example.test",
+          "gpa": 3.92,
+          "ects": 86,
+          "img": "https://placehold.co/100x100/1e3a8a/ffffff?text=KH",
+          "enrolled": [1, 2, 3, 4, 5],
+          "risk": false,
+          "tuitionBase": 3500,
+          "tuitionModel": "installments_2",
+          "tuitionDiscount": 0
+        },
+        {
+          "id": 15,
+          "name": "Ogledni student 15",
+          "jmbag": "DEMO-ONLY",
+          "year": 1,
+          "status": "Izvanredni",
+          "email": "demo@example.test",
+          "gpa": 4,
+          "ects": 90,
+          "img": "https://placehold.co/100x100/1e3a8a/ffffff?text=AK",
+          "enrolled": [1, 2, 3, 4, 5],
+          "risk": false,
+          "tuitionBase": 3500,
+          "tuitionModel": "installments_2",
+          "tuitionDiscount": 0
+        }
+      ],
+      "prof": "Ogledni zaposlenik 8"
+    },
+    {
+      "id": 5,
+      "course": "EU fondovi i projektni mng.",
+      "date": "18.09.2026",
+      "time": "16:00",
+      "room": "Inkubator",
+      "capacity": 20,
+      "enrolledStudents": [
+        {
+          "id": 16,
+          "name": "Ogledni student 16",
+          "jmbag": "DEMO-ONLY",
+          "year": 2,
+          "status": "Redovni",
+          "email": "demo@example.test",
+          "gpa": 4.08,
+          "ects": 94,
+          "img": "https://placehold.co/100x100/1e3a8a/ffffff?text=MJ",
+          "enrolled": [1, 2, 3, 4, 5],
+          "risk": false,
+          "tuitionBase": 3500,
+          "tuitionModel": "installments_2",
+          "tuitionDiscount": 0
+        },
+        {
+          "id": 17,
+          "name": "Ogledni student 17",
+          "jmbag": "DEMO-ONLY",
+          "year": 3,
+          "status": "Izvanredni",
+          "email": "demo@example.test",
+          "gpa": 4.16,
+          "ects": 98,
+          "img": "https://placehold.co/100x100/1e3a8a/ffffff?text=IB",
+          "enrolled": [1, 2, 3, 4, 5],
+          "risk": false,
+          "tuitionBase": 3500,
+          "tuitionModel": "installments_2",
+          "tuitionDiscount": 0
+        },
+        {
+          "id": 18,
+          "name": "Ogledni student 18",
+          "jmbag": "DEMO-ONLY",
+          "year": 1,
+          "status": "Redovni",
+          "email": "demo@example.test",
+          "gpa": 4.24,
+          "ects": 102,
+          "img": "https://placehold.co/100x100/1e3a8a/ffffff?text=FK",
+          "enrolled": [1, 2, 3, 4, 5],
+          "risk": false,
+          "tuitionBase": 3500,
+          "tuitionModel": "installments_2",
+          "tuitionDiscount": 0
+        },
+        {
+          "id": 19,
+          "name": "Ogledni student 19",
+          "jmbag": "DEMO-ONLY",
+          "year": 2,
+          "status": "Izvanredni",
+          "email": "demo@example.test",
+          "gpa": 4.32,
+          "ects": 106,
+          "img": "https://placehold.co/100x100/1e3a8a/ffffff?text=LV",
+          "enrolled": [1, 2, 3, 4, 5],
+          "risk": false,
+          "tuitionBase": 3500,
+          "tuitionModel": "installments_2",
+          "tuitionDiscount": 0
+        }
+      ],
+      "prof": "Ogledni nastavnik"
+    }
+  ],
+  "labs": [
+    {
+      "id": 1,
+      "name": "Raspberry Pi 4 Kit",
+      "type": "Hardware",
+      "status": "Dostupno",
+      "id_tag": "HW-RPI-01"
+    },
+    {
+      "id": 2,
+      "name": "Oculus Quest 2 VR",
+      "type": "Oprema",
+      "status": "Zaduženo",
+      "id_tag": "HW-VR-02",
+      "assignedTo": "Ogledna osoba"
+    },
+    {
+      "id": 3,
+      "name": "Arduino Mega",
+      "type": "Hardware",
+      "status": "Dostupno",
+      "id_tag": "HW-ARD-05"
+    },
+    {
+      "id": 4,
+      "name": "DJI Mini 3 Pro Drone",
+      "type": "Oprema",
+      "status": "Servis",
+      "id_tag": "HW-DRN-01"
+    }
+  ],
+  "research": [
+    {
+      "id": 1,
+      "title": "AI Integration in EU Higher Education",
+      "authors": "Ogledna osoba",
+      "status": "Drafting",
+      "link": "CreativeAIHub"
+    },
+    {
+      "id": 2,
+      "title": "Micro-credentials Framework for Industry",
+      "authors": "Ogledna osoba",
+      "status": "Peer Review",
+      "link": "Eu4Dual"
+    },
+    {
+      "id": 3,
+      "title": "Entrepreneurial Mindset of Business Students",
+      "authors": "Ogledna osoba",
+      "status": "Published",
+      "link": "Springer 2025"
+    }
+  ],
+  "alumniEvents": [
+    {
+      "id": 1,
+      "title": "Alumni Networking Koktel",
+      "date": "25.09.2026",
+      "location": "Hotel Hilton, Rijeka",
+      "type": "Networking"
+    },
+    {
+      "id": 2,
+      "title": "PAR Career Fair 2026",
+      "date": "15.10.2026",
+      "location": "Aula Veleučilišta PAR",
+      "type": "Karijera"
+    }
+  ],
+  "enrolledCourses": [1, 2, 3, 5],
+  "employeeSchedules": [
+    {
+      "empId": 1,
+      "empName": "Ogledni zaposlenik 1",
+      "date": "2026-08-10",
+      "day": 10,
+      "activity": "Na poslu (Ured)",
+      "hours": "08:00 - 16:00",
+      "color": "blue"
+    },
+    {
+      "empId": 1,
+      "empName": "Ogledni zaposlenik 1",
+      "date": "2026-08-11",
+      "day": 11,
+      "activity": "Godišnji odmor (GO)",
+      "hours": "-",
+      "color": "amber"
+    },
+    {
+      "empId": 1,
+      "empName": "Ogledni zaposlenik 1",
+      "date": "2026-08-12",
+      "day": 12,
+      "activity": "Na poslu (Ured)",
+      "hours": "08:00 - 16:00",
+      "color": "blue"
+    },
+    {
+      "empId": 1,
+      "empName": "Ogledni zaposlenik 1",
+      "date": "2026-08-13",
+      "day": 13,
+      "activity": "Na poslu (Ured)",
+      "hours": "08:00 - 16:00",
+      "color": "blue"
+    },
+    {
+      "empId": 1,
+      "empName": "Ogledni zaposlenik 1",
+      "date": "2026-08-14",
+      "day": 14,
+      "activity": "Na poslu (Ured)",
+      "hours": "08:00 - 16:00",
+      "color": "blue"
+    },
+    {
+      "empId": 1,
+      "empName": "Ogledni zaposlenik 1",
+      "date": "2026-08-15",
+      "day": 15,
+      "activity": "Slobodan dan",
+      "hours": "-",
+      "color": "slate"
+    },
+    {
+      "empId": 1,
+      "empName": "Ogledni zaposlenik 1",
+      "date": "2026-08-16",
+      "day": 16,
+      "activity": "Slobodan dan",
+      "hours": "-",
+      "color": "slate"
+    },
+    {
+      "empId": 2,
+      "empName": "Ogledni zaposlenik 2",
+      "date": "2026-08-10",
+      "day": 10,
+      "activity": "Nastava",
+      "hours": "09:00 - 13:00",
+      "color": "indigo"
+    },
+    {
+      "empId": 2,
+      "empName": "Ogledni zaposlenik 2",
+      "date": "2026-08-11",
+      "day": 11,
+      "activity": "Godišnji odmor (GO)",
+      "hours": "-",
+      "color": "amber"
+    },
+    {
+      "empId": 2,
+      "empName": "Ogledni zaposlenik 2",
+      "date": "2026-08-12",
+      "day": 12,
+      "activity": "Bolovanje",
+      "hours": "-",
+      "color": "red"
+    },
+    {
+      "empId": 2,
+      "empName": "Ogledni zaposlenik 2",
+      "date": "2026-08-13",
+      "day": 13,
+      "activity": "Na poslu (Ured)",
+      "hours": "08:00 - 16:00",
+      "color": "blue"
+    },
+    {
+      "empId": 2,
+      "empName": "Ogledni zaposlenik 2",
+      "date": "2026-08-14",
+      "day": 14,
+      "activity": "Nastava",
+      "hours": "09:00 - 13:00",
+      "color": "indigo"
+    },
+    {
+      "empId": 2,
+      "empName": "Ogledni zaposlenik 2",
+      "date": "2026-08-15",
+      "day": 15,
+      "activity": "Slobodan dan",
+      "hours": "-",
+      "color": "slate"
+    },
+    {
+      "empId": 2,
+      "empName": "Ogledni zaposlenik 2",
+      "date": "2026-08-16",
+      "day": 16,
+      "activity": "Slobodan dan",
+      "hours": "-",
+      "color": "slate"
+    },
+    {
+      "empId": 3,
+      "empName": "Ogledni zaposlenik 3",
+      "date": "2026-08-10",
+      "day": 10,
+      "activity": "Nastava",
+      "hours": "09:00 - 13:00",
+      "color": "indigo"
+    },
+    {
+      "empId": 3,
+      "empName": "Ogledni zaposlenik 3",
+      "date": "2026-08-11",
+      "day": 11,
+      "activity": "Na poslu (Ured)",
+      "hours": "08:00 - 16:00",
+      "color": "blue"
+    },
+    {
+      "empId": 3,
+      "empName": "Ogledni zaposlenik 3",
+      "date": "2026-08-12",
+      "day": 12,
+      "activity": "Bolovanje",
+      "hours": "-",
+      "color": "red"
+    },
+    {
+      "empId": 3,
+      "empName": "Ogledni zaposlenik 3",
+      "date": "2026-08-13",
+      "day": 13,
+      "activity": "Na poslu (Ured)",
+      "hours": "08:00 - 16:00",
+      "color": "blue"
+    },
+    {
+      "empId": 3,
+      "empName": "Ogledni zaposlenik 3",
+      "date": "2026-08-14",
+      "day": 14,
+      "activity": "Nastava",
+      "hours": "09:00 - 13:00",
+      "color": "indigo"
+    },
+    {
+      "empId": 3,
+      "empName": "Ogledni zaposlenik 3",
+      "date": "2026-08-15",
+      "day": 15,
+      "activity": "Slobodan dan",
+      "hours": "-",
+      "color": "slate"
+    },
+    {
+      "empId": 3,
+      "empName": "Ogledni zaposlenik 3",
+      "date": "2026-08-16",
+      "day": 16,
+      "activity": "Slobodan dan",
+      "hours": "-",
+      "color": "slate"
+    },
+    {
+      "empId": 4,
+      "empName": "Ogledni zaposlenik 4",
+      "date": "2026-08-10",
+      "day": 10,
+      "activity": "Na poslu (Ured)",
+      "hours": "08:00 - 16:00",
+      "color": "blue"
+    },
+    {
+      "empId": 4,
+      "empName": "Ogledni zaposlenik 4",
+      "date": "2026-08-11",
+      "day": 11,
+      "activity": "Godišnji odmor (GO)",
+      "hours": "-",
+      "color": "amber"
+    },
+    {
+      "empId": 4,
+      "empName": "Ogledni zaposlenik 4",
+      "date": "2026-08-12",
+      "day": 12,
+      "activity": "Na poslu (Ured)",
+      "hours": "08:00 - 16:00",
+      "color": "blue"
+    },
+    {
+      "empId": 4,
+      "empName": "Ogledni zaposlenik 4",
+      "date": "2026-08-13",
+      "day": 13,
+      "activity": "Na poslu (Ured)",
+      "hours": "08:00 - 16:00",
+      "color": "blue"
+    },
+    {
+      "empId": 4,
+      "empName": "Ogledni zaposlenik 4",
+      "date": "2026-08-14",
+      "day": 14,
+      "activity": "Na poslu (Ured)",
+      "hours": "08:00 - 16:00",
+      "color": "blue"
+    },
+    {
+      "empId": 4,
+      "empName": "Ogledni zaposlenik 4",
+      "date": "2026-08-15",
+      "day": 15,
+      "activity": "Slobodan dan",
+      "hours": "-",
+      "color": "slate"
+    },
+    {
+      "empId": 4,
+      "empName": "Ogledni zaposlenik 4",
+      "date": "2026-08-16",
+      "day": 16,
+      "activity": "Slobodan dan",
+      "hours": "-",
+      "color": "slate"
+    },
+    {
+      "empId": 5,
+      "empName": "Ogledni zaposlenik 5",
+      "date": "2026-08-10",
+      "day": 10,
+      "activity": "Na poslu (Ured)",
+      "hours": "08:00 - 16:00",
+      "color": "blue"
+    },
+    {
+      "empId": 5,
+      "empName": "Ogledni zaposlenik 5",
+      "date": "2026-08-11",
+      "day": 11,
+      "activity": "Godišnji odmor (GO)",
+      "hours": "-",
+      "color": "amber"
+    },
+    {
+      "empId": 5,
+      "empName": "Ogledni zaposlenik 5",
+      "date": "2026-08-12",
+      "day": 12,
+      "activity": "Bolovanje",
+      "hours": "-",
+      "color": "red"
+    },
+    {
+      "empId": 5,
+      "empName": "Ogledni zaposlenik 5",
+      "date": "2026-08-13",
+      "day": 13,
+      "activity": "Na poslu (Ured)",
+      "hours": "08:00 - 16:00",
+      "color": "blue"
+    },
+    {
+      "empId": 5,
+      "empName": "Ogledni zaposlenik 5",
+      "date": "2026-08-14",
+      "day": 14,
+      "activity": "Na poslu (Ured)",
+      "hours": "08:00 - 16:00",
+      "color": "blue"
+    },
+    {
+      "empId": 5,
+      "empName": "Ogledni zaposlenik 5",
+      "date": "2026-08-15",
+      "day": 15,
+      "activity": "Slobodan dan",
+      "hours": "-",
+      "color": "slate"
+    },
+    {
+      "empId": 5,
+      "empName": "Ogledni zaposlenik 5",
+      "date": "2026-08-16",
+      "day": 16,
+      "activity": "Slobodan dan",
+      "hours": "-",
+      "color": "slate"
+    },
+    {
+      "empId": 6,
+      "empName": "Ogledni zaposlenik 6",
+      "date": "2026-08-10",
+      "day": 10,
+      "activity": "Nastava",
+      "hours": "09:00 - 13:00",
+      "color": "indigo"
+    },
+    {
+      "empId": 6,
+      "empName": "Ogledni zaposlenik 6",
+      "date": "2026-08-11",
+      "day": 11,
+      "activity": "Godišnji odmor (GO)",
+      "hours": "-",
+      "color": "amber"
+    },
+    {
+      "empId": 6,
+      "empName": "Ogledni zaposlenik 6",
+      "date": "2026-08-12",
+      "day": 12,
+      "activity": "Nastava",
+      "hours": "09:00 - 13:00",
+      "color": "indigo"
+    },
+    {
+      "empId": 6,
+      "empName": "Ogledni zaposlenik 6",
+      "date": "2026-08-13",
+      "day": 13,
+      "activity": "Na poslu (Ured)",
+      "hours": "08:00 - 16:00",
+      "color": "blue"
+    },
+    {
+      "empId": 6,
+      "empName": "Ogledni zaposlenik 6",
+      "date": "2026-08-14",
+      "day": 14,
+      "activity": "Nastava",
+      "hours": "09:00 - 13:00",
+      "color": "indigo"
+    },
+    {
+      "empId": 6,
+      "empName": "Ogledni zaposlenik 6",
+      "date": "2026-08-15",
+      "day": 15,
+      "activity": "Slobodan dan",
+      "hours": "-",
+      "color": "slate"
+    },
+    {
+      "empId": 6,
+      "empName": "Ogledni zaposlenik 6",
+      "date": "2026-08-16",
+      "day": 16,
+      "activity": "Slobodan dan",
+      "hours": "-",
+      "color": "slate"
+    }
+  ],
+  "timeEntries": [
+    {
+      "id": 101,
+      "empId": 1,
+      "empName": "Ogledni zaposlenik 1",
+      "category": "Administracija",
+      "date": "2026-08-03",
+      "hours": 8,
+      "description": "Sjednica dekanskog kolegija"
+    },
+    {
+      "id": 102,
+      "empId": 1,
+      "empName": "Ogledni zaposlenik 1",
+      "category": "Nastava",
+      "date": "2026-08-04",
+      "hours": 8,
+      "description": "Predavanja Menadžment"
+    },
+    {
+      "id": 103,
+      "empId": 1,
+      "empName": "Ogledni zaposlenik 1",
+      "category": "Rad na projektu",
+      "project": "Eu4Dual",
+      "date": "2026-08-05",
+      "hours": 8,
+      "description": "Koordinacija partnera Eu4Dual"
+    },
+    {
+      "id": 104,
+      "empId": 2,
+      "empName": "Ogledni zaposlenik 2",
+      "category": "Znanstveni rad pisanje",
+      "date": "2026-08-03",
+      "hours": 8,
+      "description": "Pisanje rada AI in Edu"
+    },
+    {
+      "id": 105,
+      "empId": 5,
+      "empName": "Ogledni zaposlenik 5",
+      "category": "Administracija",
+      "date": "2026-08-03",
+      "hours": 8,
+      "description": "Obrada e-Zamolbi i potvrda u referadi"
+    },
+    {
+      "id": 106,
+      "empId": 3,
+      "empName": "Ogledni zaposlenik 3",
+      "category": "Nastava",
+      "date": "2026-08-04",
+      "hours": 4,
+      "description": "Osnove programiranja"
+    },
+    {
+      "id": 107,
+      "empId": 3,
+      "empName": "Ogledni zaposlenik 3",
+      "category": "Izvanredne aktivnosti",
+      "date": "2026-08-05",
+      "hours": 2,
+      "description": "Održavanje servera"
+    },
+    {
+      "id": 108,
+      "empId": 4,
+      "empName": "Ogledni zaposlenik 4",
+      "category": "Rad na projektu",
+      "project": "SmartCampusRijeka",
+      "date": "2026-08-06",
+      "hours": 6,
+      "description": "Instalacija pametnih senzora"
+    },
+    {
+      "id": 109,
+      "empId": 4,
+      "empName": "Ogledni zaposlenik 4",
+      "category": "Administracija",
+      "date": "2026-08-07",
+      "hours": 2,
+      "description": "Podrška studentima (Helpdesk)"
+    },
+    {
+      "id": 110,
+      "empId": 6,
+      "empName": "Ogledni zaposlenik 6",
+      "category": "Nastava",
+      "date": "2026-08-02",
+      "hours": 5,
+      "description": "Menadžment ljudskih potencijala"
+    },
+    {
+      "id": 111,
+      "empId": 6,
+      "empName": "Ogledni zaposlenik 6",
+      "category": "Znanstveni rad pisanje",
+      "date": "2026-08-03",
+      "hours": 3,
+      "description": "Pisanje članka za konferenciju"
+    }
+  ]
+}

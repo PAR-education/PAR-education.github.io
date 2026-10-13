@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="hr">
+  <head>
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com http://127.0.0.1:8080 http://127.0.0.1:9099; frame-src https://par-education.firebaseapp.com; img-src 'self' data: https:; object-src 'none'; base-uri 'self'; form-action 'self'"
+    />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="PAR Education — prijava u obrazovni i administrativni sustav."
+    />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <title>Prijava · PAR Education</title>
+    <link rel="stylesheet" href="./assets/css/main.css" />
+  </head>
+  <body class="login-page">
+    <header class="login-header">
+      <a class="brand" href="./index.html"
+        ><span class="brand-mark">PAR<span>·</span></span
+        ><span>EDUCATION<br /><small>Informacijski sustav</small></span></a
+      ><button id="theme" class="button quiet" aria-label="Promijeni temu">
+        Svijetlo / tamno
+      </button>
+    </header>
+    <main class="login-layout">
+      <section class="login-intro">
+        <p class="eyebrow">VELEUČILIŠTE PAR</p>
+        <h1>Jedno mjesto.<br />Vaš akademski rad.</h1>
+        <p>Studij, nastava i administracija povezani u jednom sustavu.</p>
+        <div class="intro-rule"></div>
+        <p class="intro-note">
+          Pristup za studente, nastavnike<br />i zaposlenike Veleučilišta PAR.
+        </p>
+      </section>
+      <section class="login-card" aria-labelledby="login-title">
+        <p class="eyebrow">KORISNIČKI PRISTUP</p>
+        <h2 id="login-title">Prijava u sustav</h2>
+        <p class="muted">Unesite podatke svojeg PAR računa.</p>
+        <div id="login-status" class="notice" role="status" aria-live="polite">
+          Provjera prijave…
+        </div>
+        <form id="login-form">
+          <div class="field">
+            <label for="email">E-adresa</label
+            ><input
+              id="email"
+              name="email"
+              type="email"
+              autocomplete="username"
+              placeholder="ime@par.hr"
+              required
+              maxlength="254"
+            />
+          </div>
+          <div class="field">
+            <label for="password">Lozinka</label>
+            <div class="password-field">
+              <input
+                id="password"
+                name="password"
+                type="password"
+                autocomplete="current-password"
+                required
+              /><button
+                type="button"
+                id="show-password"
+                aria-label="Prikaži lozinku"
+                aria-pressed="false"
+              >
+                Prikaži
+              </button>
+            </div>
+          </div>
+          <div class="login-options">
+            <label class="check"
+              ><input id="remember" type="checkbox" /> Zapamti prijavu</label
+            ><button type="button" id="reset-password" class="text-button">
+              Zaboravljena lozinka?
+            </button>
+          </div>
+          <button
+            id="login-submit"
+            type="submit"
+            class="button primary full"
+            disabled
+          >
+            Prijavi se <span aria-hidden="true">→</span>
+          </button>
+        </form>
+        <button id="logout-pending" class="button full" hidden>
+          Odjavi se
+        </button>
+        <p class="login-help">
+          Nemate račun ili pristup? Obratite se administratoru. Ulogu i pristup
+          dodjeljuje Veleučilište.
+        </p>
+      </section>
+    </main>
+    <footer class="login-footer">
+      <span>PAR Education · Akademski informacijski sustav</span
+      ><a href="./demo.html">Pregled s oglednim podacima</a>
+    </footer>
+    <noscript
+      ><p class="notice error">
+        Za prijavu je potrebno omogućiti JavaScript.
+      </p></noscript
+    >
+    <script type="module" src="./src/login.js"></script>
+  </body>
+</html>

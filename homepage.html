@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="hr">
+  <head>
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com http://127.0.0.1:8080 http://127.0.0.1:9099; frame-src https://par-education.firebaseapp.com; img-src 'self' data: https:; object-src 'none'; base-uri 'self'; form-action 'self'"
+    />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <title>Radni prostor · PAR Education</title>
+    <link rel="stylesheet" href="./assets/css/main.css" />
+  </head>
+  <body>
+    <div id="session-gate" class="session-gate" role="status">
+      Provjera prijave…
+    </div>
+    <div id="app" hidden>
+      <button
+        id="sidebar-overlay"
+        class="sidebar-overlay"
+        aria-label="Zatvori navigaciju"
+        hidden
+      ></button>
+      <aside id="sidebar" class="sidebar">
+        <a class="brand" href="./homepage.html"
+          ><span class="brand-mark">PAR<span>·</span></span
+          ><span>EDUCATION<br /><small>Informacijski sustav</small></span></a
+        >
+        <nav id="navigation" aria-label="Glavna navigacija"></nav>
+        <div class="sidebar-account">
+          <span id="account-avatar" class="avatar"></span>
+          <div>
+            <strong id="account-name"></strong><small id="account-role"></small>
+          </div>
+          <button
+            id="logout"
+            class="icon-button"
+            title="Odjava"
+            aria-label="Odjava"
+          >
+            ↗
+          </button>
+        </div>
+      </aside>
+      <div class="workspace">
+        <header class="app-header">
+          <div class="header-path">
+            <button
+              id="menu"
+              class="icon-button menu-button"
+              aria-label="Otvori navigaciju"
+              aria-expanded="false"
+            >
+              ☰</button
+            ><span>PAR Education</span><span class="muted">/</span
+            ><strong id="header-title">Nadzorna ploča</strong>
+          </div>
+          <div class="header-actions">
+            <span id="mode-label" class="pill">Firestore</span
+            ><button
+              id="theme"
+              class="button quiet"
+              aria-label="Promijeni temu"
+            >
+              Svijetlo / tamno
+            </button>
+          </div>
+        </header>
+        <main id="content" tabindex="-1"></main>
+        <footer class="app-footer">
+          PAR Education <span>Interni akademski i administrativni sustav</span>
+        </footer>
+      </div>
+    </div>
+    <dialog id="record-dialog" aria-labelledby="dialog-title">
+      <div class="dialog-header">
+        <h2 id="dialog-title"></h2>
+        <button
+          id="close-dialog"
+          class="icon-button"
+          aria-label="Zatvori dijalog"
+        >
+          ×
+        </button>
+      </div>
+      <div id="dialog-body"></div>
+    </dialog>
+    <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+    <noscript
+      ><p class="notice error">
+        Za pristup sustavu potrebno je omogućiti JavaScript.
+      </p></noscript
+    >
+    <script type="module" src="./src/main.js"></script>
+  </body>
+</html>

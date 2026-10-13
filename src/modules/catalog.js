@@ -1,0 +1,390 @@
+const text = (key, label, required = true) => ({
+  key,
+  label,
+  required,
+  maxLength: 200,
+});
+const note = (key, label, required = false) => ({
+  key,
+  label,
+  required,
+  type: "textarea",
+  maxLength: 2000,
+});
+const number = (key, label, min, max, integer = false) => ({
+  key,
+  label,
+  type: "number",
+  required: true,
+  min,
+  max,
+  integer,
+});
+const date = (key, label) => ({ key, label, type: "date", required: true });
+const select = (key, label, options) => ({
+  key,
+  label,
+  options,
+  required: true,
+});
+const owner = text("ownerUid", "Firebase UID korisnika");
+const department = text("departmentId", "Oznaka odjela");
+const course = text("courseId", "ID kolegija");
+const instructor = text("instructorUid", "Firebase UID nastavnika");
+export const modules = {
+  students: {
+    title: "Studenti",
+    group: "Administracija",
+    description: "Studentski dosjei i podaci o studiju.",
+    columns: ["name", "jmbag", "year", "status", "email"],
+    fields: [
+      owner,
+      text("name", "Ime i prezime"),
+      text("jmbag", "JMBAG"),
+      { ...text("email", "E-adresa"), type: "email" },
+      department,
+      number("year", "Godina studija", 1, 6, true),
+      select("status", "Status", ["Redovni", "Izvanredni", "Alumni"]),
+    ],
+  },
+  employees: {
+    title: "Zaposlenici",
+    group: "Administracija",
+    description: "Dosjei zaposlenika, radna mjesta i odjeli.",
+    columns: ["name", "position", "departmentId", "email"],
+    fields: [
+      owner,
+      text("name", "Ime i prezime"),
+      text("position", "Radno mjesto"),
+      department,
+      { ...text("email", "E-adresa"), type: "email" },
+    ],
+  },
+  courses: {
+    title: "Kolegiji i silabusi",
+    group: "Akademija",
+    description: "Katalog kolegija i ishodi učenja.",
+    columns: ["title", "ects", "semester", "instructorName"],
+    fields: [
+      text("title", "Naziv kolegija"),
+      number("ects", "ECTS", 1, 30),
+      select("semester", "Semestar", ["Zimski", "Ljetni"]),
+      instructor,
+      text("instructorName", "Nastavnik"),
+      text("room", "Dvorana"),
+      select("day", "Dan", ["Pon", "Uto", "Sri", "Čet", "Pet"]),
+      { ...text("startTime", "Početak"), type: "time" },
+      { ...text("endTime", "Završetak"), type: "time" },
+      note("description", "Opis"),
+      note("outcomes", "Ishodi učenja"),
+      note("literature", "Literatura"),
+    ],
+  },
+  exams: {
+    title: "Ispitni rokovi",
+    group: "Akademija",
+    description: "Ispitni termini. Prijave potvrđuje nastavnik.",
+    columns: ["title", "date", "time", "room", "capacity"],
+    fields: [
+      course,
+      instructor,
+      text("title", "Kolegij / naziv"),
+      date("date", "Datum"),
+      { ...text("time", "Vrijeme"), type: "time" },
+      text("room", "Dvorana"),
+      number("capacity", "Kapacitet", 1, 1000, true),
+    ],
+  },
+  grades: {
+    title: "Ocjene",
+    group: "Akademija",
+    description:
+      "Lokalna evidencija ocjena. ISVU povezivanje još nije konfigurirano.",
+    columns: ["studentName", "courseTitle", "grade", "date"],
+    fields: [
+      owner,
+      text("studentName", "Student"),
+      course,
+      text("courseTitle", "Kolegij"),
+      instructor,
+      number("grade", "Ocjena", 1, 5, true),
+      date("date", "Datum"),
+    ],
+  },
+  enrollments: {
+    title: "Upisi kolegija",
+    group: "Akademija",
+    description: "Prijavljeni kolegiji i potvrde upisa.",
+    columns: ["ownerName", "courseTitle", "status"],
+    fields: [
+      owner,
+      text("ownerName", "Student"),
+      course,
+      text("courseTitle", "Kolegij"),
+      instructor,
+      select("status", "Status", ["Na čekanju", "Odobreno", "Odbijeno"]),
+    ],
+  },
+  examBookings: {
+    title: "Prijave ispita",
+    group: "Akademija",
+    description:
+      "Prijave čekaju potvrdu nastavnika; potvrda kapaciteta provodi se pri obradi.",
+    columns: ["ownerName", "title", "date", "status"],
+    fields: [
+      owner,
+      text("ownerName", "Student"),
+      text("examId", "ID ispitnog roka"),
+      course,
+      instructor,
+      text("title", "Ispit"),
+      date("date", "Datum"),
+      select("status", "Status", ["Na čekanju", "Odobreno", "Odbijeno"]),
+    ],
+  },
+  calendarEvents: {
+    title: "Kalendar",
+    group: "Akademija",
+    description: "Događaji i termini nastave.",
+    columns: ["title", "date", "time", "room"],
+    fields: [
+      text("title", "Naziv"),
+      date("date", "Datum"),
+      { ...text("time", "Vrijeme"), type: "time" },
+      text("room", "Lokacija"),
+      note("description", "Opis"),
+    ],
+  },
+  projects: {
+    title: "EU projekti",
+    group: "Istraživanje i resursi",
+    description: "Projekti, financiranje, partneri i radni paketi.",
+    columns: ["title", "fundingLine", "startDate", "endDate", "budget"],
+    fields: [
+      text("title", "Naziv"),
+      text("fundingLine", "Izvor financiranja"),
+      number("budget", "Proračun (€)", 0, 1000000000),
+      date("startDate", "Početak"),
+      date("endDate", "Završetak"),
+      note("partners", "Partneri"),
+      note("workPackages", "Radni paketi"),
+      note("description", "Opis"),
+    ],
+  },
+  research: {
+    title: "Znanost i radovi",
+    group: "Istraživanje i resursi",
+    description: "Znanstveni radovi i status objave.",
+    columns: ["title", "authors", "status"],
+    fields: [
+      owner,
+      text("title", "Naslov"),
+      text("authors", "Autori"),
+      text("projectId", "ID projekta", false),
+      select("status", "Status", ["U pripremi", "Recenzija", "Objavljeno"]),
+      note("description", "Sažetak"),
+    ],
+  },
+  labs: {
+    title: "Laboratorij i oprema",
+    group: "Istraživanje i resursi",
+    description: "Inventar laboratorija i zahtjevi za zaduženje.",
+    columns: ["title", "tag", "category", "status"],
+    fields: [
+      text("title", "Naziv"),
+      text("tag", "Inventarna oznaka"),
+      text("category", "Kategorija"),
+      select("status", "Status", ["Dostupno", "Zaduženo", "Servis"]),
+    ],
+  },
+  labBookings: {
+    title: "Zaduženja opreme",
+    group: "Istraživanje i resursi",
+    description:
+      "Zahtjevi za opremu; dostupnost potvrđuje voditelj laboratorija.",
+    columns: ["ownerName", "title", "status"],
+    fields: [
+      owner,
+      text("ownerName", "Student"),
+      text("labId", "ID opreme"),
+      text("title", "Oprema"),
+      select("status", "Status", ["Na čekanju", "Odobreno", "Odbijeno"]),
+    ],
+  },
+  documents: {
+    title: "Dokumenti",
+    group: "Istraživanje i resursi",
+    description:
+      "Poveznice na objavljene pravilnike i dokumente. Privatne datoteke trebaju zasebnu zaštićenu pohranu.",
+    columns: ["title", "category", "date"],
+    fields: [
+      text("title", "Naslov"),
+      text("category", "Kategorija"),
+      date("date", "Datum"),
+      { ...text("url", "HTTPS poveznica"), type: "url", maxLength: 2000 },
+      note("description", "Opis"),
+    ],
+  },
+  requests: {
+    title: "e-Referada",
+    group: "Administracija",
+    description: "Zamolbe i zahtjevi za dokumente.",
+    columns: ["ownerName", "type", "status", "createdAt"],
+    fields: [
+      owner,
+      text("ownerName", "Podnositelj"),
+      select("type", "Vrsta zamolbe", [
+        "Prijepis ocjena",
+        "Potvrda o statusu studenta",
+        "Ostalo",
+      ]),
+      note("details", "Obrazloženje", true),
+      select("status", "Status", [
+        "Na čekanju",
+        "U obradi",
+        "Riješeno",
+        "Odbijeno",
+      ]),
+      note("response", "Odgovor referade"),
+    ],
+  },
+  finances: {
+    title: "Financije",
+    group: "Administracija",
+    description: "Školarine i obveze. Evidencija uplata ne provodi naplatu.",
+    columns: ["ownerName", "title", "amount", "dueDate", "status"],
+    fields: [
+      owner,
+      text("ownerName", "Student"),
+      text("title", "Opis obveze"),
+      number("amount", "Iznos (€)", 0, 1000000),
+      date("dueDate", "Dospijeće"),
+      select("status", "Status", ["Dugovanje", "Plaćeno"]),
+      note("paymentReference", "Podaci / poziv na broj"),
+    ],
+  },
+  employeeSchedules: {
+    title: "Raspored zaposlenika",
+    group: "Administracija",
+    description: "Radni raspored i aktivnosti zaposlenika.",
+    columns: ["ownerName", "date", "activity", "startTime", "endTime"],
+    fields: [
+      owner,
+      text("ownerName", "Zaposlenik"),
+      date("date", "Datum"),
+      select("activity", "Aktivnost", [
+        "Ured",
+        "Nastava",
+        "Godišnji odmor",
+        "Bolovanje",
+        "Putni nalog",
+        "Slobodan dan",
+      ]),
+      { ...text("startTime", "Početak"), type: "time" },
+      { ...text("endTime", "Završetak"), type: "time" },
+      department,
+    ],
+  },
+  workEntries: {
+    title: "Radno vrijeme",
+    group: "Administracija",
+    description: "Dnevna evidencija sati i izvoz mjesečnog izvještaja.",
+    columns: ["ownerName", "date", "category", "hours", "description"],
+    fields: [
+      owner,
+      text("ownerName", "Zaposlenik"),
+      date("date", "Datum"),
+      select("category", "Aktivnost", [
+        "Administracija",
+        "Nastava",
+        "Rad na projektu",
+        "Znanstveni rad",
+        "Izvanredne aktivnosti",
+      ]),
+      number("hours", "Sati", 0.25, 24),
+      text("projectId", "ID projekta", false),
+      note("description", "Opis rada", true),
+    ],
+  },
+  vacations: {
+    title: "Godišnji odmori",
+    group: "Administracija",
+    description: "Zahtjevi za godišnji odmor i odluke administratora.",
+    columns: ["ownerName", "startDate", "endDate", "days", "status"],
+    fields: [
+      owner,
+      text("ownerName", "Zaposlenik"),
+      date("startDate", "Početak"),
+      date("endDate", "Završetak"),
+      number("days", "Radni dani", 1, 60, true),
+      select("status", "Status", ["Na čekanju", "Odobreno", "Odbijeno"]),
+      note("details", "Napomena"),
+    ],
+  },
+  alumniEvents: {
+    title: "Alumni centar",
+    group: "Administracija",
+    description: "Alumni događaji, susreti i karijera.",
+    columns: ["title", "date", "location"],
+    fields: [
+      text("title", "Naziv"),
+      date("date", "Datum"),
+      text("location", "Lokacija"),
+      note("description", "Opis"),
+    ],
+  },
+  evaluations: {
+    title: "Evaluacije",
+    group: "Akademija",
+    description:
+      "Evaluacijski upitnik. Odgovori su vezani uz račun i nisu anonimni.",
+    columns: ["subject", "rating", "createdAt"],
+    fields: [
+      owner,
+      text("subject", "Kolegij / proces"),
+      number("rating", "Ukupna ocjena (1–5)", 1, 5, true),
+      note("answers", "Odgovori na pitanja", true),
+      note("comments", "Prijedlozi i komentari"),
+    ],
+  },
+  notifications: {
+    title: "Obavijesti",
+    group: "Račun",
+    description: "Obavijesti koje vam šalje administrator.",
+    columns: ["title", "message", "createdAt"],
+    fields: [owner, text("title", "Naslov"), note("message", "Poruka", true)],
+  },
+  users: {
+    title: "Korisnici i uloge",
+    group: "Račun",
+    description:
+      "Prvo izradite račun u Firebase Authentication, zatim mu dodijelite profil s istim UID-om.",
+    columns: ["name", "email", "role", "active", "departmentId"],
+    fields: [
+      text("name", "Ime i prezime"),
+      { ...text("email", "E-adresa"), type: "email" },
+      select("role", "Uloga", [
+        "admin",
+        "dept_head",
+        "profesor",
+        "lab_assistant",
+        "student",
+        "alumni",
+      ]),
+      {
+        key: "active",
+        label: "Aktivan račun",
+        type: "checkbox",
+        required: false,
+      },
+      text("departmentId", "Oznaka odjela", false),
+    ],
+  },
+};
+export function labelFor(collection, key) {
+  return (
+    modules[collection].fields.find((field) => field.key === key)?.label ||
+    { createdAt: "Kreirano" }[key] ||
+    key
+  );
+}

@@ -1,0 +1,8 @@
+node_modules/
+.reference/
+.firebase/
+*-debug.log
+test-results/
+.env*
+*service-account*.json
+coverage/

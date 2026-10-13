@@ -1,0 +1,102 @@
+[
+  {
+    "id": "template-1",
+    "department": "Uprava / Dekanat",
+    "questions": [
+      "Prikazuje li Vam nadzorna ploča sve potrebne financijske statuse i agregirane podatke o aktivnim EU projektima?",
+      "Smatrate li proces odobravanja i praćenja godišnjih odmora u sustavu dovoljno transparentnim za upravljanje timom?",
+      "Odgovaraju li ponuđeni modeli plaćanja (rate/jednokratno) i izračuni popusta školarina stvarnim financijskim politikama Veleučilišta?"
+    ]
+  },
+  {
+    "id": "template-2",
+    "department": "Ured za kvalitetu",
+    "questions": [
+      "Omogućuju li Vam izvještaji u ERP-u praćenje prolaznosti i uspješnosti studenata putem prikaza distribucije ocjena?",
+      "Postoje li specifične metrike koje Vam nedostaju u sustavu za kvalitetniju evaluaciju rada nastavnika?",
+      "Kako ocjenjujete modul za pregled silabusa i ishoda učenja u kolegijima u svrhu osiguravanja kvalitete nastave?"
+    ]
+  },
+  {
+    "id": "template-3",
+    "department": "Tajništvo",
+    "questions": [
+      "Ubrzava li sučelje e-Referade Vašu dnevnu obradu studentskih zamolbi, potvrda o statusu i prijepisa ocjena?",
+      "Generira li sustav PDF potvrde u vizualnom obliku koji odgovara standardnim službenim predlošcima ustanove?",
+      "Olakšava li Vam aplikacija filtriranje i izdvajanje riješenih e-Zamolbi od onih koje su na čekanju?"
+    ]
+  },
+  {
+    "id": "template-4",
+    "department": "Evidencija studija | Centar za karijere",
+    "questions": [
+      "Pruža li dizajn kartice studenta sve ključne informacije na jednom mjestu (ECTS bodovi, JMBAG, status i prosjek)?",
+      "Pomaže li Vam automatski generator 2D barkodova pri izdavanju računa i zaduženja za upisnine?",
+      "Pruža li Alumni modul dovoljno mogućnosti za vođenje baze bivših studenata i poslodavaca za Centar za karijere?"
+    ]
+  },
+  {
+    "id": "template-5",
+    "department": "Ured za cjeloživotno obrazovanje",
+    "questions": [
+      "Može li se u postojećoj strukturi jasno pratiti evidencija polaznika neformalnih edukacija i tečajeva odvojeno od redovnih studenata?",
+      "Odgovaraju li financijski moduli potrebama naplate specifičnih kratkih programa izvan standardnih obročnih školarina?",
+      "Pomaže li Vam interaktivni kalendar u organizaciji i praćenju zauzetosti dvorana za edukacije cjeloživotnog učenja?"
+    ]
+  },
+  {
+    "id": "template-6",
+    "department": "Ured za izdavačku djelatnost",
+    "questions": [
+      "Može li se modul 'Znanost i Istraživanje' adekvatno iskoristiti za praćenje statusa izdavanja stručnih publikacija i zbornika?",
+      "Smatrate li da aplikaciji nedostaje posebna kategorija za evidentiranje autorstva udžbenika i knjiga?",
+      "Koliko Vam je olakšana komunikacija i praćenje radova nastavnika putem predloženog digitalnog DMS sučelja?"
+    ]
+  },
+  {
+    "id": "template-7",
+    "department": "Ured za međunarodnu suradnju",
+    "questions": [
+      "Pruža li Vam modul 'EU Projekti' dovoljno opcija za vođenje Erasmus+ programa (budžeti, radni paketi, partneri)?",
+      "Kako Vam ERP sustav pomaže u organizaciji i praćenju dolaznih i odlaznih mobilnosti studenata?",
+      "Je li modul putnih naloga unutar kartica zaposlenika dovoljno informativan za praćenje odlazne mobilnosti osoblja?"
+    ]
+  },
+  {
+    "id": "template-8",
+    "department": "Ured za međunarodnu suradnju",
+    "questions": [
+      "Je li proces evidentiranja dolazne mobilnosti međunarodnih studenata jasan unutar baze 'Studenti'?",
+      "Nedostaje li Vam posebna funkcionalnost za lakše pretraživanje ugovora o međunarodnoj suradnji u DMS modulu?",
+      "Kako ocjenjujete unos specifičnih podataka (vize, osiguranja) u karton inozemnog studenta?"
+    ]
+  },
+  {
+    "id": "template-9",
+    "department": "PR i Marketing",
+    "questions": [
+      "Pomaže li Vam Alumni i Event modul u planiranju, organizaciji i marketinškom praćenju javnih događanja Veleučilišta?",
+      "Imate li kroz sustav brz uvid u nove znanstvene radove i projekte (EU Projekti) u svrhu kreiranja PR sadržaja?",
+      "Omogućuje li Vam kalendar jasno izdvajanje promotivnih evenata u odnosu na redovnu nastavu?"
+    ]
+  },
+  {
+    "id": "template-10",
+    "department": "Ured za međunarodnu suradnju",
+    "questions": [
+      "Olakšava li vizualni prikaz modula projekata planiranje i administraciju aktivnosti međunarodne suradnje?",
+      "Smatrate li kalendarski modul korisnim za praćenje termina gostujućih međunarodnih predavača?",
+      "Pomaže li Vam praćenje budžeta unutar EU projekata pri realizaciji planiranih troškova mobilnosti?"
+    ]
+  },
+  {
+    "id": "template-11",
+    "department": "Informatička služba",
+    "questions": [
+      "Pokriva li modul za laboratorij sve statuse (dostupno, zaduženo, servis) potrebne za vođenje hardverskog inventara?",
+      "Smatrate li da 'live' notifikacije i PAR AI asistent mogu poslužiti za smanjenje broja osnovnih tehničkih upita korisnika?",
+      "Je li sučelje za evidenciju tehnike i opreme (npr. VR, Arduino) dovoljno fleksibilno za unos novih resursa?",
+      "Trebaju li se unutar sustava implementirati dodatna sigurnosna i autorizacijska ograničenja (RBAC)?"
+    ]
+  }
+]
