@@ -14,20 +14,25 @@ let busy = false;
 let ready = false;
 let sessionUser = null;
 let profileLoading = false;
+let profileFailed = false;
 function show(message, error = false) {
   $("login-status").textContent = message;
   $("login-status").classList.toggle("error", error);
 }
 function renderControls() {
-  $("auth-description").textContent = sessionUser
-    ? "Pristup se aktivira nakon administratorskog odobrenja."
-    : mode === "register"
-      ? "Izradite svoj korisnički račun."
-      : "Unesite podatke svojeg PAR računa.";
+  $("auth-description").textContent =
+    sessionUser && profileFailed
+      ? "Potrebno je dovršiti pripremu korisničkog profila."
+      : sessionUser
+        ? "Pristup se aktivira nakon administratorskog odobrenja."
+        : mode === "register"
+          ? "Izradite svoj korisnički račun."
+          : "Unesite podatke svojeg PAR računa.";
   $("login-form").hidden = !!sessionUser || mode !== "login";
   $("register-form").hidden = !!sessionUser || mode !== "register";
   $("auth-switch").hidden = !!sessionUser;
   $("logout-pending").hidden = !sessionUser;
+  $("retry-profile").hidden = !sessionUser || !profileFailed;
   $("login-submit").disabled =
     !ready || busy || profileLoading || !!sessionUser;
   $("register-submit").disabled =
@@ -37,13 +42,16 @@ function renderControls() {
     mode === "login" ? "Registriraj se" : "Prijavi se";
   $("auth-switch-label").textContent =
     mode === "login" ? "Nemate račun?" : "Već imate račun?";
-  $("login-title").textContent = sessionUser
-    ? profileLoading
-      ? "Priprema profila"
-      : "Čeka odobrenje"
-    : mode === "login"
-      ? "Prijava u sustav"
-      : "Registracija";
+  $("login-title").textContent =
+    sessionUser && profileFailed
+      ? "Profil nije dostupan"
+      : sessionUser
+        ? profileLoading
+          ? "Priprema profila"
+          : "Čeka odobrenje"
+        : mode === "login"
+          ? "Prijava u sustav"
+          : "Registracija";
 }
 $("switch-auth").addEventListener("click", () => {
   if (busy || sessionUser) return;
@@ -77,7 +85,8 @@ async function submitAuth(event, action) {
   try {
     await action();
   } catch (error) {
-    show(errorMessage(error), true);
+    if (sessionUser) sessionError(error);
+    else show(errorMessage(error), true);
   } finally {
     busy = false;
     renderControls();
@@ -125,17 +134,20 @@ $("logout-pending").addEventListener("click", async () => {
     show(errorMessage(error), true);
   }
 });
+$("retry-profile").addEventListener("click", () => location.reload());
 function sessionError(error) {
+  profileFailed = true;
   profileLoading = false;
   renderControls();
   show(
     error.code === "permission-denied" && sessionUser
-      ? "Račun je prijavljen, ali profil nije moguće spremiti ili učitati. Potrebno je objaviti ažurirana Firestore pravila."
+      ? "Račun postoji, ali Firestore odbija spremanje ili učitavanje profila. Administrator treba objaviti aktualna pravila, a zatim pokušajte ponovno."
       : errorMessage(error),
     true,
   );
 }
 observeSession(({ user, profile, loading }) => {
+  profileFailed = false;
   ready = true;
   sessionUser = user;
   profileLoading = loading;

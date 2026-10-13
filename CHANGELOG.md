@@ -19,3 +19,5 @@ Registration follow-up:
 - Added unit/rules tests and local auth+Firestore emulator fixtures. Added Firebase setup, deployment and test documentation.
 
 No live Firebase configuration changes, live database writes, Git commits, pushes or deployments were performed.
+
+- Fixed profile-write errors being mislabeled as approval pending. Preserved the actionable Firestore-rules error across registration callbacks and added a retry button.

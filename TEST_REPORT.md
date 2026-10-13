@@ -61,3 +61,7 @@ Added two unit checks for inactive profile construction and registration field/c
 Browser checks using local Auth/Firestore emulators: mismatched password confirmation was rejected; registration created the account and profile with the supplied full name; the unapproved account could not bypass the homepage guard; an independent administrator session filtered pending registrations, chose the instructor role and approved the account; the user's waiting session automatically entered the workspace with the instructor's navigation.
 
 The Auth-only account migration was also verified: a login for an existing Authentication account without a Firestore document automatically created an inactive profile, which appeared in the administrator's pending-account filter.
+
+## Profile-write denial recovery
+
+Reproduced registration against the previous administrator-only user-create policy in local Auth/Firestore emulators. Confirmed Auth account creation succeeds while profile creation is denied. The login now shows a distinct profile error and retry action instead of approval pending. Loading the current restricted self-provisioning rules and clicking retry created the inactive profile successfully. No live project rules or records were changed.
