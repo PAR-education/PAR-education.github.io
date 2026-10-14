@@ -6,6 +6,7 @@ import {
   staffRoles,
 } from "../auth/permissions.js";
 import { tuitionInstallments } from "../utils/tuition.js";
+import { prepareCalendarMove, revisionOf } from "../utils/schedule.js";
 export async function readAllRecords(sdk, db, name, field, value) {
   const rows = [];
   let cursor;
@@ -25,6 +26,28 @@ export class Records {
   constructor(user, profile) {
     this.user = user;
     this.profile = profile;
+  }
+  async moveCalendar(record, target) {
+    if (
+      this.profile.active !== true ||
+      !canManage(this.profile.role, "calendarEvents")
+    )
+      throw new Error("Nemate ovlasti za promjenu rasporeda.");
+    const events = await this.listAll("calendarEvents");
+    const { db, firestore: sdk } = await getFirebase();
+    return sdk.runTransaction(db, async (transaction) => {
+      const ref = sdk.doc(db, "calendarEvents", record.id),
+        snapshot = await transaction.get(ref);
+      if (!snapshot.exists()) throw new Error("Događaj više ne postoji.");
+      const latest = { ...snapshot.data(), id: record.id };
+      if (revisionOf(latest) !== revisionOf(record))
+        throw new Error(
+          "Raspored je u međuvremenu izmijenjen. Osvježite prikaz pa ponovite premještanje.",
+        );
+      const values = prepareCalendarMove(latest, target, events);
+      transaction.update(ref, { ...values, updatedAt: sdk.serverTimestamp() });
+      return values;
+    });
   }
   async listAll(name) {
     if (!canRead(this.profile.role, name))

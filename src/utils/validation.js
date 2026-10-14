@@ -6,7 +6,11 @@ export function validateFields(fields, values) {
     if (field.required && (value === "" || value == null))
       throw new Error(`${field.label}: obavezno polje.`);
     if (value === "" || value == null) {
-      if (!field.required && ["url", "number"].includes(field.type)) continue;
+      if (
+        !field.required &&
+        ["url", "number", "time", "date"].includes(field.type)
+      )
+        continue;
       result[field.key] = "";
       continue;
     }
@@ -48,6 +52,8 @@ export function validateFields(fields, values) {
   if (result.startDate && result.endDate && result.endDate < result.startDate)
     throw new Error("Završni datum mora biti nakon početnog datuma.");
   if (result.startTime && result.endTime && result.endTime <= result.startTime)
+    throw new Error("Završno vrijeme mora biti nakon početnog vremena.");
+  if (result.time && result.endTime && result.endTime <= result.time)
     throw new Error("Završno vrijeme mora biti nakon početnog vremena.");
   return result;
 }

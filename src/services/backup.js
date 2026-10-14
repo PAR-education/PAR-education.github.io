@@ -1,5 +1,6 @@
 import { getFirebase, firebaseConfig } from "../config/firebase.js";
 import { assertModules, buildBackup, validateBackup } from "./backup-format.js";
+import { rangeBounds } from "../utils/backup-range.js";
 export function backupScope(context) {
   const local =
     ["localhost", "127.0.0.1"].includes(location.hostname) &&
@@ -49,18 +50,27 @@ export async function scanModules(context, names) {
   }
   return records;
 }
-export async function createBackup(context, names, mode) {
+export async function createBackup(context, names, mode, dateRange) {
   admin(context);
+  if (mode === "range") rangeBounds(dateRange);
   const scope = backupScope(context),
-    state = getBackupState(scope);
+    state = mode === "range" ? { checkpoints: {} } : getBackupState(scope);
   const records = await scanModules(context, names);
-  return buildBackup(records, names, mode, state.checkpoints, {
-    projectId: scope.split(":")[0],
-    uid: context.user.uid,
-  });
+  return buildBackup(
+    records,
+    names,
+    mode,
+    state.checkpoints,
+    {
+      projectId: scope.split(":")[0],
+      uid: context.user.uid,
+    },
+    dateRange,
+  );
 }
 export function confirmBackup(context, pending) {
   admin(context);
+  if (pending.backup.mode === "range") return;
   const scope = backupScope(context),
     state = getBackupState(scope);
   Object.assign(state.checkpoints, pending.next);
@@ -105,6 +115,10 @@ export async function restoreBackup(
   admin(context);
   assertModules(names);
   await validateBackup(backup);
+  if (backup.mode === "range" && applyDeletes)
+    throw new Error(
+      "Backup vremenskog raspona vraća samo uključene zapise; brisanje drugih zapisa nije dopušteno.",
+    );
   if (names.some((n) => !Object.hasOwn(backup.modules, n)))
     throw new Error("Odabrani modul nije u backupu.");
   const scope = backupScope(context),

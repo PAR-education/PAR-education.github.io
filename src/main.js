@@ -25,6 +25,7 @@ import { icon, visualRecords } from "./modules/visuals.js";
 import { importTemplate } from "./services/import-template.js";
 import { mountControlPanel } from "./components/control-panel.js";
 import { mountCalendarIntegration } from "./components/calendar-integration.js";
+import { mountSchedule } from "./components/schedule.js";
 const $ = (id) => document.getElementById(id);
 let context = null;
 let version = 0;
@@ -233,7 +234,10 @@ async function loadView(name) {
       await drawDashboard(ticket, current);
       return;
     }
-    const result = await current.repository.list(name);
+    const result =
+      name === "calendarEvents" && current.repository.listAll
+        ? await current.repository.listAll(name)
+        : await current.repository.list(name);
     if (
       name === "exams" &&
       ["admin", "profesor"].includes(current.profile.role)
@@ -460,7 +464,27 @@ function drawTable() {
   if (!shownRows.length)
     $("table-area").innerHTML =
       `<div class="empty"><h2>${rows.length ? "Nema rezultata" : "Još nema zapisa"}</h2><p>${rows.length ? "Pokušajte s drugim pojmom ili filtrom." : canCreate(active) ? "Dodajte prvi zapis. Podaci se spremaju tek nakon potvrde baze." : "Zapisi će se prikazati kada ih administrator ili nadležna služba doda."}</p></div>`;
-  else if (visual) $("table-area").innerHTML = visual;
+  else if (active === "calendarEvents") {
+    const current = context;
+    mountSchedule($("table-area"), shownRows, {
+      canEdit: canManage(current.profile.role, "calendarEvents"),
+      onDetails: (record) => showDetails("calendarEvents", record),
+      onMove: async (record, target) => {
+        if (context !== current || active !== "calendarEvents")
+          throw new Error("Prikaz ili sesija su promijenjeni.");
+        await current.repository.moveCalendar(record, target);
+        if (context !== current || active !== "calendarEvents") return;
+        rows = await (current.repository.listAll?.("calendarEvents") ||
+          current.repository.list("calendarEvents"));
+        if (context === current && active === "calendarEvents") {
+          drawTable();
+          Array.from($("table-area").querySelectorAll("[data-event]"))
+            .find((el) => el.dataset.event === record.id)
+            ?.focus({ preventScroll: true });
+        }
+      },
+    });
+  } else if (visual) $("table-area").innerHTML = visual;
   else
     $("table-area").innerHTML =
       `<div class="table-scroll"><table><caption class="sr-only">${e(config.title)}</caption><thead><tr>${config.columns.map((key) => `<th scope="col">${e(labelFor(active, key))}</th>`).join("")}<th scope="col">Detalji</th></tr></thead><tbody>${shownRows.map((row, i) => `<tr>${config.columns.map((key) => `<td>${key === "status" ? badge(row[key]) : e(display(row[key]))}</td>`).join("")}<td><button class="button table-action" data-row="${i}" aria-label="Detalji: ${e(row.name || row.title || row.ownerName || config.title)}">Otvori →</button></td></tr>`).join("")}</tbody></table></div>`;

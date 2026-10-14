@@ -552,3 +552,40 @@ test("Backup pagination includes more than 500 records without truncation and re
     readAllRecords(sdk, database("student-a"), "notifications"),
   );
 });
+
+test("Calendar end times may be defined only by admin and must follow the start time", async () => {
+  const db = database("admin");
+  const event = {
+    title: "Nastava",
+    date: "2026-10-14",
+    time: "08:00",
+    endTime: "10:00",
+    room: "PAR",
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+    createdBy: "admin",
+  };
+  await assertSucceeds(setDoc(doc(db, "calendarEvents", "drag-test"), event));
+  await assertSucceeds(
+    updateDoc(doc(db, "calendarEvents", "drag-test"), {
+      time: "10:00",
+      endTime: "12:00",
+      room: "Dvorana 1",
+      updatedAt: serverTimestamp(),
+    }),
+  );
+  await assertFails(
+    updateDoc(doc(db, "calendarEvents", "drag-test"), {
+      time: "14:00",
+      endTime: "13:00",
+      updatedAt: serverTimestamp(),
+    }),
+  );
+  await assertFails(
+    updateDoc(doc(database("teacher"), "calendarEvents", "drag-test"), {
+      time: "12:00",
+      endTime: "14:00",
+      updatedAt: serverTimestamp(),
+    }),
+  );
+});

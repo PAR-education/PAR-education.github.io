@@ -1,10 +1,29 @@
 import { scopeFor, canRead } from "../auth/permissions.js";
 import { tuitionInstallments } from "../utils/tuition.js";
+import { prepareCalendarMove, revisionOf } from "../utils/schedule.js";
 export class DemoRecords {
   constructor(data, user, profile) {
     this.data = data;
     this.user = user;
     this.profile = profile;
+  }
+  async moveCalendar(record, target) {
+    if (this.profile.role !== "admin" || this.profile.active !== true)
+      throw new Error("Nemate ovlasti za promjenu rasporeda.");
+    const current = this.data.calendarEvents.find(
+      (row) => row.id === record.id,
+    );
+    if (!current || revisionOf(current) !== revisionOf(record))
+      throw new Error(
+        "Događaj je izmijenjen ili više ne postoji. Osvježite prikaz.",
+      );
+    const values = prepareCalendarMove(
+      current,
+      target,
+      this.data.calendarEvents,
+    );
+    Object.assign(current, values, { updatedAt: new Date().toISOString() });
+    return values;
   }
   async list(name) {
     if (!canRead(this.profile.role, name))

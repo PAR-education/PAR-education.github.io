@@ -7,6 +7,7 @@ import {
   strFromU8,
 } from "../../assets/vendor/fflate/index.js";
 import { csvContent } from "../components/export.js";
+import { rangeBounds, recordTimestamp } from "../utils/backup-range.js";
 export const MAX_BACKUP_BYTES = 25 * 1024 * 1024;
 export const backupModules = Object.keys(modules);
 const own = (o, k) => Object.hasOwn(o, k);
@@ -58,9 +59,16 @@ export function assertModules(names) {
   )
     throw new Error("Odaberite barem jedan poznati modul.");
 }
-export async function buildBackup(records, names, mode, checkpoint, source) {
+export async function buildBackup(
+  records,
+  names,
+  mode,
+  checkpoint,
+  source,
+  dateRange,
+) {
   assertModules(names);
-  if (!["full", "incremental"].includes(mode))
+  if (!["full", "incremental", "range"].includes(mode))
     throw new Error("Nepoznata vrsta backupa.");
   if (
     mode === "incremental" &&
@@ -85,11 +93,30 @@ export async function buildBackup(records, names, mode, checkpoint, source) {
     modules: {},
   };
   const next = {};
+  const bounds = mode === "range" ? rangeBounds(dateRange) : null;
+  if (bounds) {
+    backup.dateRange = {
+      from: bounds.from,
+      to: bounds.to,
+      timeZone: "Europe/Zagreb",
+      field: "updatedAt-or-createdAt",
+    };
+    backup.omittedWithoutTimestamp = {};
+  }
   for (const name of names) {
     const hashes = {},
       upserts = [],
       previous = checkpoint[name]?.hashes || {};
     for (const row of records[name]) {
+      if (bounds) {
+        const stamp = recordTimestamp(row);
+        if (stamp === null) {
+          backup.omittedWithoutTimestamp[name] =
+            (backup.omittedWithoutTimestamp[name] || 0) + 1;
+          continue;
+        }
+        if (stamp < bounds.start || stamp >= bounds.end) continue;
+      }
       const id = row.id;
       if (!safeId(id) || own(hashes, id))
         throw new Error(
@@ -108,7 +135,7 @@ export async function buildBackup(records, names, mode, checkpoint, source) {
       );
       const data = encodeValue(values);
       hashes[id] = await digest(data);
-      if (mode === "full" || previous[id] !== hashes[id])
+      if (mode !== "incremental" || previous[id] !== hashes[id])
         upserts.push({ id, data });
     }
     const deleted =
@@ -118,7 +145,8 @@ export async function buildBackup(records, names, mode, checkpoint, source) {
     if (mode === "incremental")
       backup.baseBackupIds[name] = checkpoint[name].id;
     backup.modules[name] = { upserts, deleted };
-    next[name] = { id: backup.id, createdAt: backup.createdAt, hashes };
+    if (mode !== "range")
+      next[name] = { id: backup.id, createdAt: backup.createdAt, hashes };
   }
   backup.checksum = await digest(backup);
   return { backup, next };
@@ -208,7 +236,7 @@ export async function validateBackup(backup) {
     !object(backup) ||
     backup.format !== "par-erp-backup" ||
     backup.version !== 1 ||
-    !["full", "incremental"].includes(backup.mode) ||
+    !["full", "incremental", "range"].includes(backup.mode) ||
     typeof backup.id !== "string" ||
     !backup.id ||
     backup.id.length > 100 ||
@@ -217,6 +245,7 @@ export async function validateBackup(backup) {
   )
     throw new Error("Datoteka nije podržani PAR backup verzije 1.");
   assertModules(Object.keys(backup.modules));
+  if (backup.mode === "range") rangeBounds(backup.dateRange);
   if (
     !object(backup.source) ||
     typeof backup.source.projectId !== "string" ||
@@ -247,7 +276,7 @@ export async function validateBackup(backup) {
         throw new Error("Neispravna ili duplicirana oznaka brisanja.");
       ids.add(id);
     }
-    if (backup.mode === "full" && part.deleted.length)
+    if (backup.mode !== "incremental" && part.deleted.length)
       throw new Error("Potpuni backup ne smije imati oznake brisanja.");
     if (
       backup.mode === "incremental" &&

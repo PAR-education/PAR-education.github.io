@@ -24,6 +24,18 @@ Evidencija polazišta je lokalna za račun, Firebase projekt i preglednik. Drugi
 
 Izvoz više modula nije jedna atomska snimka baze; napraviti backup kad nema aktivnih izmjena. Čuvati početni potpuni backup i sve sljedeće inkrementalne datoteke.
 
+## Backup vremenskog raspona
+
+Treća vrsta backupa omogućuje odabir **Od datuma** i **Do datuma** pomoću datepickera. Uključuje oba datuma u zoni Europe/Zagreb. Odabiru se zapisi prema `updatedAt`, odnosno `createdAt` ako datum izmjene nije dostupan. Zapisi bez upotrebljivog datuma izostavljaju se uz prikaz njihovog broja.
+
+Podržani su JSON, CSV i ZIP te svi ili odabrani moduli. Ovaj backup ne pomiče polazište inkrementalnog backupa. Import vraća samo uključene zapise, bez brisanja drugih zapisa. To je izbor trenutačnih zapisa prema datumu izmjene, a ne povijesna snimka baze.
+
+## Drag & drop satnica
+
+U modulu **Kalendar** administrator može povući događaj u drugi vremenski stupac ili dvoranu. Datum ostaje isti, a trajanje se zadržava; stariji zapisi bez završetka koriste zadano trajanje od dva sata. Gumb **Satnica** omogućuje točan datum, dvoranu, početak i završetak. Dostupno je i pomicanje tipkovnicom pomoću Alt + strelica te filtriranje prikaza po datumu.
+
+Spremanje provjerava preklapanje u istoj dvorani na isti datum te odbija zastarjele izmjene istog događaja. Provjera preklapanja nije globalno zaključavanje svih događaja pri istodobnom radu više administratora. Ostale uloge imaju pregled prema svojim postojećim ovlastima. Prije objave objaviti aktualna Firestore pravila koja sada prihvaćaju i provjeravaju `endTime` događaja.
+
 ## Import i vraćanje
 
 Učitati JSON/CSV/ZIP nastao u control panelu. Aplikacija provjerava verziju, SHA-256 sažetak, module, ID-eve, tipove i obavezna polja prije prvog upisa. Sažetak otkriva oštećenje datoteke; nije digitalni potpis autora. Običan CSV iz tabličnog prikaza i pojedinačni CSV izvještaj iz ZIP-a nisu samostalni backupi.
@@ -48,7 +60,9 @@ Ovo je ručni prijenos, prema dogovoru bez OAuth podešavanja. Nema automatske i
 
 ## Provjera 14.10.2026.
 
-- 19 unit testova i 15 Firestore testova prolazi.
+- 21 unit test i 16 Firestore testova prolazi.
+- Raspon datuma: uključive Zagreb granice, prijelaz ljetnog vremena, fallback datuma kreiranja i očuvanje inkrementalnog polazišta.
+- Browser demo: preuzet backup raspona od 343 zapisa, stvarnim povlačenjem promijenjeni termin i dvorana; preko gumba Satnica spremljen termin 10:30–12:00.
 - JSON, CSV i ZIP round-trip, promjene/brisanja, redoslijed inkrementalnog lanca, oštećene datoteke i scope provjereni.
 - Paginated export od 510 Firestore dokumenata provjeren bez gubitka ili duplikata; vlasnički scope očuvan.
 - Browser demo: puni JSON od 343 zapisa, inkrementalni ZIP od 0 promjena i djelomični import 10 kolegija.

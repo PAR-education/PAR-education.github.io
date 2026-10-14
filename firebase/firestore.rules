@@ -134,15 +134,17 @@ service cloud.firestore {
         && (d.status is string && d.status.size() <= 200 && d.status.size() > 0 && d.status in ['Na čekanju', 'Odobreno', 'Odbijeno']);
     }
     function valid_calendarEvents(d) {
-      return d.keys().hasOnly(['title', 'date', 'time', 'room', 'day', 'instructorName', 'description', 'createdAt', 'createdBy', 'updatedAt'])
+      return d.keys().hasOnly(['title', 'date', 'time', 'endTime', 'room', 'day', 'instructorName', 'description', 'createdAt', 'createdBy', 'updatedAt'])
         && d.keys().hasAll(['title', 'date', 'time', 'room', 'createdAt', 'createdBy', 'updatedAt'])
         && (d.title is string && d.title.size() <= 200 && d.title.size() > 0)
         && (d.date is string && d.date.size() <= 200 && d.date.size() > 0 && d.date.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$'))
         && (d.time is string && d.time.size() <= 200 && d.time.size() > 0 && d.time.matches('^([01][0-9]|2[0-3]):[0-5][0-9]$'))
+        && (!('endTime' in d) || (d.endTime is string && d.endTime.size() <= 200 && d.endTime.matches('^([01][0-9]|2[0-3]):[0-5][0-9]$')))
         && (d.room is string && d.room.size() <= 200 && d.room.size() > 0)
         && (!('day' in d) || (d.day is string && d.day.size() <= 200))
         && (!('instructorName' in d) || (d.instructorName is string && d.instructorName.size() <= 200))
-        && (!('description' in d) || (d.description is string && d.description.size() <= 2000));
+        && (!('description' in d) || (d.description is string && d.description.size() <= 2000))
+        && (!('endTime' in d) || d.endTime > d.time);
     }
     function valid_projects(d) {
       return d.keys().hasOnly(['title', 'fundingLine', 'duration', 'budget', 'startDate', 'endDate', 'partners', 'workPackages', 'description', 'createdAt', 'createdBy', 'updatedAt'])

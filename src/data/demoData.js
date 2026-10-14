@@ -250,8 +250,8 @@ export async function demoData() {
   for (const list of Object.values(records))
     list.forEach((r) =>
       Object.assign(r, {
-        createdAt: "Ogledni zapis",
-        updatedAt: "Ogledni zapis",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
         createdBy: "demo-admin",
       }),
     );

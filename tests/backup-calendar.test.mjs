@@ -26,7 +26,130 @@ import {
   googleCalendarURL,
   foldICS,
 } from "../src/utils/calendar.js";
+import { rangeBounds } from "../src/utils/backup-range.js";
+import { prepareCalendarMove } from "../src/utils/schedule.js";
 const source = { projectId: "demo", uid: "demo-admin" };
+test("Date-range backup uses inclusive Zagreb dates, timestamp fallback, and does not advance incremental baseline", async () => {
+  const rows = [
+    { ...row("before", "Prije"), updatedAt: "2026-10-13T21:59:59Z" },
+    {
+      ...row("start", "Početak"),
+      updatedAt: {
+        $timestamp: {
+          seconds: Date.parse("2026-10-13T22:00:00Z") / 1000,
+          nanoseconds: 0,
+        },
+      },
+    },
+    { ...row("last", "Kraj"), updatedAt: "2026-10-14T21:59:59Z" },
+    { ...row("after", "Poslije"), updatedAt: "2026-10-14T22:00:00Z" },
+    {
+      ...row("fallback", "Kreirano"),
+      updatedAt: undefined,
+      createdAt: "2026-10-14T12:00:00Z",
+    },
+    row("unknown", "Bez datuma"),
+  ];
+  const result = await buildBackup(
+    { calendarEvents: rows },
+    ["calendarEvents"],
+    "range",
+    {},
+    source,
+    { from: "2026-10-14", to: "2026-10-14" },
+  );
+  assert.deepEqual(
+    result.backup.modules.calendarEvents.upserts.map((r) => r.id),
+    ["start", "last", "fallback"],
+  );
+  assert.deepEqual(result.next, {});
+  assert.equal(result.backup.omittedWithoutTimestamp.calendarEvents, 1);
+  await validateBackup(result.backup);
+  for (const format of ["json", "csv", "zip"])
+    assert.deepEqual(
+      await readBackupFile(
+        file("range." + format, backupFile(result.backup, format).content),
+      ),
+      result.backup,
+    );
+  assert.equal(
+    rangeBounds({ from: "2026-03-29", to: "2026-03-29" }).end -
+      rangeBounds({ from: "2026-03-29", to: "2026-03-29" }).start,
+    23 * 60 * 60 * 1000,
+  );
+  assert.throws(
+    () => rangeBounds({ from: "2026-10-15", to: "2026-10-14" }),
+    /Završni datum/,
+  );
+});
+test("Calendar moves preserve duration, detect conflicts only on same date/room and reject stale or unauthorized changes", async () => {
+  const event = {
+    id: "a",
+    title: "Ekonomija",
+    date: "2026-10-12",
+    time: "08:00",
+    endTime: "10:00",
+    room: "PAR",
+    updatedAt: "v1",
+  };
+  const block = {
+    id: "b",
+    title: "Ispit",
+    date: "2026-10-12",
+    time: "10:00",
+    endTime: "12:00",
+    room: "PAR",
+  };
+  assert.throws(
+    () => prepareCalendarMove(event, { time: "10:00" }, [event, block]),
+    /preklapa/,
+  );
+  assert.deepEqual(
+    prepareCalendarMove(event, { time: "10:00", room: " Dvorana 1 " }, [
+      event,
+      block,
+    ]),
+    {
+      date: "2026-10-12",
+      time: "10:00",
+      endTime: "12:00",
+      room: "Dvorana 1",
+      day: "Pon",
+    },
+  );
+  assert.equal(
+    prepareCalendarMove(event, { time: "10:00", date: "2026-10-13" }, [
+      event,
+      block,
+    ]).day,
+    "Uto",
+  );
+  assert.equal(
+    prepareCalendarMove(event, { time: "12:00" }, [event, block]).endTime,
+    "14:00",
+  );
+  assert.throws(
+    () => prepareCalendarMove(event, { time: "23:00" }, []),
+    /unutar istog dana/,
+  );
+  const profile = { role: "admin", active: true },
+    data = { calendarEvents: [{ ...event }, block] },
+    repo = new DemoRecords(data, { uid: "demo-admin" }, profile);
+  await repo.moveCalendar(event, { room: "Dvorana 1", time: "10:00" });
+  assert.equal(data.calendarEvents[0].endTime, "12:00");
+  await assert.rejects(
+    repo.moveCalendar(event, { time: "12:00" }),
+    /izmijenjen/,
+  );
+  await assert.rejects(
+    new DemoRecords(
+      data,
+      { uid: "demo-student" },
+      { role: "student", active: true },
+    ).moveCalendar(data.calendarEvents[0], { time: "12:00" }),
+    /ovlasti/,
+  );
+});
 const row = (id, title) => ({
   id,
   title,

@@ -45,6 +45,8 @@ const schemas = Object.entries(modules)
       expressions.push("d.endDate >= d.startDate");
     if (keys.includes("startTime") && keys.includes("endTime"))
       expressions.push("d.endTime > d.startTime");
+    if (keys.includes("time") && keys.includes("endTime"))
+      expressions.push("(!('endTime' in d) || d.endTime > d.time)");
     return `    function valid_${name}(d) {\n      return ${expressions.join("\n        && ")};\n    }`;
   })
   .join("\n");

@@ -2236,3 +2236,107 @@ td {
   font: inherit;
   margin-right: 12px;
 }
+.schedule-tools {
+  display: flex;
+  align-items: end;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding: 0 24px 20px;
+}
+.schedule-tools label {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  font-size: 13px;
+}
+.schedule-tools input {
+  font: inherit;
+  min-height: 42px;
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-soft);
+  color: var(--ink);
+}
+.schedule-tools p {
+  flex-basis: 100%;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+  margin: 0;
+}
+#schedule-grid {
+  padding: 0 24px 24px;
+}
+#schedule-message:empty {
+  display: none;
+}
+#schedule-message {
+  margin: 0 24px 20px;
+}
+.schedule-event {
+  width: 100%;
+  min-width: 0;
+}
+.schedule-event + .schedule-event {
+  margin-top: 10px;
+}
+.room-slot.drop-slot {
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  min-height: 110px;
+}
+.room-slot > span {
+  text-align: center;
+}
+.lesson[draggable="true"] {
+  cursor: grab;
+}
+.lesson.dragging {
+  opacity: 0.4;
+}
+.drop-slot.drop-active {
+  background: var(--accent-soft);
+  outline: 2px dashed var(--accent);
+  outline-offset: -3px;
+}
+.schedule-dragging .drop-slot {
+  border-style: dashed;
+}
+.schedule-edit {
+  width: 100%;
+  margin-top: 6px;
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  font-size: 11px;
+  text-align: right;
+  padding: 4px 6px;
+}
+.schedule-edit:hover {
+  background: var(--accent-soft);
+  border-radius: 6px;
+}
+.schedule-tools .button {
+  margin-bottom: 0;
+}
+[hidden] {
+  display: none !important;
+}
+.draggable-lesson {
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+.draggable-lesson:active {
+  cursor: grabbing;
+}
+.schedule-ghost {
+  position: fixed;
+  z-index: 1000;
+  pointer-events: none;
+  box-shadow: 0 12px 32px #13243840;
+  opacity: 0.95;
+  margin: 0;
+}

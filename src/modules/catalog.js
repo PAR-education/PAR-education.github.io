@@ -156,6 +156,7 @@ export const modules = {
       text("title", "Naziv"),
       date("date", "Datum"),
       { ...text("time", "Vrijeme"), type: "time" },
+      { ...text("endTime", "Završetak", false), type: "time" },
       text("room", "Lokacija"),
       text("day", "Dan", false),
       text("instructorName", "Nastavnik", false),
