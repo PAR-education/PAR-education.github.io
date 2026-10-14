@@ -2425,3 +2425,50 @@ td {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+.slot-finder {
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface-soft);
+  margin-bottom: 24px;
+}
+.slot-finder h2 {
+  font-size: 18px;
+  margin: 0 0 8px;
+}
+.slot-finder > p {
+  font-size: 13px;
+  color: var(--muted);
+}
+.slot-results {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 12px 0;
+}
+.slot-result {
+  display: grid;
+  gap: 6px;
+  text-align: left;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+}
+.slot-result:hover,
+.slot-result.selected {
+  border-color: var(--accent);
+  box-shadow: inset 3px 0 var(--accent);
+}
+.slot-result span {
+  color: var(--muted);
+}
+@media (max-width: 500px) {
+  .slot-results {
+    grid-template-columns: 1fr;
+  }
+}

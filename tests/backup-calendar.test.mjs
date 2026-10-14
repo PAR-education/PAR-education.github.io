@@ -30,7 +30,62 @@ import { rangeBounds } from "../src/utils/backup-range.js";
 import {
   prepareCalendarMove,
   scheduleConflicts,
+  availableSlots,
 } from "../src/utils/schedule.js";
+
+test("Slot suggestions combine optional date, room and time filters and preserve duration", () => {
+  const events = [
+    {
+      id: "a",
+      date: "2026-10-14",
+      room: "Dvorana PAR",
+      time: "10:00",
+      endTime: "12:00",
+    },
+  ];
+  const base = { from: "2026-10-14", duration: 90 };
+  assert.equal(
+    availableSlots(events, {
+      ...base,
+      date: "2026-10-14",
+      room: "Dvorana PAR",
+      time: "10:00",
+    }).length,
+    0,
+  );
+  assert.equal(
+    availableSlots(events, {
+      ...base,
+      date: "2026-10-14",
+      room: "Dvorana PAR",
+      time: "12:00",
+    })[0].endTime,
+    "13:30",
+  );
+  assert.equal(
+    availableSlots(events, { ...base, room: "Dvorana PAR", time: "10:00" })[0]
+      .date,
+    "2026-10-15",
+  );
+  assert.ok(
+    availableSlots(events, {
+      ...base,
+      date: "2026-10-14",
+      time: "10:00",
+    }).every((s) => s.room !== "Dvorana PAR"),
+  );
+  assert.equal(
+    availableSlots(events, {
+      ...base,
+      date: "2026-10-14",
+      room: "Dvorana PAR",
+      time: "10:00",
+      excludeId: "a",
+    }).length,
+    1,
+  );
+  assert.throws(() => availableSlots(events, { ...base, duration: 0 }));
+});
 
 test("Room availability detects partial overlap, adjacent slots, other dates and excludes the edited event", () => {
   const events = [

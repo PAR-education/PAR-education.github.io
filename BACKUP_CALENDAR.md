@@ -32,6 +32,8 @@ Podržani su JSON, CSV i ZIP te svi ili odabrani moduli. Ovaj backup ne pomiče 
 
 ## Drag & drop satnica
 
+Obrazac Novi zapis / Uredi u kalendaru sadrži pretragu slobodnih termina. Neobavezni filtri datum, dvorana i početak kombiniraju se uz trajanje nastave. Bez datuma traže se sljedećih 14 dana, u koracima od 30 minuta između 08:00 i 20:00; odabrani točan početak može biti i izvan tog raspona unutar istog dana. Prikaži još povećava raspon i broj prijedloga. Klik popunjava datum, dvoranu, početak, završetak i dan. Prije spremanja ponovno se čita cijeli raspored i provjerava preklapanje; to nije atomsko zaključavanje različitih događaja među istodobnim korisnicima. Pretraga slijedi postojeće ovlasti za dodavanje kalendarskih zapisa.
+
 Svaka uloga s pristupom kalendaru može provjeriti slobodan termin po datumu, dvorani, početku i završetku. Kod zauzetog termina prikazuju se naziv nastave, točno vrijeme i nastavnik radi osobnog dogovora o zamjeni. Provjera uključuje i zapise skrivene tekstualnim pretraživanjem. Dostupnost se računa prema učitanom rasporedu; gumb Osvježi dohvaća nove podatke. Dijalog Satnica onemogućuje spremanje poznatog preklapanja. Svi dani prikazuju svaki datum zasebno s danom u tjednu i godinom; termin koji traje preko granice stupca označava i nastavak zauzetosti.
 
 U modulu **Kalendar** administrator može povući događaj u drugi vremenski stupac ili dvoranu. Datum ostaje isti, a trajanje se zadržava; stariji zapisi bez završetka koriste zadano trajanje od dva sata. Gumb **Satnica** omogućuje točan datum, dvoranu, početak i završetak. Dostupno je i pomicanje tipkovnicom pomoću Alt + strelica te filtriranje prikaza po datumu.

@@ -26,6 +26,7 @@ import { importTemplate } from "./services/import-template.js";
 import { mountControlPanel } from "./components/control-panel.js";
 import { mountCalendarIntegration } from "./components/calendar-integration.js";
 import { mountSchedule } from "./components/schedule.js";
+import { mountSlotFinder } from "./components/slot-finder.js";
 const $ = (id) => document.getElementById(id);
 let context = null;
 let version = 0;
@@ -695,7 +696,7 @@ function showForm(name, record = {}) {
       : "";
   openDialog(
     `${record.id ? "Uredi" : "Novi zapis"} · ${modules[name].title}`,
-    `${questions}<form id="record-form"><div class="form-grid">${name === "users" && !record.id ? renderField({ key: "uid", label: "Firebase Authentication UID", required: true }, "") : ""}${modules[
+    `${questions}<form id="record-form">${name === "calendarEvents" ? '<div id="slot-finder"></div>' : ""}<div class="form-grid">${name === "users" && !record.id ? renderField({ key: "uid", label: "Firebase Authentication UID", required: true }, "") : ""}${modules[
       name
     ].fields
       .filter(
@@ -710,6 +711,10 @@ function showForm(name, record = {}) {
   $("cancel-form").addEventListener("click", closeDialog);
   const current = context;
   const form = $("record-form");
+  const checkSlot =
+    name === "calendarEvents"
+      ? mountSlotFinder($("slot-finder"), form, current.repository, record)
+      : null;
   if (name === "evaluations")
     loadEvaluationTemplates()
       .then((templates) => {
@@ -767,6 +772,8 @@ function showForm(name, record = {}) {
           "Vlastiti administratorski račun ne možete deaktivirati ili promijeniti mu ulogu.",
         );
       const data = validateFields(modules[name].fields, values);
+      if (checkSlot) await checkSlot(data);
+      if (context !== current || $("record-form") !== form) return;
       await current.repository.save(name, data, id);
       if (context !== current) return;
       closeDialog();

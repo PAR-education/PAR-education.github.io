@@ -37,6 +37,55 @@ export function scheduleConflicts(events, target, excludeId) {
     )
     .sort((a, b) => a.time.localeCompare(b.time));
 }
+export function availableSlots(
+  events,
+  {
+    date = "",
+    room = "",
+    time = "",
+    duration = 90,
+    from,
+    days = 14,
+    limit = 12,
+    excludeId,
+  } = {},
+) {
+  duration = Number(duration);
+  if (!Number.isInteger(duration) || duration < 15 || duration > 720)
+    throw new Error("Trajanje mora biti između 15 i 720 minuta.");
+  const first = date || from;
+  validateFields(
+    [{ key: "date", label: "Datum", type: "date", required: true }],
+    { date: first },
+  );
+  const rooms = room
+    ? [room]
+    : [...new Set([...defaultRooms, ...events.map((row) => row.room)])];
+  const result = [];
+  for (let d = 0; d < (date ? 1 : days); d++) {
+    const value = new Date(first + "T12:00:00Z");
+    value.setUTCDate(value.getUTCDate() + d);
+    const day = value.toISOString().slice(0, 10);
+    const starts = time
+      ? [minutes(time)]
+      : Array.from({ length: 25 }, (_, i) => 480 + i * 30);
+    for (const start of starts) {
+      if (start + duration > (time ? 1439 : 1200)) continue;
+      for (const location of rooms) {
+        const target = {
+          date: day,
+          room: location,
+          time: timeAt(start),
+          endTime: timeAt(start + duration),
+        };
+        if (!scheduleConflicts(events, target, excludeId).length)
+          result.push(target);
+        if (result.length === limit) return result;
+      }
+    }
+  }
+  return result;
+}
 export function prepareCalendarMove(record, target, events = []) {
   const { date, time, room } = validateFields(
     [
