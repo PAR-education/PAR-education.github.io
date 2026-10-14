@@ -71,6 +71,11 @@ service cloud.firestore {
     function created(d) {
       return d.createdAt == request.time && d.updatedAt == request.time && d.createdBy == request.auth.uid;
     }
+    function restored(d) {
+      return d.createdAt is timestamp && d.createdBy is string
+        && d.createdBy.size() > 0 && d.createdBy.size() <= 1500
+        && d.updatedAt == request.time;
+    }
     function pendingSelf(uid, d) {
       return signedIn() && uid == request.auth.uid
         && d.role == 'student' && d.active == false && d.departmentId == ''
@@ -179,7 +184,7 @@ const policies = {
     read: "admin() || own(resource.data)",
     write: "own(request.resource.data)",
     update: "false",
-    remove: "false",
+    remove: "admin()",
   },
   notifications: { read: "admin() || own(resource.data)", write: "admin()" },
 };
@@ -188,7 +193,9 @@ for (const [name, policy] of Object.entries(policies)) {
   matches += `    match /${name}/{id} {
       allow read: if ${policy.read};
       allow create: if (${policy.write}) && valid_${name}(request.resource.data) && created(request.resource.data);
+      allow create: if admin() && valid_${name}(request.resource.data) && restored(request.resource.data);
       allow update: if (${policy.update || policy.write}) && valid_${name}(request.resource.data) && updated(request.resource.data);
+      allow update: if admin() && valid_${name}(request.resource.data) && updated(request.resource.data);
       allow delete: if ${policy.remove || policy.write};
     }\n`;
 }
@@ -196,6 +203,8 @@ matches += `
     match /enrollments/{id} {
       allow read: if admin() || instructor(resource.data) || (role('student') && own(resource.data));
       allow create: if admin() && id.matches('^template-.+$') && valid_enrollments(request.resource.data) && created(request.resource.data);
+      allow create: if admin() && valid_enrollments(request.resource.data) && restored(request.resource.data);
+      allow update: if admin() && valid_enrollments(request.resource.data) && updated(request.resource.data);
       allow create: if role('student') && own(request.resource.data) && valid_enrollments(request.resource.data)
         && created(request.resource.data) && request.resource.data.status == 'Na čekanju'
         && id == request.resource.data.courseId + '__' + request.auth.uid
@@ -207,6 +216,8 @@ matches += `
     match /examBookings/{id} {
       allow read: if admin() || instructor(resource.data) || (role('student') && own(resource.data));
       allow create: if admin() && id.matches('^template-.+$') && valid_examBookings(request.resource.data) && created(request.resource.data);
+      allow create: if admin() && valid_examBookings(request.resource.data) && restored(request.resource.data);
+      allow update: if admin() && valid_examBookings(request.resource.data) && updated(request.resource.data);
       allow create: if role('student') && own(request.resource.data) && valid_examBookings(request.resource.data)
         && created(request.resource.data) && request.resource.data.status == 'Na čekanju'
         && id == request.resource.data.examId + '__' + request.auth.uid
@@ -220,6 +231,8 @@ matches += `
     match /labBookings/{id} {
       allow read: if admin() || role('lab_assistant') || (role('student') && own(resource.data));
       allow create: if admin() && id.matches('^template-.+$') && valid_labBookings(request.resource.data) && created(request.resource.data);
+      allow create: if admin() && valid_labBookings(request.resource.data) && restored(request.resource.data);
+      allow update: if admin() && valid_labBookings(request.resource.data) && updated(request.resource.data);
       allow create: if role('student') && own(request.resource.data) && valid_labBookings(request.resource.data)
         && created(request.resource.data) && request.resource.data.status == 'Na čekanju'
         && id == request.resource.data.labId + '__' + request.auth.uid

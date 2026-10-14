@@ -1,3 +1,7 @@
+## Backup i integracija kalendara (14.10.2026.)
+
+Dodani su administratorski Control panel i backup (JSON, CSV, ZIP; svi ili odabrani moduli; potpuni/inkrementalni export i pregled prije importa) te prijenos rasporeda u Google Calendar preko pojedinačnih poveznica i ICS datoteke. Prije produkcijske upotrebe objaviti aktualna Firestore pravila. Detaljne upute i ograničenja: [BACKUP_CALENDAR.md](./BACKUP_CALENDAR.md).
+
 ## Obnovljen izvorni PAR predložak (14.10.2026.)
 
 UI koristi izgled i sadržaj dostavljenog profesorova koda: kartice, ikone, raspored po dvoranama, kanban, studentski prosjek/ECTS i zaposlenički profili. `demo.html` odmah prikazuje ogledne podatke.

@@ -447,3 +447,108 @@ test("Original template records can be imported by admin under published schemas
     }),
   );
 });
+
+test("Administrator restores historical backup records; student cannot restore other owners or forge timestamps", async () => {
+  const db = database("admin"),
+    createdAt = Timestamp.fromDate(new Date("2025-02-01T10:00:00Z"));
+  const evaluation = {
+    ownerUid: "student-b",
+    subject: "Kolegij",
+    rating: 4,
+    answers: "Odgovori",
+    comments: "",
+    createdAt,
+    createdBy: "former-admin",
+    updatedAt: serverTimestamp(),
+  };
+  await assertSucceeds(
+    setDoc(doc(db, "evaluations", "restored-evaluation"), evaluation),
+  );
+  await assertSucceeds(
+    updateDoc(doc(db, "evaluations", "restored-evaluation"), {
+      rating: 5,
+      updatedAt: serverTimestamp(),
+    }),
+  );
+  await assertFails(
+    setDoc(doc(database("student-a"), "evaluations", "forged-history"), {
+      ...evaluation,
+      ownerUid: "student-a",
+      createdBy: "student-a",
+    }),
+  );
+  await assertFails(
+    updateDoc(
+      doc(database("student-b"), "evaluations", "restored-evaluation"),
+      { rating: 1, updatedAt: serverTimestamp() },
+    ),
+  );
+  const booking = {
+    ownerUid: "student-a",
+    ownerName: "A",
+    courseId: "c1",
+    courseTitle: "Business",
+    instructorUid: "teacher",
+    status: "Odobreno",
+    createdAt,
+    createdBy: "former-admin",
+    updatedAt: serverTimestamp(),
+  };
+  await assertSucceeds(
+    setDoc(doc(db, "enrollments", "restored-booking"), booking),
+  );
+  await assertSucceeds(
+    updateDoc(doc(db, "enrollments", "restored-booking"), {
+      ownerName: "Restored A",
+      updatedAt: serverTimestamp(),
+    }),
+  );
+  await assertFails(
+    setDoc(
+      doc(database("student-a"), "enrollments", "forged-booking"),
+      booking,
+    ),
+  );
+  await assertFails(
+    updateDoc(doc(db, "enrollments", "restored-booking"), {
+      createdAt: Timestamp.now(),
+      updatedAt: serverTimestamp(),
+    }),
+  );
+});
+
+test("Backup pagination includes more than 500 records without truncation and respects owner queries", async () => {
+  const sdk = await import("firebase/firestore");
+  const { readAllRecords } = await import("../src/services/records.js");
+  await env.withSecurityRulesDisabled(async (context) => {
+    const db = context.firestore();
+    for (let offset = 0; offset < 510; offset += 200) {
+      const batch = sdk.writeBatch(db);
+      for (let i = offset; i < Math.min(offset + 200, 510); i++)
+        batch.set(doc(db, "notifications", "n-" + String(i).padStart(4, "0")), {
+          ownerUid: i % 2 ? "student-a" : "student-b",
+          title: "Test " + i,
+          message: "Pagination",
+          createdAt: Timestamp.now(),
+          updatedAt: Timestamp.now(),
+          createdBy: "admin",
+        });
+      await batch.commit();
+    }
+  });
+  const all = await readAllRecords(sdk, database("admin"), "notifications");
+  if (all.length !== 510 || new Set(all.map((r) => r.id)).size !== 510)
+    throw new Error("Backup lost or duplicated records.");
+  const own = await readAllRecords(
+    sdk,
+    database("student-a"),
+    "notifications",
+    "ownerUid",
+    "student-a",
+  );
+  if (own.length !== 255 || own.some((r) => r.ownerUid !== "student-a"))
+    throw new Error("Owner scope not preserved.");
+  await assertFails(
+    readAllRecords(sdk, database("student-a"), "notifications"),
+  );
+});

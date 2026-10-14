@@ -23,6 +23,8 @@ import { loadEvaluationTemplates } from "./data/evaluations.js";
 import { tuitionInstallments } from "./utils/tuition.js";
 import { icon, visualRecords } from "./modules/visuals.js";
 import { importTemplate } from "./services/import-template.js";
+import { mountControlPanel } from "./components/control-panel.js";
+import { mountCalendarIntegration } from "./components/calendar-integration.js";
 const $ = (id) => document.getElementById(id);
 let context = null;
 let version = 0;
@@ -120,6 +122,8 @@ function clearPrivateContent() {
 function route() {
   const key = location.hash.slice(1);
   return key === "help" ||
+    key === "calendar-integration" ||
+    (key === "control-panel" && context?.profile.role === "admin") ||
     key === "dashboard" ||
     (Object.hasOwn(modules, key) && canRead(context?.profile.role, key))
     ? key
@@ -173,7 +177,10 @@ function drawNavigation() {
         )
         .join("");
   }
-  html += `<a class="nav-item ${active === "help" ? "active" : ""}" href="#help"><span class="nav-symbol" aria-hidden="true">?</span>Pomoć i integracije</a>`;
+  html += `<a class="nav-item ${active === "calendar-integration" ? "active" : ""}" href="#calendar-integration"><span class="nav-symbol">${icon("calendar-days")}</span>Integracija kalendara</a>`;
+  if (context.profile.role === "admin")
+    html += `<a class="nav-item ${active === "control-panel" ? "active" : ""}" href="#control-panel"><span class="nav-symbol">${icon("sliders")}</span>Control panel i backup</a>`;
+  html += `<a class="nav-item ${active === "help" ? "active" : ""}" href="#help"><span class="nav-symbol">${icon("help")}</span>Pomoć i integracije</a>`;
   $("navigation").innerHTML = html;
 }
 window.addEventListener("hashchange", () => {
@@ -193,17 +200,32 @@ async function loadView(name) {
   rows = [];
   shownRows = [];
   closeDialog();
+  window.scrollTo(0, 0);
   drawNavigation();
   $("header-title").textContent =
     name === "dashboard"
       ? "Nadzorna ploča"
       : name === "help"
         ? "Pomoć"
-        : modules[name].title;
+        : name === "control-panel"
+          ? "Control panel"
+          : name === "calendar-integration"
+            ? "Integracija kalendara"
+            : modules[name].title;
   $("content").innerHTML =
     '<div class="loading" role="status">Učitavanje podataka…</div>';
   if (name === "help") {
     drawHelp();
+    return;
+  }
+  if (name === "control-panel" || name === "calendar-integration") {
+    const render =
+      name === "control-panel" ? mountControlPanel : mountCalendarIntegration;
+    render(
+      $("content"),
+      current,
+      () => context === current && version === ticket,
+    );
     return;
   }
   try {
@@ -274,7 +296,7 @@ async function drawDashboard(ticket, current) {
     heading(
       "Nadzorna ploča",
       `Dobrodošli, ${current.profile.name || current.user.email}. ${new Date().toLocaleDateString("hr-HR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}`,
-      `${current.profile.role === "admin" && !current.demo ? '<button id="import-template" class="button primary">Uvezi podatke predloška</button>' : ""}<button id="refresh" class="button">Osvježi podatke</button>`,
+      `${current.profile.role === "admin" ? '<a class="button" href="#control-panel">Control panel i backup</a>' : ""}${current.profile.role === "admin" && !current.demo ? '<button id="import-template" class="button primary">Uvezi podatke predloška</button>' : ""}<button id="refresh" class="button">Osvježi podatke</button>`,
     ) +
     (failures.length
       ? `<div class="notice error">Neki podaci nisu dostupni. ${e(errorMessage(failures[0].reason))}</div>`
@@ -777,6 +799,31 @@ if (document.body.dataset.mode !== "demo") {
       if (!session.user || !session.profile) {
         clearPrivateContent();
         location.replace(pageURL("./index.html"));
+        return;
+      }
+      // Backup restores may refresh profile metadata without changing access.
+      // Keep an in-progress operation mounted when the user's permissions are unchanged.
+      if (
+        context &&
+        !context.demo &&
+        context.user.uid === session.user.uid &&
+        ["role", "active", "departmentId"].every(
+          (key) => context.profile[key] === session.profile[key],
+        )
+      ) {
+        context.profile = session.profile;
+        context.user = session.user;
+        context.repository.profile = session.profile;
+        context.repository.user = session.user;
+        $("account-name").textContent =
+          session.profile.name || session.user.email;
+        $("account-avatar").textContent = (
+          session.profile.name ||
+          session.user.email ||
+          "P"
+        )
+          .charAt(0)
+          .toUpperCase();
         return;
       }
       startApplication(session.user, session.profile);

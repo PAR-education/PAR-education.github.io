@@ -6,10 +6,35 @@ import {
   staffRoles,
 } from "../auth/permissions.js";
 import { tuitionInstallments } from "../utils/tuition.js";
+export async function readAllRecords(sdk, db, name, field, value) {
+  const rows = [];
+  let cursor;
+  for (;;) {
+    const constraints = [sdk.orderBy(sdk.documentId()), sdk.limit(500)];
+    if (field) constraints.unshift(sdk.where(field, "==", value));
+    if (cursor) constraints.push(sdk.startAfter(cursor));
+    const snapshot = await sdk.getDocsFromServer(
+      sdk.query(sdk.collection(db, name), ...constraints),
+    );
+    rows.push(...snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id })));
+    if (snapshot.size < 500) return rows;
+    cursor = snapshot.docs.at(-1);
+  }
+}
 export class Records {
   constructor(user, profile) {
     this.user = user;
     this.profile = profile;
+  }
+  async listAll(name) {
+    if (!canRead(this.profile.role, name))
+      throw new Error("Nemate pristup ovom modulu.");
+    const { db, firestore: sdk } = await getFirebase();
+    const field = scopeFor(this.profile.role, name);
+    const value =
+      field === "departmentId" ? this.profile.departmentId : this.user.uid;
+    if (field && !value) return [];
+    return readAllRecords(sdk, db, name, field, value);
   }
   async list(name) {
     if (!canRead(this.profile.role, name))

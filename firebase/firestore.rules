@@ -21,6 +21,11 @@ service cloud.firestore {
     function created(d) {
       return d.createdAt == request.time && d.updatedAt == request.time && d.createdBy == request.auth.uid;
     }
+    function restored(d) {
+      return d.createdAt is timestamp && d.createdBy is string
+        && d.createdBy.size() > 0 && d.createdBy.size() <= 1500
+        && d.updatedAt == request.time;
+    }
     function pendingSelf(uid, d) {
       return signedIn() && uid == request.auth.uid
         && d.role == 'student' && d.active == false && d.departmentId == ''
@@ -292,115 +297,153 @@ service cloud.firestore {
     match /students/{id} {
       allow read: if admin() || inDepartment(resource.data);
       allow create: if (admin()) && valid_students(request.resource.data) && created(request.resource.data);
+      allow create: if admin() && valid_students(request.resource.data) && restored(request.resource.data);
       allow update: if (admin()) && valid_students(request.resource.data) && updated(request.resource.data);
+      allow update: if admin() && valid_students(request.resource.data) && updated(request.resource.data);
       allow delete: if admin();
     }
     match /employees/{id} {
       allow read: if admin() || inDepartment(resource.data);
       allow create: if (admin()) && valid_employees(request.resource.data) && created(request.resource.data);
+      allow create: if admin() && valid_employees(request.resource.data) && restored(request.resource.data);
       allow update: if (admin()) && valid_employees(request.resource.data) && updated(request.resource.data);
+      allow update: if admin() && valid_employees(request.resource.data) && updated(request.resource.data);
       allow delete: if admin();
     }
     match /courses/{id} {
       allow read: if active();
       allow create: if (admin()) && valid_courses(request.resource.data) && created(request.resource.data);
+      allow create: if admin() && valid_courses(request.resource.data) && restored(request.resource.data);
       allow update: if (admin()) && valid_courses(request.resource.data) && updated(request.resource.data);
+      allow update: if admin() && valid_courses(request.resource.data) && updated(request.resource.data);
       allow delete: if admin();
     }
     match /calendarEvents/{id} {
       allow read: if active();
       allow create: if (admin()) && valid_calendarEvents(request.resource.data) && created(request.resource.data);
+      allow create: if admin() && valid_calendarEvents(request.resource.data) && restored(request.resource.data);
       allow update: if (admin()) && valid_calendarEvents(request.resource.data) && updated(request.resource.data);
+      allow update: if admin() && valid_calendarEvents(request.resource.data) && updated(request.resource.data);
       allow delete: if admin();
     }
     match /exams/{id} {
       allow read: if active() && profile().role in ['admin', 'dept_head', 'profesor', 'student'];
       allow create: if (admin() || (role('profesor') && assignedCourse(request.resource.data))) && valid_exams(request.resource.data) && created(request.resource.data);
+      allow create: if admin() && valid_exams(request.resource.data) && restored(request.resource.data);
       allow update: if (admin() || (instructor(resource.data) && assignedCourse(request.resource.data))) && valid_exams(request.resource.data) && updated(request.resource.data);
+      allow update: if admin() && valid_exams(request.resource.data) && updated(request.resource.data);
       allow delete: if admin() || instructor(resource.data);
     }
     match /grades/{id} {
       allow read: if admin() || instructor(resource.data) || (role('student') && own(resource.data));
       allow create: if (admin() || (role('profesor') && assignedCourse(request.resource.data) && enrolledStudent(request.resource.data))) && valid_grades(request.resource.data) && created(request.resource.data);
+      allow create: if admin() && valid_grades(request.resource.data) && restored(request.resource.data);
       allow update: if (admin() || (instructor(resource.data) && assignedCourse(request.resource.data) && enrolledStudent(request.resource.data))) && valid_grades(request.resource.data) && updated(request.resource.data);
+      allow update: if admin() && valid_grades(request.resource.data) && updated(request.resource.data);
       allow delete: if admin() || instructor(resource.data);
     }
     match /projects/{id} {
       allow read: if staff();
       allow create: if (admin() || role('dept_head')) && valid_projects(request.resource.data) && created(request.resource.data);
+      allow create: if admin() && valid_projects(request.resource.data) && restored(request.resource.data);
       allow update: if (admin() || role('dept_head')) && valid_projects(request.resource.data) && updated(request.resource.data);
+      allow update: if admin() && valid_projects(request.resource.data) && updated(request.resource.data);
       allow delete: if admin() || role('dept_head');
     }
     match /research/{id} {
       allow read: if admin() || (staff() && own(resource.data));
       allow create: if (admin() || (staff() && own(request.resource.data))) && valid_research(request.resource.data) && created(request.resource.data);
+      allow create: if admin() && valid_research(request.resource.data) && restored(request.resource.data);
       allow update: if (admin() || (staff() && own(resource.data) && own(request.resource.data))) && valid_research(request.resource.data) && updated(request.resource.data);
+      allow update: if admin() && valid_research(request.resource.data) && updated(request.resource.data);
       allow delete: if admin();
     }
     match /labs/{id} {
       allow read: if admin() || role('lab_assistant') || role('student');
       allow create: if (admin() || role('lab_assistant')) && valid_labs(request.resource.data) && created(request.resource.data);
+      allow create: if admin() && valid_labs(request.resource.data) && restored(request.resource.data);
       allow update: if (admin() || role('lab_assistant')) && valid_labs(request.resource.data) && updated(request.resource.data);
+      allow update: if admin() && valid_labs(request.resource.data) && updated(request.resource.data);
       allow delete: if admin() || role('lab_assistant');
     }
     match /documents/{id} {
       allow read: if active();
       allow create: if (admin()) && valid_documents(request.resource.data) && created(request.resource.data);
+      allow create: if admin() && valid_documents(request.resource.data) && restored(request.resource.data);
       allow update: if (admin()) && valid_documents(request.resource.data) && updated(request.resource.data);
+      allow update: if admin() && valid_documents(request.resource.data) && updated(request.resource.data);
       allow delete: if admin();
     }
     match /alumniEvents/{id} {
       allow read: if admin() || role('alumni');
       allow create: if (admin()) && valid_alumniEvents(request.resource.data) && created(request.resource.data);
+      allow create: if admin() && valid_alumniEvents(request.resource.data) && restored(request.resource.data);
       allow update: if (admin()) && valid_alumniEvents(request.resource.data) && updated(request.resource.data);
+      allow update: if admin() && valid_alumniEvents(request.resource.data) && updated(request.resource.data);
       allow delete: if admin();
     }
     match /requests/{id} {
       allow read: if admin() || (active() && profile().role in ['student', 'alumni'] && own(resource.data));
       allow create: if (admin() || (active() && profile().role in ['student', 'alumni'] && own(request.resource.data) && request.resource.data.status == 'Na čekanju' && request.resource.data.response == '')) && valid_requests(request.resource.data) && created(request.resource.data);
+      allow create: if admin() && valid_requests(request.resource.data) && restored(request.resource.data);
       allow update: if (admin()) && valid_requests(request.resource.data) && updated(request.resource.data);
+      allow update: if admin() && valid_requests(request.resource.data) && updated(request.resource.data);
       allow delete: if admin();
     }
     match /finances/{id} {
       allow read: if admin() || (role('student') && own(resource.data));
       allow create: if (admin()) && valid_finances(request.resource.data) && created(request.resource.data);
+      allow create: if admin() && valid_finances(request.resource.data) && restored(request.resource.data);
       allow update: if (admin()) && valid_finances(request.resource.data) && updated(request.resource.data);
+      allow update: if admin() && valid_finances(request.resource.data) && updated(request.resource.data);
       allow delete: if admin();
     }
     match /employeeSchedules/{id} {
       allow read: if admin() || (staff() && own(resource.data));
       allow create: if (admin()) && valid_employeeSchedules(request.resource.data) && created(request.resource.data);
+      allow create: if admin() && valid_employeeSchedules(request.resource.data) && restored(request.resource.data);
       allow update: if (admin()) && valid_employeeSchedules(request.resource.data) && updated(request.resource.data);
+      allow update: if admin() && valid_employeeSchedules(request.resource.data) && updated(request.resource.data);
       allow delete: if admin();
     }
     match /workEntries/{id} {
       allow read: if admin() || (staff() && own(resource.data));
       allow create: if (admin() || (staff() && own(request.resource.data))) && valid_workEntries(request.resource.data) && created(request.resource.data);
+      allow create: if admin() && valid_workEntries(request.resource.data) && restored(request.resource.data);
       allow update: if (admin() || (staff() && own(resource.data) && own(request.resource.data))) && valid_workEntries(request.resource.data) && updated(request.resource.data);
+      allow update: if admin() && valid_workEntries(request.resource.data) && updated(request.resource.data);
       allow delete: if admin();
     }
     match /vacations/{id} {
       allow read: if admin() || (staff() && own(resource.data));
       allow create: if (admin() || (staff() && own(request.resource.data) && request.resource.data.status == 'Na čekanju')) && valid_vacations(request.resource.data) && created(request.resource.data);
+      allow create: if admin() && valid_vacations(request.resource.data) && restored(request.resource.data);
       allow update: if (admin()) && valid_vacations(request.resource.data) && updated(request.resource.data);
+      allow update: if admin() && valid_vacations(request.resource.data) && updated(request.resource.data);
       allow delete: if admin();
     }
     match /evaluations/{id} {
       allow read: if admin() || own(resource.data);
       allow create: if (own(request.resource.data)) && valid_evaluations(request.resource.data) && created(request.resource.data);
+      allow create: if admin() && valid_evaluations(request.resource.data) && restored(request.resource.data);
       allow update: if (false) && valid_evaluations(request.resource.data) && updated(request.resource.data);
-      allow delete: if false;
+      allow update: if admin() && valid_evaluations(request.resource.data) && updated(request.resource.data);
+      allow delete: if admin();
     }
     match /notifications/{id} {
       allow read: if admin() || own(resource.data);
       allow create: if (admin()) && valid_notifications(request.resource.data) && created(request.resource.data);
+      allow create: if admin() && valid_notifications(request.resource.data) && restored(request.resource.data);
       allow update: if (admin()) && valid_notifications(request.resource.data) && updated(request.resource.data);
+      allow update: if admin() && valid_notifications(request.resource.data) && updated(request.resource.data);
       allow delete: if admin();
     }
 
     match /enrollments/{id} {
       allow read: if admin() || instructor(resource.data) || (role('student') && own(resource.data));
       allow create: if admin() && id.matches('^template-.+$') && valid_enrollments(request.resource.data) && created(request.resource.data);
+      allow create: if admin() && valid_enrollments(request.resource.data) && restored(request.resource.data);
+      allow update: if admin() && valid_enrollments(request.resource.data) && updated(request.resource.data);
       allow create: if role('student') && own(request.resource.data) && valid_enrollments(request.resource.data)
         && created(request.resource.data) && request.resource.data.status == 'Na čekanju'
         && id == request.resource.data.courseId + '__' + request.auth.uid
@@ -412,6 +455,8 @@ service cloud.firestore {
     match /examBookings/{id} {
       allow read: if admin() || instructor(resource.data) || (role('student') && own(resource.data));
       allow create: if admin() && id.matches('^template-.+$') && valid_examBookings(request.resource.data) && created(request.resource.data);
+      allow create: if admin() && valid_examBookings(request.resource.data) && restored(request.resource.data);
+      allow update: if admin() && valid_examBookings(request.resource.data) && updated(request.resource.data);
       allow create: if role('student') && own(request.resource.data) && valid_examBookings(request.resource.data)
         && created(request.resource.data) && request.resource.data.status == 'Na čekanju'
         && id == request.resource.data.examId + '__' + request.auth.uid
@@ -425,6 +470,8 @@ service cloud.firestore {
     match /labBookings/{id} {
       allow read: if admin() || role('lab_assistant') || (role('student') && own(resource.data));
       allow create: if admin() && id.matches('^template-.+$') && valid_labBookings(request.resource.data) && created(request.resource.data);
+      allow create: if admin() && valid_labBookings(request.resource.data) && restored(request.resource.data);
+      allow update: if admin() && valid_labBookings(request.resource.data) && updated(request.resource.data);
       allow create: if role('student') && own(request.resource.data) && valid_labBookings(request.resource.data)
         && created(request.resource.data) && request.resource.data.status == 'Na čekanju'
         && id == request.resource.data.labId + '__' + request.auth.uid

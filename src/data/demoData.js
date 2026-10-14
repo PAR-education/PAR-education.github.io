@@ -182,7 +182,7 @@ export async function demoData() {
           "Putni nalozi": "Putni nalog",
         }[r.activity] || r.activity,
       startTime: r.hours === "-" ? "00:00" : r.hours.split(" - ")[0],
-      endTime: r.hours === "-" ? "00:00" : r.hours.split(" - ")[1],
+      endTime: r.hours === "-" ? "00:01" : r.hours.split(" - ")[1],
     })),
     workEntries: old.timeEntries.map((r) => ({
       id: String(r.id),

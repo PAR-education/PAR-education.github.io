@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "node scripts/serve.mjs",
     "check": "node scripts/check.mjs",
-    "test": "node --test tests/unit.test.mjs",
+    "test": "node --test tests/unit.test.mjs tests/backup-calendar.test.mjs",
     "test:rules": "firebase emulators:exec --only firestore --project demo-par-education \"node --test tests/firestore.test.mjs\""
   },
   "devDependencies": {
@@ -13,5 +13,8 @@
     "firebase": "^13.0.0",
     "firebase-tools": "^15.33.0",
     "prettier": "^3.8.5"
+  },
+  "dependencies": {
+    "fflate": "^0.8.3"
   }
 }

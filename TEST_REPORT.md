@@ -1,3 +1,7 @@
+## Backup/calendar provjera 14.10.2026.
+
+19 unit + 15 Firestore testova prolazi. Provjeren puni JSON i inkrementalni ZIP kroz demo UI, djelomičan import 10 kolegija te export/import JSON i CSV u stvarnom Auth/Firestore emulatoru. Export je paginiran (provjera 510 dokumenata); ispravan inkrementalni lanac, promjene i brisanja, UTC Zagreb/DST i ICS escaping imaju testove. Preuzeto 10 događaja u ICS. Vanjski Google račun nije mijenjan. Detalji: BACKUP_CALENDAR.md.
+
 # Verification — 13 October 2026
 
 Tests ran locally against the modular implementation. Live Firebase and GitHub Pages were not modified.
