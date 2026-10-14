@@ -43,7 +43,7 @@ service cloud.firestore {
         && d.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt']) && updated(d);
     }
     function valid_students(d) {
-      return d.keys().hasOnly(['ownerUid', 'name', 'jmbag', 'email', 'departmentId', 'year', 'status', 'createdAt', 'createdBy', 'updatedAt'])
+      return d.keys().hasOnly(['ownerUid', 'name', 'jmbag', 'email', 'departmentId', 'year', 'status', 'gpa', 'ects', 'createdAt', 'createdBy', 'updatedAt'])
         && d.keys().hasAll(['ownerUid', 'name', 'jmbag', 'email', 'departmentId', 'year', 'status', 'createdAt', 'createdBy', 'updatedAt'])
         && (d.ownerUid is string && d.ownerUid.size() <= 200 && d.ownerUid.size() > 0)
         && (d.name is string && d.name.size() <= 200 && d.name.size() > 0)
@@ -51,21 +51,25 @@ service cloud.firestore {
         && (d.email is string && d.email.size() <= 200 && d.email.size() > 0 && d.email.matches('^[^ @]+@[^ @]+[.][^ @]+$'))
         && (d.departmentId is string && d.departmentId.size() <= 200 && d.departmentId.size() > 0)
         && (d.year is int && d.year >= 1 && d.year <= 6)
-        && (d.status is string && d.status.size() <= 200 && d.status.size() > 0 && d.status in ['Redovni', 'Izvanredni', 'Alumni']);
+        && (d.status is string && d.status.size() <= 200 && d.status.size() > 0 && d.status in ['Redovni', 'Izvanredni', 'Alumni'])
+        && (!('gpa' in d) || (d.gpa is number && d.gpa >= 1 && d.gpa <= 5))
+        && (!('ects' in d) || (d.ects is number && d.ects >= 0 && d.ects <= 360));
     }
     function valid_employees(d) {
-      return d.keys().hasOnly(['ownerUid', 'name', 'position', 'departmentId', 'email', 'createdAt', 'createdBy', 'updatedAt'])
+      return d.keys().hasOnly(['ownerUid', 'name', 'position', 'departmentName', 'departmentId', 'email', 'createdAt', 'createdBy', 'updatedAt'])
         && d.keys().hasAll(['ownerUid', 'name', 'position', 'departmentId', 'email', 'createdAt', 'createdBy', 'updatedAt'])
         && (d.ownerUid is string && d.ownerUid.size() <= 200 && d.ownerUid.size() > 0)
         && (d.name is string && d.name.size() <= 200 && d.name.size() > 0)
         && (d.position is string && d.position.size() <= 200 && d.position.size() > 0)
+        && (!('departmentName' in d) || (d.departmentName is string && d.departmentName.size() <= 200))
         && (d.departmentId is string && d.departmentId.size() <= 200 && d.departmentId.size() > 0)
         && (d.email is string && d.email.size() <= 200 && d.email.size() > 0 && d.email.matches('^[^ @]+@[^ @]+[.][^ @]+$'));
     }
     function valid_courses(d) {
-      return d.keys().hasOnly(['title', 'ects', 'semester', 'instructorUid', 'instructorName', 'room', 'day', 'startTime', 'endTime', 'description', 'outcomes', 'literature', 'createdAt', 'createdBy', 'updatedAt'])
+      return d.keys().hasOnly(['title', 'courseType', 'ects', 'semester', 'instructorUid', 'instructorName', 'room', 'day', 'startTime', 'endTime', 'description', 'outcomes', 'literature', 'createdAt', 'createdBy', 'updatedAt'])
         && d.keys().hasAll(['title', 'ects', 'semester', 'instructorUid', 'instructorName', 'room', 'day', 'startTime', 'endTime', 'createdAt', 'createdBy', 'updatedAt'])
         && (d.title is string && d.title.size() <= 200 && d.title.size() > 0)
+        && (!('courseType' in d) || (d.courseType is string && d.courseType.size() <= 200))
         && (d.ects is number && d.ects >= 1 && d.ects <= 30)
         && (d.semester is string && d.semester.size() <= 200 && d.semester.size() > 0 && d.semester in ['Zimski', 'Ljetni'])
         && (d.instructorUid is string && d.instructorUid.size() <= 200 && d.instructorUid.size() > 0)
@@ -80,10 +84,11 @@ service cloud.firestore {
         && d.endTime > d.startTime;
     }
     function valid_exams(d) {
-      return d.keys().hasOnly(['courseId', 'instructorUid', 'title', 'date', 'time', 'room', 'capacity', 'createdAt', 'createdBy', 'updatedAt'])
+      return d.keys().hasOnly(['courseId', 'instructorUid', 'instructorName', 'title', 'date', 'time', 'room', 'capacity', 'createdAt', 'createdBy', 'updatedAt'])
         && d.keys().hasAll(['courseId', 'instructorUid', 'title', 'date', 'time', 'room', 'capacity', 'createdAt', 'createdBy', 'updatedAt'])
         && (d.courseId is string && d.courseId.size() <= 200 && d.courseId.size() > 0)
         && (d.instructorUid is string && d.instructorUid.size() <= 200 && d.instructorUid.size() > 0)
+        && (!('instructorName' in d) || (d.instructorName is string && d.instructorName.size() <= 200))
         && (d.title is string && d.title.size() <= 200 && d.title.size() > 0)
         && (d.date is string && d.date.size() <= 200 && d.date.size() > 0 && d.date.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$'))
         && (d.time is string && d.time.size() <= 200 && d.time.size() > 0 && d.time.matches('^([01][0-9]|2[0-3]):[0-5][0-9]$'))
@@ -124,19 +129,22 @@ service cloud.firestore {
         && (d.status is string && d.status.size() <= 200 && d.status.size() > 0 && d.status in ['Na čekanju', 'Odobreno', 'Odbijeno']);
     }
     function valid_calendarEvents(d) {
-      return d.keys().hasOnly(['title', 'date', 'time', 'room', 'description', 'createdAt', 'createdBy', 'updatedAt'])
+      return d.keys().hasOnly(['title', 'date', 'time', 'room', 'day', 'instructorName', 'description', 'createdAt', 'createdBy', 'updatedAt'])
         && d.keys().hasAll(['title', 'date', 'time', 'room', 'createdAt', 'createdBy', 'updatedAt'])
         && (d.title is string && d.title.size() <= 200 && d.title.size() > 0)
         && (d.date is string && d.date.size() <= 200 && d.date.size() > 0 && d.date.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$'))
         && (d.time is string && d.time.size() <= 200 && d.time.size() > 0 && d.time.matches('^([01][0-9]|2[0-3]):[0-5][0-9]$'))
         && (d.room is string && d.room.size() <= 200 && d.room.size() > 0)
+        && (!('day' in d) || (d.day is string && d.day.size() <= 200))
+        && (!('instructorName' in d) || (d.instructorName is string && d.instructorName.size() <= 200))
         && (!('description' in d) || (d.description is string && d.description.size() <= 2000));
     }
     function valid_projects(d) {
-      return d.keys().hasOnly(['title', 'fundingLine', 'budget', 'startDate', 'endDate', 'partners', 'workPackages', 'description', 'createdAt', 'createdBy', 'updatedAt'])
+      return d.keys().hasOnly(['title', 'fundingLine', 'duration', 'budget', 'startDate', 'endDate', 'partners', 'workPackages', 'description', 'createdAt', 'createdBy', 'updatedAt'])
         && d.keys().hasAll(['title', 'fundingLine', 'budget', 'startDate', 'endDate', 'createdAt', 'createdBy', 'updatedAt'])
         && (d.title is string && d.title.size() <= 200 && d.title.size() > 0)
         && (d.fundingLine is string && d.fundingLine.size() <= 200 && d.fundingLine.size() > 0)
+        && (!('duration' in d) || (d.duration is string && d.duration.size() <= 200))
         && (d.budget is number && d.budget >= 0 && d.budget <= 1000000000)
         && (d.startDate is string && d.startDate.size() <= 200 && d.startDate.size() > 0 && d.startDate.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$'))
         && (d.endDate is string && d.endDate.size() <= 200 && d.endDate.size() > 0 && d.endDate.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$'))
@@ -174,11 +182,11 @@ service cloud.firestore {
     }
     function valid_documents(d) {
       return d.keys().hasOnly(['title', 'category', 'date', 'url', 'description', 'createdAt', 'createdBy', 'updatedAt'])
-        && d.keys().hasAll(['title', 'category', 'date', 'url', 'createdAt', 'createdBy', 'updatedAt'])
+        && d.keys().hasAll(['title', 'category', 'date', 'createdAt', 'createdBy', 'updatedAt'])
         && (d.title is string && d.title.size() <= 200 && d.title.size() > 0)
         && (d.category is string && d.category.size() <= 200 && d.category.size() > 0)
         && (d.date is string && d.date.size() <= 200 && d.date.size() > 0 && d.date.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$'))
-        && (d.url is string && d.url.size() <= 2000 && d.url.size() > 0 && d.url.matches('^https://.+$'))
+        && (!('url' in d) || (d.url is string && d.url.size() <= 2000 && d.url.matches('^https://.+$')))
         && (!('description' in d) || (d.description is string && d.description.size() <= 2000));
     }
     function valid_requests(d) {
@@ -392,6 +400,7 @@ service cloud.firestore {
 
     match /enrollments/{id} {
       allow read: if admin() || instructor(resource.data) || (role('student') && own(resource.data));
+      allow create: if admin() && id.matches('^template-.+$') && valid_enrollments(request.resource.data) && created(request.resource.data);
       allow create: if role('student') && own(request.resource.data) && valid_enrollments(request.resource.data)
         && created(request.resource.data) && request.resource.data.status == 'Na čekanju'
         && id == request.resource.data.courseId + '__' + request.auth.uid
@@ -402,6 +411,7 @@ service cloud.firestore {
     }
     match /examBookings/{id} {
       allow read: if admin() || instructor(resource.data) || (role('student') && own(resource.data));
+      allow create: if admin() && id.matches('^template-.+$') && valid_examBookings(request.resource.data) && created(request.resource.data);
       allow create: if role('student') && own(request.resource.data) && valid_examBookings(request.resource.data)
         && created(request.resource.data) && request.resource.data.status == 'Na čekanju'
         && id == request.resource.data.examId + '__' + request.auth.uid
@@ -414,6 +424,7 @@ service cloud.firestore {
     }
     match /labBookings/{id} {
       allow read: if admin() || role('lab_assistant') || (role('student') && own(resource.data));
+      allow create: if admin() && id.matches('^template-.+$') && valid_labBookings(request.resource.data) && created(request.resource.data);
       allow create: if role('student') && own(request.resource.data) && valid_labBookings(request.resource.data)
         && created(request.resource.data) && request.resource.data.status == 'Na čekanju'
         && id == request.resource.data.labId + '__' + request.auth.uid

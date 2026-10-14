@@ -195,6 +195,7 @@ for (const [name, policy] of Object.entries(policies)) {
 matches += `
     match /enrollments/{id} {
       allow read: if admin() || instructor(resource.data) || (role('student') && own(resource.data));
+      allow create: if admin() && id.matches('^template-.+$') && valid_enrollments(request.resource.data) && created(request.resource.data);
       allow create: if role('student') && own(request.resource.data) && valid_enrollments(request.resource.data)
         && created(request.resource.data) && request.resource.data.status == 'Na čekanju'
         && id == request.resource.data.courseId + '__' + request.auth.uid
@@ -205,6 +206,7 @@ matches += `
     }
     match /examBookings/{id} {
       allow read: if admin() || instructor(resource.data) || (role('student') && own(resource.data));
+      allow create: if admin() && id.matches('^template-.+$') && valid_examBookings(request.resource.data) && created(request.resource.data);
       allow create: if role('student') && own(request.resource.data) && valid_examBookings(request.resource.data)
         && created(request.resource.data) && request.resource.data.status == 'Na čekanju'
         && id == request.resource.data.examId + '__' + request.auth.uid
@@ -217,6 +219,7 @@ matches += `
     }
     match /labBookings/{id} {
       allow read: if admin() || role('lab_assistant') || (role('student') && own(resource.data));
+      allow create: if admin() && id.matches('^template-.+$') && valid_labBookings(request.resource.data) && created(request.resource.data);
       allow create: if role('student') && own(request.resource.data) && valid_labBookings(request.resource.data)
         && created(request.resource.data) && request.resource.data.status == 'Na čekanju'
         && id == request.resource.data.labId + '__' + request.auth.uid

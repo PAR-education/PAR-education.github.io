@@ -6,6 +6,7 @@ export function validateFields(fields, values) {
     if (field.required && (value === "" || value == null))
       throw new Error(`${field.label}: obavezno polje.`);
     if (value === "" || value == null) {
+      if (!field.required && ["url", "number"].includes(field.type)) continue;
       result[field.key] = "";
       continue;
     }

@@ -1,3 +1,16 @@
+## Obnovljen izvorni PAR predložak (14.10.2026.)
+
+UI koristi izgled i sadržaj dostavljenog profesorova koda: kartice, ikone, raspored po dvoranama, kanban, studentski prosjek/ECTS i zaposlenički profili. `demo.html` odmah prikazuje ogledne podatke.
+
+Za popunjavanje Firebase radnog prostora:
+1. Pushajte izmijenjene datoteke na GitHub Pages.
+2. U Firebase Console → Firestore → Rules zamijenite cijeli sadržaj aktualnom datotekom `firebase/firestore.rules` i objavite pravila.
+3. Prijavite se kao aktivni administrator. Na nadzornoj ploči odaberite **Uvezi podatke predloška**, pa **Uvezi ogledne podatke**.
+
+Uvoz preskače kolekcije koje već imaju podatke; ponovni uvoz ne duplicira zapise. ID-evi počinju s template-. Korisnički profili/Authentication računi ne uvoze se niti im se dodjeljuju prava. Ogledne osobe nisu povezane s pravim Firebase UID-evima; stvarne studente i nastavnike povezuje administrator pri uređivanju. Podaci su iz prototipa, nisu potvrđene evidencije. Izvor ne sadrži stvarni PDF pravilnika, bankovne podatke niti ISVU API.
+
+Provjera: 12 unit testova, 13 Firestore testova uključujući uvoz svih zapisa, pregled modula i mobilnog rasporeda.
+
 # PAR Education ERP
 
 Vanilla JavaScript ES modules, Croatian UI, Firebase Authentication and Cloud Firestore. No production build step. The public entry point is **index.html** (login); the authenticated workspace is **homepage.html**.
@@ -21,7 +34,7 @@ npm run dev
 
 Open `http://127.0.0.1:4173/` or `http://127.0.0.1:4173/par/`. Firebase SDKs are loaded from Google's versioned CDN. `npm ci` is for development/tests; GitHub Pages needs only the committed static files.
 
-`demo.html` uses anonymized, fictional prototype fixtures. All changes stay in memory and disappear on reload. It never initializes Firebase, supplies real authentication, or seeds a database. Remove the demo link/page if you do not want a public preview.
+`demo.html` uses the supplied professor's prototype fixtures. All changes stay in memory and disappear on reload. It never initializes Firebase or supplies real authentication. The separate administrator import on the authenticated homepage can populate empty Firestore collections. Remove the demo link/page if you do not want a public preview.
 
 ## Architecture
 

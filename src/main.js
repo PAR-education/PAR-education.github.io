@@ -21,6 +21,8 @@ import {
 import { printReport, exportCSV } from "./components/export.js";
 import { loadEvaluationTemplates } from "./data/evaluations.js";
 import { tuitionInstallments } from "./utils/tuition.js";
+import { icon, visualRecords } from "./modules/visuals.js";
+import { importTemplate } from "./services/import-template.js";
 const $ = (id) => document.getElementById(id);
 let context = null;
 let version = 0;
@@ -32,6 +34,42 @@ let statusFilter = "";
 let month = "";
 let toastTimer;
 theme();
+document.addEventListener("click", async (event) => {
+  if (event.target.id !== "confirm-import") return;
+  const current = context;
+  event.target.disabled = true;
+  try {
+    const count = await importTemplate(current.profile, current.user.uid);
+    closeDialog();
+    notify(count + " oglednih zapisa uvezeno.");
+    if (current === context) await loadView("dashboard");
+  } catch (error) {
+    event.target.disabled = false;
+    notify(errorMessage(error));
+  }
+});
+$("global-search")?.addEventListener("input", (event) => {
+  const value = event.target.value.trim().toLocaleLowerCase("hr");
+  const results = $("global-results");
+  results.hidden = !value;
+  results.innerHTML =
+    context && value
+      ? Object.entries(modules)
+          .filter(
+            ([name, m]) =>
+              canRead(context.profile.role, name) &&
+              m.title.toLocaleLowerCase("hr").includes(value),
+          )
+          .map(
+            ([name, m]) => `<a href="#${name}">${icon(name)} ${e(m.title)}</a>`,
+          )
+          .join("") || "<p>Nema rezultata</p>"
+      : "";
+});
+$("global-results")?.addEventListener("click", () => {
+  $("global-results").hidden = true;
+  $("global-search").value = "";
+});
 setupDialog();
 $("theme").addEventListener("click", toggleTheme);
 function notify(message) {
@@ -63,7 +101,7 @@ document.addEventListener("keydown", (event) => {
   if (event.key === "Escape") mobileMenu(false);
 });
 function heading(title, description, actions = "") {
-  return `<div class="page-heading"><div><p class="eyebrow">RADNI PROSTOR</p><h1>${e(title)}</h1><p>${e(description)}</p></div><div class="page-actions">${actions}</div></div>`;
+  return `<div class="page-heading"><div><h1>${e(title)}</h1><p>${e(description)}</p></div><div class="page-actions">${actions}</div></div>`;
 }
 function clearPrivateContent() {
   version++;
@@ -119,7 +157,7 @@ function drawNavigation() {
     "Administracija",
     "Račun",
   ];
-  let html = `<a class="nav-item ${active === "dashboard" ? "active" : ""}" href="#dashboard" ${active === "dashboard" ? 'aria-current="page"' : ""}><span class="nav-symbol" aria-hidden="true">▦</span>Nadzorna ploča</a>`;
+  let html = `<a class="nav-item ${active === "dashboard" ? "active" : ""}" href="#dashboard" ${active === "dashboard" ? 'aria-current="page"' : ""}><span class="nav-symbol">${icon("dashboard")}</span>Nadzorna ploča</a>`;
   for (const group of groups) {
     const allowed = Object.entries(modules).filter(
       ([name, module]) =>
@@ -131,7 +169,7 @@ function drawNavigation() {
       allowed
         .map(
           ([name, module]) =>
-            `<a class="nav-item ${active === name ? "active" : ""}" href="#${name}" ${active === name ? 'aria-current="page"' : ""}><span class="nav-symbol" aria-hidden="true">${group === "Akademija" ? "□" : group === "Administracija" ? "≡" : "◇"}</span>${e(module.title)}</a>`,
+            `<a class="nav-item ${active === name ? "active" : ""}" href="#${name}" ${active === name ? 'aria-current="page"' : ""}><span class="nav-symbol">${icon(name)}</span>${e(module.title)}</a>`,
         )
         .join("");
   }
@@ -174,6 +212,17 @@ async function loadView(name) {
       return;
     }
     const result = await current.repository.list(name);
+    if (
+      name === "exams" &&
+      ["admin", "profesor"].includes(current.profile.role)
+    ) {
+      const bookings = await current.repository.list("examBookings");
+      for (const exam of result)
+        if (!exam.enrolledStudents)
+          exam.enrolledStudents = bookings
+            .filter((b) => b.examId === exam.id && b.status === "Odobreno")
+            .map((b) => ({ name: b.ownerName }));
+    }
     if (ticket !== version || current !== context) return;
     rows = result;
     drawModule();
@@ -191,8 +240,8 @@ async function drawDashboard(ticket, current) {
       ? ["enrollments", "grades", "requests", "finances"]
       : current.profile.role === "alumni"
         ? ["alumniEvents", "requests", "documents", "notifications"]
-        : ["students", "courses", "projects", "workEntries"].filter((name) =>
-            canRead(current.profile.role, name),
+        : ["students", "employees", "projects", "vacations", "requests"].filter(
+            (name) => canRead(current.profile.role, name),
           );
   const result = await Promise.allSettled(
     choices.map((name) => current.repository.list(name)),
@@ -206,7 +255,7 @@ async function drawDashboard(ticket, current) {
   const stats = choices
     .map(
       (name, i) =>
-        `<div class="stat"><p>${e(modules[name].title)}</p><strong>${result[i].status === "fulfilled" ? result[i].value.length + (result[i].value.length === 250 ? "+" : "") : "—"}</strong><small>${result[i].status === "fulfilled" ? "U vašem opsegu pristupa" : "Podaci nisu dostupni"}</small></div>`,
+        `<a href="#${name}" class="stat stat-${name}"><span class="stat-icon">${icon(name)}</span><p>${e(modules[name].title)}</p><strong>${result[i].status === "fulfilled" ? (["vacations", "requests"].includes(name) ? result[i].value.filter((r) => r.status === "Na čekanju").length : result[i].value.length) : "—"}</strong><small>${["vacations", "requests"].includes(name) ? "Zahtjeva na čekanju" : "U vašem opsegu pristupa"}</small></a>`,
     )
     .join("");
   const today = new Date().toLocaleDateString("sv-SE");
@@ -225,12 +274,12 @@ async function drawDashboard(ticket, current) {
     heading(
       "Nadzorna ploča",
       `Dobrodošli, ${current.profile.name || current.user.email}. ${new Date().toLocaleDateString("hr-HR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}`,
-      '<button id="refresh" class="button">Osvježi podatke</button>',
+      `${current.profile.role === "admin" && !current.demo ? '<button id="import-template" class="button primary">Uvezi podatke predloška</button>' : ""}<button id="refresh" class="button">Osvježi podatke</button>`,
     ) +
     (failures.length
       ? `<div class="notice error">Neki podaci nisu dostupni. ${e(errorMessage(failures[0].reason))}</div>`
       : "") +
-    `<section class="stats stats-${choices.length}" aria-label="Pregled podataka">${stats}</section><div class="dashboard-grid"><section class="panel"><div class="panel-title"><h2>Radni prostor</h2><span class="pill">${e(roles[current.profile.role])}</span></div><div class="link-list">${Object.entries(
+    `<section class="stats stats-${choices.length}" aria-label="Pregled podataka"><article class="security-card"><span>${icon("shield-halved")}</span><h2>Sigurnosni kontekst</h2><p>Pristup sustavu prema dodijeljenoj ulozi.</p><div><strong>${e(roles[current.profile.role])}</strong><small>Prijavljeni korisnik · Zaštićeni podaci</small></div></article>${stats}</section><div class="dashboard-grid"><section class="panel"><div class="panel-title"><h2>Radni prostor</h2><span class="pill">${e(roles[current.profile.role])}</span></div><div class="link-list">${Object.entries(
       modules,
     )
       .filter(
@@ -245,6 +294,12 @@ async function drawDashboard(ticket, current) {
       .join(
         "",
       )}</div></section><section class="panel"><div class="panel-title"><h2>Sljedeći događaji</h2><a href="#calendarEvents">Kalendar</a></div>${scheduleResult[0].status === "rejected" ? '<p class="panel-note">Kalendar nije dostupan.</p>' : upcoming.length ? `<div class="calendar-list">${upcoming.map((row) => `<div class="calendar-row"><div class="date-box">${e(row.date)}</div><div><h3>${e(row.title)}</h3><p>${e(row.time)} · ${e(row.room)}</p></div></div>`).join("")}</div>` : '<p class="panel-note">Nema nadolazećih događaja.</p>'}</section></div><section class="panel"><div class="panel-title"><h2>Obavijesti</h2><a href="#notifications">Sve obavijesti</a></div>${scheduleResult[1].status === "rejected" ? '<p class="panel-note">Obavijesti nisu dostupne.</p>' : notices.length ? `<div class="calendar-list">${notices.map((row) => `<div class="calendar-row"><div><h3>${e(row.title)}</h3><p>${e(row.message)}</p></div></div>`).join("")}</div>` : '<p class="panel-note">Trenutno nema novih obavijesti.</p>'}</section>`;
+  $("import-template")?.addEventListener("click", () =>
+    openDialog(
+      "Uvoz izvornog predloška",
+      '<p>Uvoz oglednih zapisa iz profesorova koda u prazne kolekcije. Postojeći zapisi i korisnički računi ostaju sačuvani. Ogledne financijske obveze nisu stvarni nalozi za uplatu.</p><p>Uvoze se studenti, zaposlenici, kolegiji, ispiti, projekti, ocjene, rasporedi i ostale evidencije. Zapisi imaju oznaku template- u ID-u.</p><button id="confirm-import" class="button primary">Uvezi ogledne podatke</button>',
+    ),
+  );
   $("refresh").addEventListener("click", () => loadView("dashboard"));
   $("content")
     .querySelectorAll("[data-nav]")
@@ -343,11 +398,15 @@ function badge(value) {
     "Objavljeno",
   ].includes(value)
     ? "good"
-    : ["Odbijeno", "Dugovanje", "Servis"].includes(value)
+    : ["Odbijeno", "Dugovanje", "Servis", "Bolovanje"].includes(value)
       ? "bad"
-      : ["Na čekanju", "U obradi"].includes(value)
+      : ["Na čekanju", "U obradi", "Godišnji odmor"].includes(value)
         ? "pending"
-        : "";
+        : value === "Ured"
+          ? "office"
+          : value === "Nastava"
+            ? "teaching"
+            : "";
   return `<span class="badge ${type}">${e(value)}</span>`;
 }
 function drawTable() {
@@ -366,15 +425,20 @@ function drawTable() {
           display(row[field.key]).toLocaleLowerCase("hr").includes(search),
         )),
   );
-  shownRows.sort((a, b) =>
-    String(a.date || a.name || a.title || "").localeCompare(
-      String(b.date || b.name || b.title || ""),
-      "hr",
-    ),
-  );
+  if (!context.demo)
+    shownRows.sort((a, b) =>
+      String(a.date || a.name || a.title || "").localeCompare(
+        String(b.date || b.name || b.title || ""),
+        "hr",
+      ),
+    );
+  const visual = shownRows.length
+    ? visualRecords(active, shownRows, badge)
+    : null;
   if (!shownRows.length)
     $("table-area").innerHTML =
       `<div class="empty"><h2>${rows.length ? "Nema rezultata" : "Još nema zapisa"}</h2><p>${rows.length ? "Pokušajte s drugim pojmom ili filtrom." : canCreate(active) ? "Dodajte prvi zapis. Podaci se spremaju tek nakon potvrde baze." : "Zapisi će se prikazati kada ih administrator ili nadležna služba doda."}</p></div>`;
+  else if (visual) $("table-area").innerHTML = visual;
   else
     $("table-area").innerHTML =
       `<div class="table-scroll"><table><caption class="sr-only">${e(config.title)}</caption><thead><tr>${config.columns.map((key) => `<th scope="col">${e(labelFor(active, key))}</th>`).join("")}<th scope="col">Detalji</th></tr></thead><tbody>${shownRows.map((row, i) => `<tr>${config.columns.map((key) => `<td>${key === "status" ? badge(row[key]) : e(display(row[key]))}</td>`).join("")}<td><button class="button table-action" data-row="${i}" aria-label="Detalji: ${e(row.name || row.title || row.ownerName || config.title)}">Otvori →</button></td></tr>`).join("")}</tbody></table></div>`;

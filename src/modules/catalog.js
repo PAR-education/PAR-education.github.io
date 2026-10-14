@@ -45,6 +45,8 @@ export const modules = {
       department,
       number("year", "Godina studija", 1, 6, true),
       select("status", "Status", ["Redovni", "Izvanredni", "Alumni"]),
+      { ...number("gpa", "Prosjek", 1, 5), required: false },
+      { ...number("ects", "Ostvareni ECTS", 0, 360), required: false },
     ],
   },
   employees: {
@@ -56,6 +58,7 @@ export const modules = {
       owner,
       text("name", "Ime i prezime"),
       text("position", "Radno mjesto"),
+      text("departmentName", "Naziv odjela", false),
       department,
       { ...text("email", "E-adresa"), type: "email" },
     ],
@@ -67,6 +70,7 @@ export const modules = {
     columns: ["title", "ects", "semester", "instructorName"],
     fields: [
       text("title", "Naziv kolegija"),
+      text("courseType", "Vrsta kolegija", false),
       number("ects", "ECTS", 1, 30),
       select("semester", "Semestar", ["Zimski", "Ljetni"]),
       instructor,
@@ -88,6 +92,7 @@ export const modules = {
     fields: [
       course,
       instructor,
+      text("instructorName", "Nastavnik", false),
       text("title", "Kolegij / naziv"),
       date("date", "Datum"),
       { ...text("time", "Vrijeme"), type: "time" },
@@ -152,6 +157,8 @@ export const modules = {
       date("date", "Datum"),
       { ...text("time", "Vrijeme"), type: "time" },
       text("room", "Lokacija"),
+      text("day", "Dan", false),
+      text("instructorName", "Nastavnik", false),
       note("description", "Opis"),
     ],
   },
@@ -163,6 +170,7 @@ export const modules = {
     fields: [
       text("title", "Naziv"),
       text("fundingLine", "Izvor financiranja"),
+      text("duration", "Trajanje", false),
       number("budget", "Proračun (€)", 0, 1000000000),
       date("startDate", "Početak"),
       date("endDate", "Završetak"),
@@ -221,7 +229,11 @@ export const modules = {
       text("title", "Naslov"),
       text("category", "Kategorija"),
       date("date", "Datum"),
-      { ...text("url", "HTTPS poveznica"), type: "url", maxLength: 2000 },
+      {
+        ...text("url", "HTTPS poveznica", false),
+        type: "url",
+        maxLength: 2000,
+      },
       note("description", "Opis"),
     ],
   },

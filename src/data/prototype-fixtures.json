@@ -2,15 +2,21 @@
   "students": [
     {
       "id": 1,
-      "name": "Ogledni student 1",
-      "jmbag": "DEMO-00001",
+      "name": "Ana Horvat",
+      "jmbag": "0234567001",
       "year": 2,
       "status": "Izvanredni",
-      "email": "student1@example.test",
+      "email": "student1@student.par.hr",
       "gpa": 2.88,
       "ects": 34,
-      "img": "",
-      "enrolled": [1, 2, 3, 4, 5],
+      "img": "https://placehold.co/100x100/1e3a8a/ffffff?text=AH",
+      "enrolled": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
       "risk": true,
       "tuitionBase": 3500,
       "tuitionModel": "installments_2",
@@ -18,15 +24,21 @@
     },
     {
       "id": 2,
-      "name": "Ogledni student 2",
-      "jmbag": "DEMO-00002",
+      "name": "Ivana Jurić",
+      "jmbag": "0234567002",
       "year": 3,
       "status": "Redovni",
-      "email": "student2@example.test",
+      "email": "student2@student.par.hr",
       "gpa": 2.96,
       "ects": 38,
-      "img": "",
-      "enrolled": [1, 2, 3, 4, 5],
+      "img": "https://placehold.co/100x100/1e3a8a/ffffff?text=IJ",
+      "enrolled": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
       "risk": true,
       "tuitionBase": 3500,
       "tuitionModel": "installments_2",
@@ -34,15 +46,21 @@
     },
     {
       "id": 3,
-      "name": "Ogledni student 3",
-      "jmbag": "DEMO-00003",
+      "name": "Filip Babić",
+      "jmbag": "0234567003",
       "year": 1,
       "status": "Izvanredni",
-      "email": "student3@example.test",
+      "email": "student3@student.par.hr",
       "gpa": 3.04,
       "ects": 42,
-      "img": "",
-      "enrolled": [1, 2, 3, 4, 5],
+      "img": "https://placehold.co/100x100/1e3a8a/ffffff?text=FB",
+      "enrolled": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
       "risk": false,
       "tuitionBase": 3500,
       "tuitionModel": "installments_2",
@@ -50,15 +68,21 @@
     },
     {
       "id": 4,
-      "name": "Ogledni student 4",
-      "jmbag": "DEMO-00004",
+      "name": "Lucija Knez",
+      "jmbag": "0234567004",
       "year": 2,
       "status": "Redovni",
-      "email": "student4@example.test",
+      "email": "student4@student.par.hr",
       "gpa": 3.12,
       "ects": 46,
-      "img": "",
-      "enrolled": [1, 2, 3, 4, 5],
+      "img": "https://placehold.co/100x100/1e3a8a/ffffff?text=LK",
+      "enrolled": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
       "risk": false,
       "tuitionBase": 3500,
       "tuitionModel": "installments_2",
@@ -66,15 +90,21 @@
     },
     {
       "id": 5,
-      "name": "Ogledni student 5",
-      "jmbag": "DEMO-00005",
+      "name": "Ivan Vidović",
+      "jmbag": "0234567005",
       "year": 3,
       "status": "Izvanredni",
-      "email": "student5@example.test",
+      "email": "student5@student.par.hr",
       "gpa": 3.2,
       "ects": 50,
-      "img": "",
-      "enrolled": [1, 2, 3, 4, 5],
+      "img": "https://placehold.co/100x100/1e3a8a/ffffff?text=IV",
+      "enrolled": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
       "risk": false,
       "tuitionBase": 3500,
       "tuitionModel": "installments_2",
@@ -82,15 +112,21 @@
     },
     {
       "id": 6,
-      "name": "Ogledni student 6",
-      "jmbag": "DEMO-00006",
+      "name": "Mia Perković",
+      "jmbag": "0234567006",
       "year": 1,
       "status": "Redovni",
-      "email": "student6@example.test",
+      "email": "student6@student.par.hr",
       "gpa": 3.28,
       "ects": 54,
-      "img": "",
-      "enrolled": [1, 2, 3, 4, 5],
+      "img": "https://placehold.co/100x100/1e3a8a/ffffff?text=MP",
+      "enrolled": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
       "risk": false,
       "tuitionBase": 3500,
       "tuitionModel": "installments_2",
@@ -98,15 +134,21 @@
     },
     {
       "id": 7,
-      "name": "Ogledni student 7",
-      "jmbag": "DEMO-00007",
+      "name": "Luka Novak",
+      "jmbag": "0234567007",
       "year": 2,
       "status": "Izvanredni",
-      "email": "student7@example.test",
+      "email": "student7@student.par.hr",
       "gpa": 3.36,
       "ects": 58,
-      "img": "",
-      "enrolled": [1, 2, 3, 4, 5],
+      "img": "https://placehold.co/100x100/1e3a8a/ffffff?text=LN",
+      "enrolled": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
       "risk": false,
       "tuitionBase": 3500,
       "tuitionModel": "installments_2",
@@ -114,15 +156,21 @@
     },
     {
       "id": 8,
-      "name": "Ogledni student 8",
-      "jmbag": "DEMO-00008",
+      "name": "Petra Vuković",
+      "jmbag": "0234567008",
       "year": 3,
       "status": "Redovni",
-      "email": "student8@example.test",
+      "email": "student8@student.par.hr",
       "gpa": 3.44,
       "ects": 62,
-      "img": "",
-      "enrolled": [1, 2, 3, 4, 5],
+      "img": "https://placehold.co/100x100/1e3a8a/ffffff?text=PV",
+      "enrolled": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
       "risk": false,
       "tuitionBase": 3500,
       "tuitionModel": "installments_2",
@@ -130,15 +178,21 @@
     },
     {
       "id": 9,
-      "name": "Ogledni student 9",
-      "jmbag": "DEMO-00009",
+      "name": "Dorian Kos",
+      "jmbag": "0234567009",
       "year": 1,
       "status": "Izvanredni",
-      "email": "student9@example.test",
+      "email": "student9@student.par.hr",
       "gpa": 3.52,
       "ects": 66,
-      "img": "",
-      "enrolled": [1, 2, 3, 4, 5],
+      "img": "https://placehold.co/100x100/1e3a8a/ffffff?text=DK",
+      "enrolled": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
       "risk": false,
       "tuitionBase": 3500,
       "tuitionModel": "installments_2",
@@ -146,15 +200,21 @@
     },
     {
       "id": 10,
-      "name": "Ogledni student 10",
-      "jmbag": "DEMO-00010",
+      "name": "Ema Rožić",
+      "jmbag": "0234567010",
       "year": 2,
       "status": "Redovni",
-      "email": "student10@example.test",
+      "email": "student10@student.par.hr",
       "gpa": 3.6,
       "ects": 70,
-      "img": "",
-      "enrolled": [1, 2, 3, 4, 5],
+      "img": "https://placehold.co/100x100/1e3a8a/ffffff?text=ER",
+      "enrolled": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
       "risk": false,
       "tuitionBase": 3500,
       "tuitionModel": "installments_2",
@@ -162,15 +222,21 @@
     },
     {
       "id": 11,
-      "name": "Ogledni student 11",
-      "jmbag": "DEMO-00011",
+      "name": "Tin Grgić",
+      "jmbag": "0234567011",
       "year": 3,
       "status": "Izvanredni",
-      "email": "student11@example.test",
+      "email": "student11@student.par.hr",
       "gpa": 3.68,
       "ects": 74,
-      "img": "",
-      "enrolled": [1, 2, 3, 4, 5],
+      "img": "https://placehold.co/100x100/1e3a8a/ffffff?text=TG",
+      "enrolled": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
       "risk": false,
       "tuitionBase": 3500,
       "tuitionModel": "installments_2",
@@ -178,15 +244,21 @@
     },
     {
       "id": 12,
-      "name": "Ogledni student 12",
-      "jmbag": "DEMO-00012",
+      "name": "Jakov Tomić",
+      "jmbag": "0234567012",
       "year": 1,
       "status": "Redovni",
-      "email": "student12@example.test",
+      "email": "student12@student.par.hr",
       "gpa": 3.76,
       "ects": 78,
-      "img": "",
-      "enrolled": [1, 2, 3, 4, 5],
+      "img": "https://placehold.co/100x100/1e3a8a/ffffff?text=JT",
+      "enrolled": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
       "risk": false,
       "tuitionBase": 3500,
       "tuitionModel": "installments_2",
@@ -194,15 +266,21 @@
     },
     {
       "id": 13,
-      "name": "Ogledni student 13",
-      "jmbag": "DEMO-00013",
+      "name": "Nika Marić",
+      "jmbag": "0234567013",
       "year": 2,
       "status": "Izvanredni",
-      "email": "student13@example.test",
+      "email": "student13@student.par.hr",
       "gpa": 3.84,
       "ects": 82,
-      "img": "",
-      "enrolled": [1, 2, 3, 4, 5],
+      "img": "https://placehold.co/100x100/1e3a8a/ffffff?text=NM",
+      "enrolled": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
       "risk": false,
       "tuitionBase": 3500,
       "tuitionModel": "installments_2",
@@ -210,15 +288,21 @@
     },
     {
       "id": 14,
-      "name": "Ogledni student 14",
-      "jmbag": "DEMO-00014",
+      "name": "Karlo Horvat",
+      "jmbag": "0234567014",
       "year": 3,
       "status": "Redovni",
-      "email": "student14@example.test",
+      "email": "student14@student.par.hr",
       "gpa": 3.92,
       "ects": 86,
-      "img": "",
-      "enrolled": [1, 2, 3, 4, 5],
+      "img": "https://placehold.co/100x100/1e3a8a/ffffff?text=KH",
+      "enrolled": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
       "risk": false,
       "tuitionBase": 3500,
       "tuitionModel": "installments_2",
@@ -226,15 +310,21 @@
     },
     {
       "id": 15,
-      "name": "Ogledni student 15",
-      "jmbag": "DEMO-00015",
+      "name": "Ana Kovač",
+      "jmbag": "0234567015",
       "year": 1,
       "status": "Izvanredni",
-      "email": "student15@example.test",
+      "email": "student15@student.par.hr",
       "gpa": 4,
       "ects": 90,
-      "img": "",
-      "enrolled": [1, 2, 3, 4, 5],
+      "img": "https://placehold.co/100x100/1e3a8a/ffffff?text=AK",
+      "enrolled": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
       "risk": false,
       "tuitionBase": 3500,
       "tuitionModel": "installments_2",
@@ -242,15 +332,21 @@
     },
     {
       "id": 16,
-      "name": "Ogledni student 16",
-      "jmbag": "DEMO-00016",
+      "name": "Marko Jurić",
+      "jmbag": "0234567016",
       "year": 2,
       "status": "Redovni",
-      "email": "student16@example.test",
+      "email": "student16@student.par.hr",
       "gpa": 4.08,
       "ects": 94,
-      "img": "",
-      "enrolled": [1, 2, 3, 4, 5],
+      "img": "https://placehold.co/100x100/1e3a8a/ffffff?text=MJ",
+      "enrolled": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
       "risk": false,
       "tuitionBase": 3500,
       "tuitionModel": "installments_2",
@@ -258,15 +354,21 @@
     },
     {
       "id": 17,
-      "name": "Ogledni student 17",
-      "jmbag": "DEMO-00017",
+      "name": "Ivana Babić",
+      "jmbag": "0234567017",
       "year": 3,
       "status": "Izvanredni",
-      "email": "student17@example.test",
+      "email": "student17@student.par.hr",
       "gpa": 4.16,
       "ects": 98,
-      "img": "",
-      "enrolled": [1, 2, 3, 4, 5],
+      "img": "https://placehold.co/100x100/1e3a8a/ffffff?text=IB",
+      "enrolled": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
       "risk": false,
       "tuitionBase": 3500,
       "tuitionModel": "installments_2",
@@ -274,15 +376,21 @@
     },
     {
       "id": 18,
-      "name": "Ogledni student 18",
-      "jmbag": "DEMO-00018",
+      "name": "Filip Knez",
+      "jmbag": "0234567018",
       "year": 1,
       "status": "Redovni",
-      "email": "student18@example.test",
+      "email": "student18@student.par.hr",
       "gpa": 4.24,
       "ects": 102,
-      "img": "",
-      "enrolled": [1, 2, 3, 4, 5],
+      "img": "https://placehold.co/100x100/1e3a8a/ffffff?text=FK",
+      "enrolled": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
       "risk": false,
       "tuitionBase": 3500,
       "tuitionModel": "installments_2",
@@ -290,15 +398,21 @@
     },
     {
       "id": 19,
-      "name": "Ogledni student 19",
-      "jmbag": "DEMO-00019",
+      "name": "Lucija Vidović",
+      "jmbag": "0234567019",
       "year": 2,
       "status": "Izvanredni",
-      "email": "student19@example.test",
+      "email": "student19@student.par.hr",
       "gpa": 4.32,
       "ects": 106,
-      "img": "",
-      "enrolled": [1, 2, 3, 4, 5],
+      "img": "https://placehold.co/100x100/1e3a8a/ffffff?text=LV",
+      "enrolled": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
       "risk": false,
       "tuitionBase": 3500,
       "tuitionModel": "installments_2",
@@ -306,15 +420,21 @@
     },
     {
       "id": 20,
-      "name": "Ogledni student 20",
-      "jmbag": "DEMO-00020",
+      "name": "Ivan Perković",
+      "jmbag": "0234567020",
       "year": 3,
       "status": "Redovni",
-      "email": "student20@example.test",
+      "email": "student20@student.par.hr",
       "gpa": 4.4,
       "ects": 110,
-      "img": "",
-      "enrolled": [1, 2, 3, 4, 5],
+      "img": "https://placehold.co/100x100/1e3a8a/ffffff?text=IP",
+      "enrolled": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
       "risk": false,
       "tuitionBase": 3500,
       "tuitionModel": "installments_2",
@@ -322,15 +442,21 @@
     },
     {
       "id": 21,
-      "name": "Ogledni student 21",
-      "jmbag": "DEMO-00021",
+      "name": "Mia Novak",
+      "jmbag": "0234567021",
       "year": 1,
       "status": "Izvanredni",
-      "email": "student21@example.test",
+      "email": "student21@student.par.hr",
       "gpa": 4.48,
       "ects": 114,
-      "img": "",
-      "enrolled": [1, 2, 3, 4, 5],
+      "img": "https://placehold.co/100x100/1e3a8a/ffffff?text=MN",
+      "enrolled": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
       "risk": false,
       "tuitionBase": 3500,
       "tuitionModel": "installments_2",
@@ -338,15 +464,21 @@
     },
     {
       "id": 22,
-      "name": "Ogledni student 22",
-      "jmbag": "DEMO-00022",
+      "name": "Luka Vuković",
+      "jmbag": "0234567022",
       "year": 2,
       "status": "Redovni",
-      "email": "student22@example.test",
+      "email": "student22@student.par.hr",
       "gpa": 4.56,
       "ects": 118,
-      "img": "",
-      "enrolled": [1, 2, 3, 4, 5],
+      "img": "https://placehold.co/100x100/1e3a8a/ffffff?text=LV",
+      "enrolled": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
       "risk": false,
       "tuitionBase": 3500,
       "tuitionModel": "installments_2",
@@ -354,15 +486,21 @@
     },
     {
       "id": 23,
-      "name": "Ogledni student 23",
-      "jmbag": "DEMO-00023",
+      "name": "Petra Kos",
+      "jmbag": "0234567023",
       "year": 3,
       "status": "Izvanredni",
-      "email": "student23@example.test",
+      "email": "student23@student.par.hr",
       "gpa": 4.64,
       "ects": 122,
-      "img": "",
-      "enrolled": [1, 2, 3, 4, 5],
+      "img": "https://placehold.co/100x100/1e3a8a/ffffff?text=PK",
+      "enrolled": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
       "risk": false,
       "tuitionBase": 3500,
       "tuitionModel": "installments_2",
@@ -370,15 +508,21 @@
     },
     {
       "id": 24,
-      "name": "Ogledni student 24",
-      "jmbag": "DEMO-00024",
+      "name": "Dorian Rožić",
+      "jmbag": "0234567024",
       "year": 1,
       "status": "Redovni",
-      "email": "student24@example.test",
+      "email": "student24@student.par.hr",
       "gpa": 4.72,
       "ects": 126,
-      "img": "",
-      "enrolled": [1, 2, 3, 4, 5],
+      "img": "https://placehold.co/100x100/1e3a8a/ffffff?text=DR",
+      "enrolled": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
       "risk": false,
       "tuitionBase": 3500,
       "tuitionModel": "installments_2",
@@ -386,15 +530,21 @@
     },
     {
       "id": 25,
-      "name": "Ogledni student 25",
-      "jmbag": "DEMO-00025",
+      "name": "Ema Grgić",
+      "jmbag": "0234567025",
       "year": 2,
       "status": "Izvanredni",
-      "email": "student25@example.test",
+      "email": "student25@student.par.hr",
       "gpa": 4.8,
       "ects": 130,
-      "img": "",
-      "enrolled": [1, 2, 3, 4, 5],
+      "img": "https://placehold.co/100x100/1e3a8a/ffffff?text=EG",
+      "enrolled": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
       "risk": false,
       "tuitionBase": 3500,
       "tuitionModel": "installments_2",
@@ -402,15 +552,21 @@
     },
     {
       "id": 26,
-      "name": "Ogledni student 26",
-      "jmbag": "DEMO-00026",
+      "name": "Tin Tomić",
+      "jmbag": "0234567026",
       "year": 3,
       "status": "Redovni",
-      "email": "student26@example.test",
+      "email": "student26@student.par.hr",
       "gpa": 4.88,
       "ects": 134,
-      "img": "",
-      "enrolled": [1, 2, 3, 4, 5],
+      "img": "https://placehold.co/100x100/1e3a8a/ffffff?text=TT",
+      "enrolled": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
       "risk": false,
       "tuitionBase": 3500,
       "tuitionModel": "installments_2",
@@ -418,15 +574,21 @@
     },
     {
       "id": 27,
-      "name": "Ogledni student 27",
-      "jmbag": "DEMO-00027",
+      "name": "Jakov Marić",
+      "jmbag": "0234567027",
       "year": 1,
       "status": "Izvanredni",
-      "email": "student27@example.test",
+      "email": "student27@student.par.hr",
       "gpa": 2.86,
       "ects": 138,
-      "img": "",
-      "enrolled": [1, 2, 3, 4, 5],
+      "img": "https://placehold.co/100x100/1e3a8a/ffffff?text=JM",
+      "enrolled": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
       "risk": true,
       "tuitionBase": 3500,
       "tuitionModel": "installments_2",
@@ -434,15 +596,21 @@
     },
     {
       "id": 28,
-      "name": "Ogledni student 28",
-      "jmbag": "DEMO-00028",
+      "name": "Nika Horvat",
+      "jmbag": "0234567028",
       "year": 2,
       "status": "Redovni",
-      "email": "student28@example.test",
+      "email": "student28@student.par.hr",
       "gpa": 2.94,
       "ects": 142,
-      "img": "",
-      "enrolled": [1, 2, 3, 4, 5],
+      "img": "https://placehold.co/100x100/1e3a8a/ffffff?text=NH",
+      "enrolled": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
       "risk": true,
       "tuitionBase": 3500,
       "tuitionModel": "installments_2",
@@ -450,15 +618,21 @@
     },
     {
       "id": 29,
-      "name": "Ogledni student 29",
-      "jmbag": "DEMO-00029",
+      "name": "Karlo Kovač",
+      "jmbag": "0234567029",
       "year": 3,
       "status": "Izvanredni",
-      "email": "student29@example.test",
+      "email": "student29@student.par.hr",
       "gpa": 3.02,
       "ects": 146,
-      "img": "",
-      "enrolled": [1, 2, 3, 4, 5],
+      "img": "https://placehold.co/100x100/1e3a8a/ffffff?text=KK",
+      "enrolled": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
       "risk": false,
       "tuitionBase": 3500,
       "tuitionModel": "installments_2",
@@ -466,15 +640,21 @@
     },
     {
       "id": 30,
-      "name": "Ogledni student 30",
-      "jmbag": "DEMO-00030",
+      "name": "Ana Jurić",
+      "jmbag": "0234567030",
       "year": 1,
       "status": "Redovni",
-      "email": "student30@example.test",
+      "email": "student30@student.par.hr",
       "gpa": 3.1,
       "ects": 150,
-      "img": "",
-      "enrolled": [1, 2, 3, 4, 5],
+      "img": "https://placehold.co/100x100/1e3a8a/ffffff?text=AJ",
+      "enrolled": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
       "risk": false,
       "tuitionBase": 3500,
       "tuitionModel": "installments_2",
@@ -484,22 +664,29 @@
   "employees": [
     {
       "id": 1,
-      "name": "Ogledni zaposlenik 1",
+      "name": "izv.prof. Gordana Nikolić",
       "role": "Dekanica",
       "dept": "Uprava",
       "type": "Uprava",
-      "email": "zaposlenik1@example.test",
+      "email": "uprava@par.hr",
       "goUsed": 12,
       "sickLeave": 0,
       "travelOrders": 15,
-      "projects": ["Eu4Dual", "CreativeAIHub"],
-      "travelOrdersList": ["Brusseles - EU Commission (12.03.)"],
+      "projects": [
+        "Eu4Dual",
+        "CreativeAIHub"
+      ],
+      "travelOrdersList": [
+        "Brusseles - EU Commission (12.03.)"
+      ],
       "papers": {
         "drafting": [
-          "Analiza trendova u obrazovanju (Ogledni zaposlenik 1)",
+          "Analiza trendova u obrazovanju (izv.prof. Gordana Nikolić)",
           "Digitalna transformacija"
         ],
-        "review": ["Dualno obrazovanje u RH (2026.)"],
+        "review": [
+          "Dualno obrazovanje u RH (2026.)"
+        ],
         "published": [
           "Znanstveni rad: Uloga inovacija u poslovanju, Zbornik PAR 2026."
         ]
@@ -507,22 +694,28 @@
     },
     {
       "id": 2,
-      "name": "Ogledni zaposlenik 2",
+      "name": "prof. dr. sc. Sven Maričić",
       "role": "Pročelnik",
       "dept": "Katedra inovacije",
       "type": "Nastavnik",
-      "email": "zaposlenik2@example.test",
+      "email": "sven@par.hr",
       "goUsed": 18,
       "sickLeave": 5,
       "travelOrders": 8,
-      "projects": ["CreativeStartup"],
-      "travelOrdersList": ["Split - Gostovanje (22.04.)"],
+      "projects": [
+        "CreativeStartup"
+      ],
+      "travelOrdersList": [
+        "Split - Gostovanje (22.04.)"
+      ],
       "papers": {
         "drafting": [
-          "Analiza trendova u obrazovanju (Ogledni zaposlenik 2)",
+          "Analiza trendova u obrazovanju (prof. dr. sc. Sven Maričić)",
           "Digitalna transformacija"
         ],
-        "review": ["Dualno obrazovanje u RH (2026.)"],
+        "review": [
+          "Dualno obrazovanje u RH (2026.)"
+        ],
         "published": [
           "Znanstveni rad: Uloga inovacija u poslovanju, Zbornik PAR 2026."
         ]
@@ -530,22 +723,26 @@
     },
     {
       "id": 3,
-      "name": "Ogledni zaposlenik 3",
+      "name": "Tomo Tomić, pred.",
       "role": "Predavač",
       "dept": "Katedra IT",
       "type": "Nastavnik",
-      "email": "zaposlenik3@example.test",
+      "email": "tomo@par.hr",
       "goUsed": 0,
       "sickLeave": 12,
       "travelOrders": 0,
-      "projects": ["CreativeAIHub"],
+      "projects": [
+        "CreativeAIHub"
+      ],
       "travelOrdersList": [],
       "papers": {
         "drafting": [
-          "Analiza trendova u obrazovanju (Ogledni zaposlenik 3)",
+          "Analiza trendova u obrazovanju (Tomo Tomić, pred.)",
           "Digitalna transformacija"
         ],
-        "review": ["Dualno obrazovanje u RH (2026.)"],
+        "review": [
+          "Dualno obrazovanje u RH (2026.)"
+        ],
         "published": [
           "Znanstveni rad: Uloga inovacija u poslovanju, Zbornik PAR 2026."
         ]
@@ -553,22 +750,29 @@
     },
     {
       "id": 4,
-      "name": "Ogledni zaposlenik 4",
+      "name": "Marko IT",
       "role": "LabTech",
       "dept": "IT Služba",
       "type": "Administracija",
-      "email": "zaposlenik4@example.test",
+      "email": "lab@par.hr",
       "goUsed": 8,
       "sickLeave": 0,
       "travelOrders": 2,
-      "projects": ["Eu4Dual", "SmartCampusRijeka"],
-      "travelOrdersList": ["Zagreb - Nabava (02.02.)"],
+      "projects": [
+        "Eu4Dual",
+        "SmartCampusRijeka"
+      ],
+      "travelOrdersList": [
+        "Zagreb - Nabava (02.02.)"
+      ],
       "papers": {
         "drafting": [
-          "Analiza trendova u obrazovanju (Ogledni zaposlenik 4)",
+          "Analiza trendova u obrazovanju (Marko IT)",
           "Digitalna transformacija"
         ],
-        "review": ["Dualno obrazovanje u RH (2026.)"],
+        "review": [
+          "Dualno obrazovanje u RH (2026.)"
+        ],
         "published": [
           "Znanstveni rad: Uloga inovacija u poslovanju, Zbornik PAR 2026."
         ]
@@ -576,22 +780,26 @@
     },
     {
       "id": 5,
-      "name": "Ogledni zaposlenik 5",
+      "name": "Marina Srdoč",
       "role": "Voditeljica referade",
       "dept": "Stručne službe",
       "type": "Administracija",
-      "email": "zaposlenik5@example.test",
+      "email": "marina.srdoc@par.hr",
       "goUsed": 14,
       "sickLeave": 2,
       "travelOrders": 1,
       "projects": [],
-      "travelOrdersList": ["Zagreb - Edukacija (15.05.)"],
+      "travelOrdersList": [
+        "Zagreb - Edukacija (15.05.)"
+      ],
       "papers": {
         "drafting": [
-          "Analiza trendova u obrazovanju (Ogledni zaposlenik 5)",
+          "Analiza trendova u obrazovanju (Marina Srdoč)",
           "Digitalna transformacija"
         ],
-        "review": ["Dualno obrazovanje u RH (2026.)"],
+        "review": [
+          "Dualno obrazovanje u RH (2026.)"
+        ],
         "published": [
           "Znanstveni rad: Uloga inovacija u poslovanju, Zbornik PAR 2026."
         ]
@@ -599,22 +807,29 @@
     },
     {
       "id": 6,
-      "name": "Ogledni zaposlenik 6",
+      "name": "Martina Jurković, pred.",
       "role": "Predavač",
       "dept": "Katedra za menadžment",
       "type": "Nastavnik",
-      "email": "zaposlenik6@example.test",
+      "email": "martina.jurkovic@par.hr",
       "goUsed": 5,
       "sickLeave": 0,
       "travelOrders": 3,
-      "projects": ["CreativeStartup", "WomenInTechPAR"],
-      "travelOrdersList": ["Ljubljana - Konferencija (10.06.)"],
+      "projects": [
+        "CreativeStartup",
+        "WomenInTechPAR"
+      ],
+      "travelOrdersList": [
+        "Ljubljana - Konferencija (10.06.)"
+      ],
       "papers": {
         "drafting": [
-          "Analiza trendova u obrazovanju (Ogledni zaposlenik 6)",
+          "Analiza trendova u obrazovanju (Martina Jurković, pred.)",
           "Digitalna transformacija"
         ],
-        "review": ["Dualno obrazovanje u RH (2026.)"],
+        "review": [
+          "Dualno obrazovanje u RH (2026.)"
+        ],
         "published": [
           "Znanstveni rad: Uloga inovacija u poslovanju, Zbornik PAR 2026."
         ]
@@ -622,11 +837,11 @@
     },
     {
       "id": 7,
-      "name": "Ogledni zaposlenik 7",
+      "name": "doc. dr. sc. Ivan Babić",
       "role": "Predavač",
       "dept": "Katedra za marketing",
       "type": "Nastavnik",
-      "email": "zaposlenik7@example.test",
+      "email": "ivan.babic@par.hr",
       "goUsed": 0,
       "sickLeave": 0,
       "travelOrders": 0,
@@ -640,11 +855,11 @@
     },
     {
       "id": 8,
-      "name": "Ogledni zaposlenik 8",
+      "name": "mr. sc. Ana Turčić",
       "role": "Predavač",
       "dept": "Katedra za financije",
       "type": "Nastavnik",
-      "email": "zaposlenik8@example.test",
+      "email": "ana.turcic@par.hr",
       "goUsed": 5,
       "sickLeave": 2,
       "travelOrders": 1,
@@ -658,11 +873,11 @@
     },
     {
       "id": 9,
-      "name": "Ogledni zaposlenik 9",
+      "name": "Maja Marić, v. pred.",
       "role": "Viši predavač",
       "dept": "Katedra za menadžment",
       "type": "Nastavnik",
-      "email": "zaposlenik9@example.test",
+      "email": "maja.maric@par.hr",
       "goUsed": 10,
       "sickLeave": 0,
       "travelOrders": 0,
@@ -684,11 +899,21 @@
       "budget": "€ 1,200,000",
       "startDate": "01.09.2023",
       "endDate": "31.08.2026",
-      "partners": ["DHBW Heilbronn (DE)", "Mondragon UAS (ES)"],
+      "partners": [
+        "DHBW Heilbronn (DE)",
+        "Mondragon UAS (ES)"
+      ],
       "description": "Razvoj standarda mikrokredencijala za dualno obrazovanje.",
-      "wps": ["WP1: Upravljanje", "WP2: Dualni okvir"],
-      "professors": ["Ogledna osoba 1"],
-      "students": ["Ogledna osoba 1"]
+      "wps": [
+        "WP1: Upravljanje",
+        "WP2: Dualni okvir"
+      ],
+      "professors": [
+        "izv.prof. Gordana Nikolić"
+      ],
+      "students": [
+        "Luka Jurić"
+      ]
     },
     {
       "id": 2,
@@ -698,11 +923,20 @@
       "budget": "€ 450,000",
       "startDate": "01.01.2025",
       "endDate": "31.12.2026",
-      "partners": ["Inkubator Rijeka", "STEP RI"],
+      "partners": [
+        "Inkubator Rijeka",
+        "STEP RI"
+      ],
       "description": "Poticanje studentskog poduzetništva kroz kreativni inkubator.",
-      "wps": ["WP1: Vođenje projekta"],
-      "professors": ["Ogledna osoba 1"],
-      "students": ["Ogledna osoba 1"]
+      "wps": [
+        "WP1: Vođenje projekta"
+      ],
+      "professors": [
+        "prof. dr. sc. Sven Maričić"
+      ],
+      "students": [
+        "Filip Horvat"
+      ]
     },
     {
       "id": 3,
@@ -712,11 +946,19 @@
       "budget": "€ 890,000",
       "startDate": "01.06.2024",
       "endDate": "31.05.2027",
-      "partners": ["AI Institute Austria"],
+      "partners": [
+        "AI Institute Austria"
+      ],
       "description": "Implementacija umjetne inteligencije u visokoškolsku edukaciju.",
-      "wps": ["WP1: AI Lab Setup"],
-      "professors": ["Ogledna osoba 1"],
-      "students": ["Ogledna osoba 1"]
+      "wps": [
+        "WP1: AI Lab Setup"
+      ],
+      "professors": [
+        "Tomo Tomić, pred."
+      ],
+      "students": [
+        "Mia Kovač"
+      ]
     },
     {
       "id": 4,
@@ -726,11 +968,19 @@
       "budget": "€ 350,000",
       "startDate": "01.10.2024",
       "endDate": "30.09.2026",
-      "partners": ["Hrvatski olimpijski odbor"],
+      "partners": [
+        "Hrvatski olimpijski odbor"
+      ],
       "description": "Podrška vrhunskim sportašima tijekom akademske karijere.",
-      "wps": ["WP1: Edukativni moduli"],
-      "professors": ["Ogledna osoba 1"],
-      "students": ["Ogledna osoba 1"]
+      "wps": [
+        "WP1: Edukativni moduli"
+      ],
+      "professors": [
+        "doc. dr. sc. Marko Kučić"
+      ],
+      "students": [
+        "Karlo Vuković"
+      ]
     },
     {
       "id": 5,
@@ -740,11 +990,19 @@
       "budget": "€ 620,000",
       "startDate": "01.03.2025",
       "endDate": "31.08.2027",
-      "partners": ["University of Trieste"],
+      "partners": [
+        "University of Trieste"
+      ],
       "description": "Zelene tranzicije i održivi razvoj u poslovanju.",
-      "wps": ["WP1: Analiza otiska"],
-      "professors": ["Ogledna osoba 1"],
-      "students": ["Ogledna osoba 1"]
+      "wps": [
+        "WP1: Analiza otiska"
+      ],
+      "professors": [
+        "prof. dr. sc. Bisera Karanović"
+      ],
+      "students": [
+        "Petra Kos"
+      ]
     },
     {
       "id": 6,
@@ -754,11 +1012,19 @@
       "budget": "€ 280,000",
       "startDate": "01.05.2025",
       "endDate": "31.10.2026",
-      "partners": ["Udruga Mladih Poduzetnika"],
+      "partners": [
+        "Udruga Mladih Poduzetnika"
+      ],
       "description": "Osnaživanje ženskog poduzetništva u STEM i IT sektorima.",
-      "wps": ["WP1: Mentorski program"],
-      "professors": ["Ogledna osoba 1"],
-      "students": ["Ogledna osoba 1"]
+      "wps": [
+        "WP1: Mentorski program"
+      ],
+      "professors": [
+        "Martina Jurković, pred."
+      ],
+      "students": [
+        "Ema Novak"
+      ]
     },
     {
       "id": 7,
@@ -768,11 +1034,20 @@
       "budget": "€ 510,000",
       "startDate": "01.01.2026",
       "endDate": "31.12.2027",
-      "partners": ["Grad Rijeka", "Ericsson Nikola Tesla"],
+      "partners": [
+        "Grad Rijeka",
+        "Ericsson Nikola Tesla"
+      ],
       "description": "Digitalizacija kampusnih resursa i pametne dvorane.",
-      "wps": ["WP1: IoT Mreža"],
-      "professors": ["Ogledna osoba 1"],
-      "students": ["Ogledna osoba 1"]
+      "wps": [
+        "WP1: IoT Mreža"
+      ],
+      "professors": [
+        "Marko IT"
+      ],
+      "students": [
+        "Tin Rožić"
+      ]
     }
   ],
   "courses": [
@@ -780,7 +1055,7 @@
       "id": 1,
       "title": "Osnove ekonomije",
       "ects": 6,
-      "prof": "Ogledni nastavnik",
+      "prof": "prof. dr. sc. Bisera Karanović",
       "sem": "Zimski",
       "tip": "Obvezni",
       "opterećenje": "30P + 30S",
@@ -793,13 +1068,15 @@
         "Definirati osnovne ekonomske pojmove.",
         "Analizirati utjecaj makroekonomskih agregata."
       ],
-      "literature": ["Samuelson, P. A. (2011). Ekonomija. MATE."]
+      "literature": [
+        "Samuelson, P. A. (2011). Ekonomija. MATE."
+      ]
     },
     {
       "id": 2,
       "title": "Menadžment",
       "ects": 7,
-      "prof": "Ogledni nastavnik",
+      "prof": "izv. prof. dr. sc. Gordana Nikolić",
       "sem": "Zimski",
       "tip": "Obvezni",
       "opterećenje": "45P + 15S",
@@ -812,13 +1089,15 @@
         "Razumjeti funkcije menadžmenta.",
         "Primijeniti metode planiranja."
       ],
-      "literature": ["Buble, M. (2006). Osnove menadžmenta. Sinergija."]
+      "literature": [
+        "Buble, M. (2006). Osnove menadžmenta. Sinergija."
+      ]
     },
     {
       "id": 3,
       "title": "Poduzetništvo i inovacije",
       "ects": 6,
-      "prof": "Ogledni zaposlenik 2",
+      "prof": "prof. dr. sc. Sven Maričić",
       "sem": "Ljetni",
       "tip": "Obvezni",
       "opterećenje": "30P + 30V",
@@ -827,14 +1106,19 @@
       "timeEnd": 14,
       "dvorana": "Inkubator",
       "description": "Prepoznavanje poslovnih prilika i implementacija inovacija koristeći Business Model Canvas.",
-      "outcomes": ["Kritički procijeniti ideju.", "Izraditi poslovni plan."],
-      "literature": ["Kuratko, D. F. (2016). Entrepreneurship."]
+      "outcomes": [
+        "Kritički procijeniti ideju.",
+        "Izraditi poslovni plan."
+      ],
+      "literature": [
+        "Kuratko, D. F. (2016). Entrepreneurship."
+      ]
     },
     {
       "id": 4,
       "title": "Računovodstvo",
       "ects": 6,
-      "prof": "Ogledni zaposlenik 8",
+      "prof": "mr. sc. Ana Turčić",
       "sem": "Zimski",
       "tip": "Obvezni",
       "opterećenje": "30P + 30V",
@@ -843,14 +1127,18 @@
       "timeEnd": 10,
       "dvorana": "Dvorana 2",
       "description": "Temeljna znanja o računovodstvenom praćenju poslovnih događaja i financijskim izvješćima.",
-      "outcomes": ["Knjižiti promjene na računima."],
-      "literature": ["Gulin, D. (2011). Računovodstvo."]
+      "outcomes": [
+        "Knjižiti promjene na računima."
+      ],
+      "literature": [
+        "Gulin, D. (2011). Računovodstvo."
+      ]
     },
     {
       "id": 5,
       "title": "Digitalni marketing",
       "ects": 6,
-      "prof": "Ogledni zaposlenik 7",
+      "prof": "doc. dr. sc. Ivan Babić",
       "sem": "Ljetni",
       "tip": "Obvezni",
       "opterećenje": "30P + 30V",
@@ -859,14 +1147,18 @@
       "timeEnd": 12,
       "dvorana": "IT Lab 1",
       "description": "SEO optimizacija, oglašavanje na društvenim mrežama, content marketing i Google Analytics.",
-      "outcomes": ["Kreirati digitalnu kampanju."],
-      "literature": ["Chaffey, D. (2019). Digital Marketing."]
+      "outcomes": [
+        "Kreirati digitalnu kampanju."
+      ],
+      "literature": [
+        "Chaffey, D. (2019). Digital Marketing."
+      ]
     },
     {
       "id": 6,
       "title": "Strateški menadžment",
       "ects": 6,
-      "prof": "Ogledni zaposlenik 2",
+      "prof": "prof. dr. sc. Sven Maričić",
       "sem": "Zimski",
       "tip": "Obvezni",
       "opterećenje": "30P + 30V",
@@ -875,14 +1167,18 @@
       "timeEnd": 16,
       "dvorana": "Dvorana 2",
       "description": "Formuliranje, implementacija i evaluacija poslovne strategije u dinamičnom okruženju.",
-      "outcomes": ["SWOT i PESTLE analiza."],
-      "literature": ["David, F. R. (2011). Strategic Management."]
+      "outcomes": [
+        "SWOT i PESTLE analiza."
+      ],
+      "literature": [
+        "David, F. R. (2011). Strategic Management."
+      ]
     },
     {
       "id": 7,
       "title": "Krizni menadžment",
       "ects": 5,
-      "prof": "Ogledni zaposlenik 9",
+      "prof": "Maja Marić, v. pred.",
       "sem": "Ljetni",
       "tip": "Izborni",
       "opterećenje": "30P + 15V",
@@ -891,14 +1187,18 @@
       "timeEnd": 18,
       "dvorana": "Dvorana 1",
       "description": "Faze razvoja krize, krizno komuniciranje i upravljanje kontinuitetom poslovanja.",
-      "outcomes": ["Izraditi plan kriznog komuniciranja."],
-      "literature": ["Coombs, W. T. (2014). Ongoing Crisis Communication."]
+      "outcomes": [
+        "Izraditi plan kriznog komuniciranja."
+      ],
+      "literature": [
+        "Coombs, W. T. (2014). Ongoing Crisis Communication."
+      ]
     },
     {
       "id": 8,
       "title": "Menadžment sportskih događaja",
       "ects": 5,
-      "prof": "Ogledni nastavnik",
+      "prof": "doc. dr. sc. Marko Kučić",
       "sem": "Ljetni",
       "tip": "Izborni",
       "opterećenje": "30P + 15S",
@@ -907,14 +1207,18 @@
       "timeEnd": 18,
       "dvorana": "Dvorana 1",
       "description": "Upravljanje sportskim i turističkim događajima od koncepcije do provedbe.",
-      "outcomes": ["Planirati sponzorstva i logistiku."],
-      "literature": ["Masterman, G. (2014). Strategic Sports Event Mng."]
+      "outcomes": [
+        "Planirati sponzorstva i logistiku."
+      ],
+      "literature": [
+        "Masterman, G. (2014). Strategic Sports Event Mng."
+      ]
     },
     {
       "id": 9,
       "title": "EU fondovi i projektni menadžment",
       "ects": 6,
-      "prof": "Ogledni nastavnik",
+      "prof": "izv. prof. dr. sc. Gordana Nikolić",
       "sem": "Zimski",
       "tip": "Obvezni",
       "opterećenje": "30P + 30V",
@@ -923,14 +1227,18 @@
       "timeEnd": 14,
       "dvorana": "Dvorana PAR",
       "description": "Priprema projektne dokumentacije i upravljanje EU projektima (PCM, logička matrica).",
-      "outcomes": ["Izraditi logičku matricu."],
-      "literature": ["Priručnik za upravljanje projektnim ciklusom (EK)."]
+      "outcomes": [
+        "Izraditi logičku matricu."
+      ],
+      "literature": [
+        "Priručnik za upravljanje projektnim ciklusom (EK)."
+      ]
     },
     {
       "id": 10,
       "title": "Menadžment ljudskih potencijala",
       "ects": 6,
-      "prof": "Ogledni zaposlenik 6",
+      "prof": "Martina Jurković, pred.",
       "sem": "Zimski",
       "tip": "Obvezni",
       "opterećenje": "30P + 30S",
@@ -939,15 +1247,19 @@
       "timeEnd": 16,
       "dvorana": "Dvorana 2",
       "description": "Regrutacija, selekcija, razvoj karijere, motivacija i nagrađivanje zaposlenika.",
-      "outcomes": ["Dizajnirati sustav nagrađivanja."],
-      "literature": ["Dessler, G. (2016). Human Resource Management."]
+      "outcomes": [
+        "Dizajnirati sustav nagrađivanja."
+      ],
+      "literature": [
+        "Dessler, G. (2016). Human Resource Management."
+      ]
     }
   ],
   "finances": [
     {
       "id": "RN-2026-1",
       "studentId": 1,
-      "student": "Ogledni student 1",
+      "student": "Ana Horvat",
       "type": "Upisnina",
       "amount": "€ 635.00",
       "status": "Dugovanje",
@@ -956,7 +1268,7 @@
     {
       "id": "RN-2026-2",
       "studentId": 2,
-      "student": "Ogledni student 2",
+      "student": "Ivana Jurić",
       "type": "Školarina 1. rata",
       "amount": "€ 670.00",
       "status": "Dugovanje",
@@ -965,7 +1277,7 @@
     {
       "id": "RN-2026-3",
       "studentId": 3,
-      "student": "Ogledni student 3",
+      "student": "Filip Babić",
       "type": "Upisnina",
       "amount": "€ 705.00",
       "status": "Plaćeno",
@@ -974,7 +1286,7 @@
     {
       "id": "RN-2026-4",
       "studentId": 4,
-      "student": "Ogledni student 4",
+      "student": "Lucija Knez",
       "type": "Školarina 1. rata",
       "amount": "€ 740.00",
       "status": "Dugovanje",
@@ -983,7 +1295,7 @@
     {
       "id": "RN-2026-5",
       "studentId": 5,
-      "student": "Ogledni student 5",
+      "student": "Ivan Vidović",
       "type": "Upisnina",
       "amount": "€ 775.00",
       "status": "Dugovanje",
@@ -992,7 +1304,7 @@
     {
       "id": "RN-2026-6",
       "studentId": 6,
-      "student": "Ogledni student 6",
+      "student": "Mia Perković",
       "type": "Školarina 1. rata",
       "amount": "€ 810.00",
       "status": "Plaćeno",
@@ -1001,7 +1313,7 @@
     {
       "id": "RN-2026-7",
       "studentId": 7,
-      "student": "Ogledni student 7",
+      "student": "Luka Novak",
       "type": "Upisnina",
       "amount": "€ 845.00",
       "status": "Dugovanje",
@@ -1010,7 +1322,7 @@
     {
       "id": "RN-2026-8",
       "studentId": 8,
-      "student": "Ogledni student 8",
+      "student": "Petra Vuković",
       "type": "Školarina 1. rata",
       "amount": "€ 880.00",
       "status": "Dugovanje",
@@ -1019,7 +1331,7 @@
     {
       "id": "RN-2026-9",
       "studentId": 9,
-      "student": "Ogledni student 9",
+      "student": "Dorian Kos",
       "type": "Upisnina",
       "amount": "€ 915.00",
       "status": "Plaćeno",
@@ -1028,7 +1340,7 @@
     {
       "id": "RN-2026-10",
       "studentId": 10,
-      "student": "Ogledni student 10",
+      "student": "Ema Rožić",
       "type": "Školarina 1. rata",
       "amount": "€ 950.00",
       "status": "Dugovanje",
@@ -1037,7 +1349,7 @@
     {
       "id": "RN-2026-11",
       "studentId": 11,
-      "student": "Ogledni student 11",
+      "student": "Tin Grgić",
       "type": "Upisnina",
       "amount": "€ 985.00",
       "status": "Dugovanje",
@@ -1046,7 +1358,7 @@
     {
       "id": "RN-2026-12",
       "studentId": 12,
-      "student": "Ogledni student 12",
+      "student": "Jakov Tomić",
       "type": "Školarina 1. rata",
       "amount": "€ 1020.00",
       "status": "Plaćeno",
@@ -1056,70 +1368,70 @@
   "grades": [
     {
       "id": 1,
-      "student": "Ogledni student 1",
+      "student": "Ana Horvat",
       "course": "Osnove ekonomije",
       "grade": 5,
       "date": "10.07.2026"
     },
     {
       "id": 2,
-      "student": "Ogledni student 1",
+      "student": "Ana Horvat",
       "course": "Menadžment",
       "grade": 4,
       "date": "12.07.2026"
     },
     {
       "id": 3,
-      "student": "Ogledna osoba",
+      "student": "Marko Kovač",
       "course": "Poduzetništvo i inovacije",
       "grade": 5,
       "date": "15.07.2026"
     },
     {
       "id": 4,
-      "student": "Ogledni student 2",
+      "student": "Ivana Jurić",
       "course": "Računovodstvo",
       "grade": 3,
       "date": "18.07.2026"
     },
     {
       "id": 5,
-      "student": "Ogledni student 3",
+      "student": "Filip Babić",
       "course": "Digitalni marketing",
       "grade": 4,
       "date": "20.07.2026"
     },
     {
       "id": 6,
-      "student": "Ogledni student 4",
+      "student": "Lucija Knez",
       "course": "Strateški menadžment",
       "grade": 5,
       "date": "22.07.2026"
     },
     {
       "id": 7,
-      "student": "Ogledni student 5",
+      "student": "Ivan Vidović",
       "course": "Krizni menadžment",
       "grade": 2,
       "date": "25.07.2026"
     },
     {
       "id": 8,
-      "student": "Ogledni student 6",
+      "student": "Mia Perković",
       "course": "Menadžment sportskih događaja",
       "grade": 4,
       "date": "28.07.2026"
     },
     {
       "id": 9,
-      "student": "Ogledni student 7",
+      "student": "Luka Novak",
       "course": "EU fondovi i projektni menadžment",
       "grade": 5,
       "date": "01.08.2026"
     },
     {
       "id": 10,
-      "student": "Ogledni student 8",
+      "student": "Petra Vuković",
       "course": "Menadžment ljudskih potencijala",
       "grade": 3,
       "date": "03.08.2026"
@@ -1128,35 +1440,35 @@
   "vacations": [
     {
       "id": 1,
-      "employee": "Ogledni zaposlenik 1",
+      "employee": "izv.prof. Gordana Nikolić",
       "period": "15.08 - 30.08",
       "status": "Odobreno",
       "days": 10
     },
     {
       "id": 2,
-      "employee": "Ogledni zaposlenik 2",
+      "employee": "prof. dr. sc. Sven Maričić",
       "period": "01.09 - 10.09",
       "status": "Na čekanju",
       "days": 8
     },
     {
       "id": 3,
-      "employee": "Ogledni zaposlenik 7",
+      "employee": "doc. dr. sc. Ivan Babić",
       "period": "20.08 - 25.08",
       "status": "Na čekanju",
       "days": 5
     },
     {
       "id": 4,
-      "employee": "Ogledni zaposlenik 8",
+      "employee": "mr. sc. Ana Turčić",
       "period": "05.09 - 15.09",
       "status": "Na čekanju",
       "days": 10
     },
     {
       "id": 5,
-      "employee": "Ogledni zaposlenik 9",
+      "employee": "Maja Marić, v. pred.",
       "period": "12.08 - 18.08",
       "status": "Na čekanju",
       "days": 6
@@ -1165,7 +1477,7 @@
   "requests": [
     {
       "id": 1,
-      "student": "Ogledni student 1",
+      "student": "Ana Horvat",
       "type": "Prijepis ocjena",
       "date": "05.08.2026 09:12",
       "status": "Riješeno",
@@ -1184,7 +1496,7 @@
     },
     {
       "id": 2,
-      "student": "Ogledna osoba",
+      "student": "Marko Kovač",
       "type": "Potvrda o statusu studenta",
       "date": "08.08.2026 11:30",
       "status": "U obradi",
@@ -1199,7 +1511,7 @@
     },
     {
       "id": 3,
-      "student": "Ogledni student 2",
+      "student": "Ivana Jurić",
       "type": "Prijepis ocjena",
       "date": "10.08.2026 08:15",
       "status": "Na čekanju",
@@ -1214,7 +1526,7 @@
     },
     {
       "id": 4,
-      "student": "Ogledni student 3",
+      "student": "Filip Babić",
       "type": "Potvrda o statusu studenta",
       "date": "10.08.2026 09:20",
       "status": "Na čekanju",
@@ -1229,7 +1541,7 @@
     },
     {
       "id": 5,
-      "student": "Ogledni student 4",
+      "student": "Lucija Knez",
       "type": "Prijepis ocjena",
       "date": "11.08.2026 10:05",
       "status": "Na čekanju",
@@ -1244,7 +1556,7 @@
     },
     {
       "id": 6,
-      "student": "Ogledni student 5",
+      "student": "Ivan Vidović",
       "type": "Potvrda o statusu studenta",
       "date": "12.08.2026 12:40",
       "status": "Na čekanju",
@@ -1280,15 +1592,21 @@
       "enrolledStudents": [
         {
           "id": 1,
-          "name": "Ogledni student 1",
-          "jmbag": "DEMO-ONLY",
+          "name": "Ana Horvat",
+          "jmbag": "0234567001",
           "year": 2,
           "status": "Izvanredni",
-          "email": "demo@example.test",
+          "email": "student1@student.par.hr",
           "gpa": 2.88,
           "ects": 34,
           "img": "https://placehold.co/100x100/1e3a8a/ffffff?text=AH",
-          "enrolled": [1, 2, 3, 4, 5],
+          "enrolled": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
           "risk": true,
           "tuitionBase": 3500,
           "tuitionModel": "installments_2",
@@ -1296,15 +1614,21 @@
         },
         {
           "id": 2,
-          "name": "Ogledni student 2",
-          "jmbag": "DEMO-ONLY",
+          "name": "Ivana Jurić",
+          "jmbag": "0234567002",
           "year": 3,
           "status": "Redovni",
-          "email": "demo@example.test",
+          "email": "student2@student.par.hr",
           "gpa": 2.96,
           "ects": 38,
           "img": "https://placehold.co/100x100/1e3a8a/ffffff?text=IJ",
-          "enrolled": [1, 2, 3, 4, 5],
+          "enrolled": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
           "risk": true,
           "tuitionBase": 3500,
           "tuitionModel": "installments_2",
@@ -1312,15 +1636,21 @@
         },
         {
           "id": 3,
-          "name": "Ogledni student 3",
-          "jmbag": "DEMO-ONLY",
+          "name": "Filip Babić",
+          "jmbag": "0234567003",
           "year": 1,
           "status": "Izvanredni",
-          "email": "demo@example.test",
+          "email": "student3@student.par.hr",
           "gpa": 3.04,
           "ects": 42,
           "img": "https://placehold.co/100x100/1e3a8a/ffffff?text=FB",
-          "enrolled": [1, 2, 3, 4, 5],
+          "enrolled": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
           "risk": false,
           "tuitionBase": 3500,
           "tuitionModel": "installments_2",
@@ -1328,22 +1658,28 @@
         },
         {
           "id": 6,
-          "name": "Ogledni student 6",
-          "jmbag": "DEMO-ONLY",
+          "name": "Mia Perković",
+          "jmbag": "0234567006",
           "year": 1,
           "status": "Redovni",
-          "email": "demo@example.test",
+          "email": "student6@student.par.hr",
           "gpa": 3.28,
           "ects": 54,
           "img": "https://placehold.co/100x100/1e3a8a/ffffff?text=MP",
-          "enrolled": [1, 2, 3, 4, 5],
+          "enrolled": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
           "risk": false,
           "tuitionBase": 3500,
           "tuitionModel": "installments_2",
           "tuitionDiscount": 0
         }
       ],
-      "prof": "Ogledni nastavnik"
+      "prof": "prof. dr. sc. Bisera Karanović"
     },
     {
       "id": 2,
@@ -1355,15 +1691,21 @@
       "enrolledStudents": [
         {
           "id": 4,
-          "name": "Ogledni student 4",
-          "jmbag": "DEMO-ONLY",
+          "name": "Lucija Knez",
+          "jmbag": "0234567004",
           "year": 2,
           "status": "Redovni",
-          "email": "demo@example.test",
+          "email": "student4@student.par.hr",
           "gpa": 3.12,
           "ects": 46,
           "img": "https://placehold.co/100x100/1e3a8a/ffffff?text=LK",
-          "enrolled": [1, 2, 3, 4, 5],
+          "enrolled": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
           "risk": false,
           "tuitionBase": 3500,
           "tuitionModel": "installments_2",
@@ -1371,15 +1713,21 @@
         },
         {
           "id": 5,
-          "name": "Ogledni student 5",
-          "jmbag": "DEMO-ONLY",
+          "name": "Ivan Vidović",
+          "jmbag": "0234567005",
           "year": 3,
           "status": "Izvanredni",
-          "email": "demo@example.test",
+          "email": "student5@student.par.hr",
           "gpa": 3.2,
           "ects": 50,
           "img": "https://placehold.co/100x100/1e3a8a/ffffff?text=IV",
-          "enrolled": [1, 2, 3, 4, 5],
+          "enrolled": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
           "risk": false,
           "tuitionBase": 3500,
           "tuitionModel": "installments_2",
@@ -1387,22 +1735,28 @@
         },
         {
           "id": 7,
-          "name": "Ogledni student 7",
-          "jmbag": "DEMO-ONLY",
+          "name": "Luka Novak",
+          "jmbag": "0234567007",
           "year": 2,
           "status": "Izvanredni",
-          "email": "demo@example.test",
+          "email": "student7@student.par.hr",
           "gpa": 3.36,
           "ects": 58,
           "img": "https://placehold.co/100x100/1e3a8a/ffffff?text=LN",
-          "enrolled": [1, 2, 3, 4, 5],
+          "enrolled": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
           "risk": false,
           "tuitionBase": 3500,
           "tuitionModel": "installments_2",
           "tuitionDiscount": 0
         }
       ],
-      "prof": "Ogledni nastavnik"
+      "prof": "izv. prof. dr. sc. Gordana Nikolić"
     },
     {
       "id": 3,
@@ -1414,15 +1768,21 @@
       "enrolledStudents": [
         {
           "id": 8,
-          "name": "Ogledni student 8",
-          "jmbag": "DEMO-ONLY",
+          "name": "Petra Vuković",
+          "jmbag": "0234567008",
           "year": 3,
           "status": "Redovni",
-          "email": "demo@example.test",
+          "email": "student8@student.par.hr",
           "gpa": 3.44,
           "ects": 62,
           "img": "https://placehold.co/100x100/1e3a8a/ffffff?text=PV",
-          "enrolled": [1, 2, 3, 4, 5],
+          "enrolled": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
           "risk": false,
           "tuitionBase": 3500,
           "tuitionModel": "installments_2",
@@ -1430,15 +1790,21 @@
         },
         {
           "id": 9,
-          "name": "Ogledni student 9",
-          "jmbag": "DEMO-ONLY",
+          "name": "Dorian Kos",
+          "jmbag": "0234567009",
           "year": 1,
           "status": "Izvanredni",
-          "email": "demo@example.test",
+          "email": "student9@student.par.hr",
           "gpa": 3.52,
           "ects": 66,
           "img": "https://placehold.co/100x100/1e3a8a/ffffff?text=DK",
-          "enrolled": [1, 2, 3, 4, 5],
+          "enrolled": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
           "risk": false,
           "tuitionBase": 3500,
           "tuitionModel": "installments_2",
@@ -1446,15 +1812,21 @@
         },
         {
           "id": 10,
-          "name": "Ogledni student 10",
-          "jmbag": "DEMO-ONLY",
+          "name": "Ema Rožić",
+          "jmbag": "0234567010",
           "year": 2,
           "status": "Redovni",
-          "email": "demo@example.test",
+          "email": "student10@student.par.hr",
           "gpa": 3.6,
           "ects": 70,
           "img": "https://placehold.co/100x100/1e3a8a/ffffff?text=ER",
-          "enrolled": [1, 2, 3, 4, 5],
+          "enrolled": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
           "risk": false,
           "tuitionBase": 3500,
           "tuitionModel": "installments_2",
@@ -1462,15 +1834,21 @@
         },
         {
           "id": 11,
-          "name": "Ogledni student 11",
-          "jmbag": "DEMO-ONLY",
+          "name": "Tin Grgić",
+          "jmbag": "0234567011",
           "year": 3,
           "status": "Izvanredni",
-          "email": "demo@example.test",
+          "email": "student11@student.par.hr",
           "gpa": 3.68,
           "ects": 74,
           "img": "https://placehold.co/100x100/1e3a8a/ffffff?text=TG",
-          "enrolled": [1, 2, 3, 4, 5],
+          "enrolled": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
           "risk": false,
           "tuitionBase": 3500,
           "tuitionModel": "installments_2",
@@ -1478,22 +1856,28 @@
         },
         {
           "id": 12,
-          "name": "Ogledni student 12",
-          "jmbag": "DEMO-ONLY",
+          "name": "Jakov Tomić",
+          "jmbag": "0234567012",
           "year": 1,
           "status": "Redovni",
-          "email": "demo@example.test",
+          "email": "student12@student.par.hr",
           "gpa": 3.76,
           "ects": 78,
           "img": "https://placehold.co/100x100/1e3a8a/ffffff?text=JT",
-          "enrolled": [1, 2, 3, 4, 5],
+          "enrolled": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
           "risk": false,
           "tuitionBase": 3500,
           "tuitionModel": "installments_2",
           "tuitionDiscount": 0
         }
       ],
-      "prof": "Ogledni zaposlenik 7"
+      "prof": "doc. dr. sc. Ivan Babić"
     },
     {
       "id": 4,
@@ -1505,15 +1889,21 @@
       "enrolledStudents": [
         {
           "id": 13,
-          "name": "Ogledni student 13",
-          "jmbag": "DEMO-ONLY",
+          "name": "Nika Marić",
+          "jmbag": "0234567013",
           "year": 2,
           "status": "Izvanredni",
-          "email": "demo@example.test",
+          "email": "student13@student.par.hr",
           "gpa": 3.84,
           "ects": 82,
           "img": "https://placehold.co/100x100/1e3a8a/ffffff?text=NM",
-          "enrolled": [1, 2, 3, 4, 5],
+          "enrolled": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
           "risk": false,
           "tuitionBase": 3500,
           "tuitionModel": "installments_2",
@@ -1521,15 +1911,21 @@
         },
         {
           "id": 14,
-          "name": "Ogledni student 14",
-          "jmbag": "DEMO-ONLY",
+          "name": "Karlo Horvat",
+          "jmbag": "0234567014",
           "year": 3,
           "status": "Redovni",
-          "email": "demo@example.test",
+          "email": "student14@student.par.hr",
           "gpa": 3.92,
           "ects": 86,
           "img": "https://placehold.co/100x100/1e3a8a/ffffff?text=KH",
-          "enrolled": [1, 2, 3, 4, 5],
+          "enrolled": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
           "risk": false,
           "tuitionBase": 3500,
           "tuitionModel": "installments_2",
@@ -1537,22 +1933,28 @@
         },
         {
           "id": 15,
-          "name": "Ogledni student 15",
-          "jmbag": "DEMO-ONLY",
+          "name": "Ana Kovač",
+          "jmbag": "0234567015",
           "year": 1,
           "status": "Izvanredni",
-          "email": "demo@example.test",
+          "email": "student15@student.par.hr",
           "gpa": 4,
           "ects": 90,
           "img": "https://placehold.co/100x100/1e3a8a/ffffff?text=AK",
-          "enrolled": [1, 2, 3, 4, 5],
+          "enrolled": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
           "risk": false,
           "tuitionBase": 3500,
           "tuitionModel": "installments_2",
           "tuitionDiscount": 0
         }
       ],
-      "prof": "Ogledni zaposlenik 8"
+      "prof": "mr. sc. Ana Turčić"
     },
     {
       "id": 5,
@@ -1564,15 +1966,21 @@
       "enrolledStudents": [
         {
           "id": 16,
-          "name": "Ogledni student 16",
-          "jmbag": "DEMO-ONLY",
+          "name": "Marko Jurić",
+          "jmbag": "0234567016",
           "year": 2,
           "status": "Redovni",
-          "email": "demo@example.test",
+          "email": "student16@student.par.hr",
           "gpa": 4.08,
           "ects": 94,
           "img": "https://placehold.co/100x100/1e3a8a/ffffff?text=MJ",
-          "enrolled": [1, 2, 3, 4, 5],
+          "enrolled": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
           "risk": false,
           "tuitionBase": 3500,
           "tuitionModel": "installments_2",
@@ -1580,15 +1988,21 @@
         },
         {
           "id": 17,
-          "name": "Ogledni student 17",
-          "jmbag": "DEMO-ONLY",
+          "name": "Ivana Babić",
+          "jmbag": "0234567017",
           "year": 3,
           "status": "Izvanredni",
-          "email": "demo@example.test",
+          "email": "student17@student.par.hr",
           "gpa": 4.16,
           "ects": 98,
           "img": "https://placehold.co/100x100/1e3a8a/ffffff?text=IB",
-          "enrolled": [1, 2, 3, 4, 5],
+          "enrolled": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
           "risk": false,
           "tuitionBase": 3500,
           "tuitionModel": "installments_2",
@@ -1596,15 +2010,21 @@
         },
         {
           "id": 18,
-          "name": "Ogledni student 18",
-          "jmbag": "DEMO-ONLY",
+          "name": "Filip Knez",
+          "jmbag": "0234567018",
           "year": 1,
           "status": "Redovni",
-          "email": "demo@example.test",
+          "email": "student18@student.par.hr",
           "gpa": 4.24,
           "ects": 102,
           "img": "https://placehold.co/100x100/1e3a8a/ffffff?text=FK",
-          "enrolled": [1, 2, 3, 4, 5],
+          "enrolled": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
           "risk": false,
           "tuitionBase": 3500,
           "tuitionModel": "installments_2",
@@ -1612,22 +2032,28 @@
         },
         {
           "id": 19,
-          "name": "Ogledni student 19",
-          "jmbag": "DEMO-ONLY",
+          "name": "Lucija Vidović",
+          "jmbag": "0234567019",
           "year": 2,
           "status": "Izvanredni",
-          "email": "demo@example.test",
+          "email": "student19@student.par.hr",
           "gpa": 4.32,
           "ects": 106,
           "img": "https://placehold.co/100x100/1e3a8a/ffffff?text=LV",
-          "enrolled": [1, 2, 3, 4, 5],
+          "enrolled": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
           "risk": false,
           "tuitionBase": 3500,
           "tuitionModel": "installments_2",
           "tuitionDiscount": 0
         }
       ],
-      "prof": "Ogledni nastavnik"
+      "prof": "izv. prof. dr. sc. Gordana Nikolić"
     }
   ],
   "labs": [
@@ -1644,7 +2070,7 @@
       "type": "Oprema",
       "status": "Zaduženo",
       "id_tag": "HW-VR-02",
-      "assignedTo": "Ogledna osoba"
+      "assignedTo": "Luka Jurić"
     },
     {
       "id": 3,
@@ -1665,21 +2091,21 @@
     {
       "id": 1,
       "title": "AI Integration in EU Higher Education",
-      "authors": "Ogledna osoba",
+      "authors": "Maričić, S., Nikolić, G.",
       "status": "Drafting",
       "link": "CreativeAIHub"
     },
     {
       "id": 2,
       "title": "Micro-credentials Framework for Industry",
-      "authors": "Ogledna osoba",
+      "authors": "Nikolić, G., Tomić, T.",
       "status": "Peer Review",
       "link": "Eu4Dual"
     },
     {
       "id": 3,
       "title": "Entrepreneurial Mindset of Business Students",
-      "authors": "Ogledna osoba",
+      "authors": "Maričić, S.",
       "status": "Published",
       "link": "Springer 2025"
     }
@@ -1700,11 +2126,16 @@
       "type": "Karijera"
     }
   ],
-  "enrolledCourses": [1, 2, 3, 5],
+  "enrolledCourses": [
+    1,
+    2,
+    3,
+    5
+  ],
   "employeeSchedules": [
     {
       "empId": 1,
-      "empName": "Ogledni zaposlenik 1",
+      "empName": "izv.prof. Gordana Nikolić",
       "date": "2026-08-10",
       "day": 10,
       "activity": "Na poslu (Ured)",
@@ -1713,7 +2144,7 @@
     },
     {
       "empId": 1,
-      "empName": "Ogledni zaposlenik 1",
+      "empName": "izv.prof. Gordana Nikolić",
       "date": "2026-08-11",
       "day": 11,
       "activity": "Godišnji odmor (GO)",
@@ -1722,7 +2153,7 @@
     },
     {
       "empId": 1,
-      "empName": "Ogledni zaposlenik 1",
+      "empName": "izv.prof. Gordana Nikolić",
       "date": "2026-08-12",
       "day": 12,
       "activity": "Na poslu (Ured)",
@@ -1731,7 +2162,7 @@
     },
     {
       "empId": 1,
-      "empName": "Ogledni zaposlenik 1",
+      "empName": "izv.prof. Gordana Nikolić",
       "date": "2026-08-13",
       "day": 13,
       "activity": "Na poslu (Ured)",
@@ -1740,7 +2171,7 @@
     },
     {
       "empId": 1,
-      "empName": "Ogledni zaposlenik 1",
+      "empName": "izv.prof. Gordana Nikolić",
       "date": "2026-08-14",
       "day": 14,
       "activity": "Na poslu (Ured)",
@@ -1749,7 +2180,7 @@
     },
     {
       "empId": 1,
-      "empName": "Ogledni zaposlenik 1",
+      "empName": "izv.prof. Gordana Nikolić",
       "date": "2026-08-15",
       "day": 15,
       "activity": "Slobodan dan",
@@ -1758,7 +2189,7 @@
     },
     {
       "empId": 1,
-      "empName": "Ogledni zaposlenik 1",
+      "empName": "izv.prof. Gordana Nikolić",
       "date": "2026-08-16",
       "day": 16,
       "activity": "Slobodan dan",
@@ -1767,7 +2198,7 @@
     },
     {
       "empId": 2,
-      "empName": "Ogledni zaposlenik 2",
+      "empName": "prof. dr. sc. Sven Maričić",
       "date": "2026-08-10",
       "day": 10,
       "activity": "Nastava",
@@ -1776,7 +2207,7 @@
     },
     {
       "empId": 2,
-      "empName": "Ogledni zaposlenik 2",
+      "empName": "prof. dr. sc. Sven Maričić",
       "date": "2026-08-11",
       "day": 11,
       "activity": "Godišnji odmor (GO)",
@@ -1785,7 +2216,7 @@
     },
     {
       "empId": 2,
-      "empName": "Ogledni zaposlenik 2",
+      "empName": "prof. dr. sc. Sven Maričić",
       "date": "2026-08-12",
       "day": 12,
       "activity": "Bolovanje",
@@ -1794,7 +2225,7 @@
     },
     {
       "empId": 2,
-      "empName": "Ogledni zaposlenik 2",
+      "empName": "prof. dr. sc. Sven Maričić",
       "date": "2026-08-13",
       "day": 13,
       "activity": "Na poslu (Ured)",
@@ -1803,7 +2234,7 @@
     },
     {
       "empId": 2,
-      "empName": "Ogledni zaposlenik 2",
+      "empName": "prof. dr. sc. Sven Maričić",
       "date": "2026-08-14",
       "day": 14,
       "activity": "Nastava",
@@ -1812,7 +2243,7 @@
     },
     {
       "empId": 2,
-      "empName": "Ogledni zaposlenik 2",
+      "empName": "prof. dr. sc. Sven Maričić",
       "date": "2026-08-15",
       "day": 15,
       "activity": "Slobodan dan",
@@ -1821,7 +2252,7 @@
     },
     {
       "empId": 2,
-      "empName": "Ogledni zaposlenik 2",
+      "empName": "prof. dr. sc. Sven Maričić",
       "date": "2026-08-16",
       "day": 16,
       "activity": "Slobodan dan",
@@ -1830,7 +2261,7 @@
     },
     {
       "empId": 3,
-      "empName": "Ogledni zaposlenik 3",
+      "empName": "Tomo Tomić, pred.",
       "date": "2026-08-10",
       "day": 10,
       "activity": "Nastava",
@@ -1839,7 +2270,7 @@
     },
     {
       "empId": 3,
-      "empName": "Ogledni zaposlenik 3",
+      "empName": "Tomo Tomić, pred.",
       "date": "2026-08-11",
       "day": 11,
       "activity": "Na poslu (Ured)",
@@ -1848,7 +2279,7 @@
     },
     {
       "empId": 3,
-      "empName": "Ogledni zaposlenik 3",
+      "empName": "Tomo Tomić, pred.",
       "date": "2026-08-12",
       "day": 12,
       "activity": "Bolovanje",
@@ -1857,7 +2288,7 @@
     },
     {
       "empId": 3,
-      "empName": "Ogledni zaposlenik 3",
+      "empName": "Tomo Tomić, pred.",
       "date": "2026-08-13",
       "day": 13,
       "activity": "Na poslu (Ured)",
@@ -1866,7 +2297,7 @@
     },
     {
       "empId": 3,
-      "empName": "Ogledni zaposlenik 3",
+      "empName": "Tomo Tomić, pred.",
       "date": "2026-08-14",
       "day": 14,
       "activity": "Nastava",
@@ -1875,7 +2306,7 @@
     },
     {
       "empId": 3,
-      "empName": "Ogledni zaposlenik 3",
+      "empName": "Tomo Tomić, pred.",
       "date": "2026-08-15",
       "day": 15,
       "activity": "Slobodan dan",
@@ -1884,7 +2315,7 @@
     },
     {
       "empId": 3,
-      "empName": "Ogledni zaposlenik 3",
+      "empName": "Tomo Tomić, pred.",
       "date": "2026-08-16",
       "day": 16,
       "activity": "Slobodan dan",
@@ -1893,7 +2324,7 @@
     },
     {
       "empId": 4,
-      "empName": "Ogledni zaposlenik 4",
+      "empName": "Marko IT",
       "date": "2026-08-10",
       "day": 10,
       "activity": "Na poslu (Ured)",
@@ -1902,7 +2333,7 @@
     },
     {
       "empId": 4,
-      "empName": "Ogledni zaposlenik 4",
+      "empName": "Marko IT",
       "date": "2026-08-11",
       "day": 11,
       "activity": "Godišnji odmor (GO)",
@@ -1911,7 +2342,7 @@
     },
     {
       "empId": 4,
-      "empName": "Ogledni zaposlenik 4",
+      "empName": "Marko IT",
       "date": "2026-08-12",
       "day": 12,
       "activity": "Na poslu (Ured)",
@@ -1920,7 +2351,7 @@
     },
     {
       "empId": 4,
-      "empName": "Ogledni zaposlenik 4",
+      "empName": "Marko IT",
       "date": "2026-08-13",
       "day": 13,
       "activity": "Na poslu (Ured)",
@@ -1929,7 +2360,7 @@
     },
     {
       "empId": 4,
-      "empName": "Ogledni zaposlenik 4",
+      "empName": "Marko IT",
       "date": "2026-08-14",
       "day": 14,
       "activity": "Na poslu (Ured)",
@@ -1938,7 +2369,7 @@
     },
     {
       "empId": 4,
-      "empName": "Ogledni zaposlenik 4",
+      "empName": "Marko IT",
       "date": "2026-08-15",
       "day": 15,
       "activity": "Slobodan dan",
@@ -1947,7 +2378,7 @@
     },
     {
       "empId": 4,
-      "empName": "Ogledni zaposlenik 4",
+      "empName": "Marko IT",
       "date": "2026-08-16",
       "day": 16,
       "activity": "Slobodan dan",
@@ -1956,7 +2387,7 @@
     },
     {
       "empId": 5,
-      "empName": "Ogledni zaposlenik 5",
+      "empName": "Marina Srdoč",
       "date": "2026-08-10",
       "day": 10,
       "activity": "Na poslu (Ured)",
@@ -1965,7 +2396,7 @@
     },
     {
       "empId": 5,
-      "empName": "Ogledni zaposlenik 5",
+      "empName": "Marina Srdoč",
       "date": "2026-08-11",
       "day": 11,
       "activity": "Godišnji odmor (GO)",
@@ -1974,7 +2405,7 @@
     },
     {
       "empId": 5,
-      "empName": "Ogledni zaposlenik 5",
+      "empName": "Marina Srdoč",
       "date": "2026-08-12",
       "day": 12,
       "activity": "Bolovanje",
@@ -1983,7 +2414,7 @@
     },
     {
       "empId": 5,
-      "empName": "Ogledni zaposlenik 5",
+      "empName": "Marina Srdoč",
       "date": "2026-08-13",
       "day": 13,
       "activity": "Na poslu (Ured)",
@@ -1992,7 +2423,7 @@
     },
     {
       "empId": 5,
-      "empName": "Ogledni zaposlenik 5",
+      "empName": "Marina Srdoč",
       "date": "2026-08-14",
       "day": 14,
       "activity": "Na poslu (Ured)",
@@ -2001,7 +2432,7 @@
     },
     {
       "empId": 5,
-      "empName": "Ogledni zaposlenik 5",
+      "empName": "Marina Srdoč",
       "date": "2026-08-15",
       "day": 15,
       "activity": "Slobodan dan",
@@ -2010,7 +2441,7 @@
     },
     {
       "empId": 5,
-      "empName": "Ogledni zaposlenik 5",
+      "empName": "Marina Srdoč",
       "date": "2026-08-16",
       "day": 16,
       "activity": "Slobodan dan",
@@ -2019,7 +2450,7 @@
     },
     {
       "empId": 6,
-      "empName": "Ogledni zaposlenik 6",
+      "empName": "Martina Jurković, pred.",
       "date": "2026-08-10",
       "day": 10,
       "activity": "Nastava",
@@ -2028,7 +2459,7 @@
     },
     {
       "empId": 6,
-      "empName": "Ogledni zaposlenik 6",
+      "empName": "Martina Jurković, pred.",
       "date": "2026-08-11",
       "day": 11,
       "activity": "Godišnji odmor (GO)",
@@ -2037,7 +2468,7 @@
     },
     {
       "empId": 6,
-      "empName": "Ogledni zaposlenik 6",
+      "empName": "Martina Jurković, pred.",
       "date": "2026-08-12",
       "day": 12,
       "activity": "Nastava",
@@ -2046,7 +2477,7 @@
     },
     {
       "empId": 6,
-      "empName": "Ogledni zaposlenik 6",
+      "empName": "Martina Jurković, pred.",
       "date": "2026-08-13",
       "day": 13,
       "activity": "Na poslu (Ured)",
@@ -2055,7 +2486,7 @@
     },
     {
       "empId": 6,
-      "empName": "Ogledni zaposlenik 6",
+      "empName": "Martina Jurković, pred.",
       "date": "2026-08-14",
       "day": 14,
       "activity": "Nastava",
@@ -2064,7 +2495,7 @@
     },
     {
       "empId": 6,
-      "empName": "Ogledni zaposlenik 6",
+      "empName": "Martina Jurković, pred.",
       "date": "2026-08-15",
       "day": 15,
       "activity": "Slobodan dan",
@@ -2073,7 +2504,7 @@
     },
     {
       "empId": 6,
-      "empName": "Ogledni zaposlenik 6",
+      "empName": "Martina Jurković, pred.",
       "date": "2026-08-16",
       "day": 16,
       "activity": "Slobodan dan",
@@ -2085,7 +2516,7 @@
     {
       "id": 101,
       "empId": 1,
-      "empName": "Ogledni zaposlenik 1",
+      "empName": "izv.prof. Gordana Nikolić",
       "category": "Administracija",
       "date": "2026-08-03",
       "hours": 8,
@@ -2094,7 +2525,7 @@
     {
       "id": 102,
       "empId": 1,
-      "empName": "Ogledni zaposlenik 1",
+      "empName": "izv.prof. Gordana Nikolić",
       "category": "Nastava",
       "date": "2026-08-04",
       "hours": 8,
@@ -2103,7 +2534,7 @@
     {
       "id": 103,
       "empId": 1,
-      "empName": "Ogledni zaposlenik 1",
+      "empName": "izv.prof. Gordana Nikolić",
       "category": "Rad na projektu",
       "project": "Eu4Dual",
       "date": "2026-08-05",
@@ -2113,7 +2544,7 @@
     {
       "id": 104,
       "empId": 2,
-      "empName": "Ogledni zaposlenik 2",
+      "empName": "prof. dr. sc. Sven Maričić",
       "category": "Znanstveni rad pisanje",
       "date": "2026-08-03",
       "hours": 8,
@@ -2122,7 +2553,7 @@
     {
       "id": 105,
       "empId": 5,
-      "empName": "Ogledni zaposlenik 5",
+      "empName": "Marina Srdoč",
       "category": "Administracija",
       "date": "2026-08-03",
       "hours": 8,
@@ -2131,7 +2562,7 @@
     {
       "id": 106,
       "empId": 3,
-      "empName": "Ogledni zaposlenik 3",
+      "empName": "Tomo Tomić, pred.",
       "category": "Nastava",
       "date": "2026-08-04",
       "hours": 4,
@@ -2140,7 +2571,7 @@
     {
       "id": 107,
       "empId": 3,
-      "empName": "Ogledni zaposlenik 3",
+      "empName": "Tomo Tomić, pred.",
       "category": "Izvanredne aktivnosti",
       "date": "2026-08-05",
       "hours": 2,
@@ -2149,7 +2580,7 @@
     {
       "id": 108,
       "empId": 4,
-      "empName": "Ogledni zaposlenik 4",
+      "empName": "Marko IT",
       "category": "Rad na projektu",
       "project": "SmartCampusRijeka",
       "date": "2026-08-06",
@@ -2159,7 +2590,7 @@
     {
       "id": 109,
       "empId": 4,
-      "empName": "Ogledni zaposlenik 4",
+      "empName": "Marko IT",
       "category": "Administracija",
       "date": "2026-08-07",
       "hours": 2,
@@ -2168,7 +2599,7 @@
     {
       "id": 110,
       "empId": 6,
-      "empName": "Ogledni zaposlenik 6",
+      "empName": "Martina Jurković, pred.",
       "category": "Nastava",
       "date": "2026-08-02",
       "hours": 5,
@@ -2177,7 +2608,7 @@
     {
       "id": 111,
       "empId": 6,
-      "empName": "Ogledni zaposlenik 6",
+      "empName": "Martina Jurković, pred.",
       "category": "Znanstveni rad pisanje",
       "date": "2026-08-03",
       "hours": 3,

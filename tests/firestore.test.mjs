@@ -410,3 +410,40 @@ test("Unexpected fields, invalid dates and unknown collections are denied", asyn
     }),
   );
 });
+
+test("Original template records can be imported by admin under published schemas", async () => {
+  const { demoData } = await import("../src/data/demoData.js");
+  const { templateValues } = await import("../src/services/import-template.js");
+  const { writeBatch } = await import("firebase/firestore");
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => ({
+    ok: true,
+    json: async () =>
+      JSON.parse(readFileSync("src/data/prototype-fixtures.json", "utf8")),
+  });
+  let data;
+  try {
+    data = await demoData();
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+  const db = database("admin");
+  for (const [name, list] of Object.entries(data)) {
+    if (name === "users" || !list.length) continue;
+    const batch = writeBatch(db);
+    for (const row of list)
+      batch.set(doc(db, name, "template-" + row.id), {
+        ...templateValues(name, row),
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+        createdBy: "admin",
+      });
+    await assertSucceeds(batch.commit());
+  }
+  await assertFails(
+    setDoc(doc(database("student-a"), "enrollments", "template-forged"), {
+      ...templateValues("enrollments", data.enrollments[0]),
+      ...meta(),
+    }),
+  );
+});
