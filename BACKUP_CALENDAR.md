@@ -32,6 +32,8 @@ Podržani su JSON, CSV i ZIP te svi ili odabrani moduli. Ovaj backup ne pomiče 
 
 ## Drag & drop satnica
 
+Svaka uloga s pristupom kalendaru može provjeriti slobodan termin po datumu, dvorani, početku i završetku. Kod zauzetog termina prikazuju se naziv nastave, točno vrijeme i nastavnik radi osobnog dogovora o zamjeni. Provjera uključuje i zapise skrivene tekstualnim pretraživanjem. Dostupnost se računa prema učitanom rasporedu; gumb Osvježi dohvaća nove podatke. Dijalog Satnica onemogućuje spremanje poznatog preklapanja. Svi dani prikazuju svaki datum zasebno s danom u tjednu i godinom; termin koji traje preko granice stupca označava i nastavak zauzetosti.
+
 U modulu **Kalendar** administrator može povući događaj u drugi vremenski stupac ili dvoranu. Datum ostaje isti, a trajanje se zadržava; stariji zapisi bez završetka koriste zadano trajanje od dva sata. Gumb **Satnica** omogućuje točan datum, dvoranu, početak i završetak. Dostupno je i pomicanje tipkovnicom pomoću Alt + strelica te filtriranje prikaza po datumu.
 
 Spremanje provjerava preklapanje u istoj dvorani na isti datum te odbija zastarjele izmjene istog događaja. Provjera preklapanja nije globalno zaključavanje svih događaja pri istodobnom radu više administratora. Ostale uloge imaju pregled prema svojim postojećim ovlastima. Prije objave objaviti aktualna Firestore pravila koja sada prihvaćaju i provjeravaju `endTime` događaja.

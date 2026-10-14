@@ -2340,3 +2340,88 @@ td {
   opacity: 0.95;
   margin: 0;
 }
+.availability-panel {
+  padding: 22px;
+  margin: 20px 0 30px;
+}
+.availability-panel h2 {
+  margin: 0 0 8px;
+  font-size: 18px;
+}
+.availability-panel > p {
+  color: var(--muted);
+  font-size: 13px;
+}
+.availability-fields {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin: 18px 0;
+}
+.availability-fields label {
+  display: grid;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.availability-fields input,
+.availability-fields select {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid var(--border);
+  background: var(--surface-soft);
+  color: var(--text);
+  padding: 12px;
+  border-radius: 10px;
+  font: inherit;
+}
+.availability-free {
+  border-color: #21844f;
+  background: var(--surface-soft);
+}
+.availability-free strong {
+  color: #21844f;
+}
+.schedule-date-section {
+  margin: 26px 0 38px;
+}
+.schedule-date-heading {
+  padding: 16px 20px;
+  background: var(--accent);
+  color: white;
+  border-radius: 12px;
+  font-size: 18px;
+  text-transform: capitalize;
+}
+.room-row h3 {
+  font-size: 14px;
+  margin: 0 0 14px;
+}
+.room-row h3 i {
+  color: var(--accent);
+}
+.room-slot.slot-occupied {
+  border-color: #d2ac44;
+}
+.room-slot > .slot-status {
+  display: block;
+  align-self: flex-start;
+  margin: 2px 4px 8px;
+}
+.room-slot.slot-occupied > .slot-status {
+  color: #977219;
+}
+.schedule-continuation {
+  font-size: 12px;
+  line-height: 1.6;
+  padding: 8px;
+  color: var(--text);
+}
+#move-availability {
+  grid-column: 1 / -1;
+}
+@media (max-width: 650px) {
+  .availability-fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

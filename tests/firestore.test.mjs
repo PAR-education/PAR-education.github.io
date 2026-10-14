@@ -17,7 +17,9 @@ import {
   deleteDoc,
   serverTimestamp,
   Timestamp,
+  runTransaction,
 } from "firebase/firestore";
+import { prepareCalendarMove } from "../src/utils/schedule.js";
 let env;
 const database = (uid) => env.authenticatedContext(uid).firestore();
 const meta = () => ({
@@ -572,6 +574,19 @@ test("Calendar end times may be defined only by admin and must follow the start 
       endTime: "12:00",
       room: "Dvorana 1",
       updatedAt: serverTimestamp(),
+    }),
+  );
+  await assertSucceeds(
+    runTransaction(db, async (transaction) => {
+      const ref = doc(db, "calendarEvents", "drag-test");
+      const snapshot = await transaction.get(ref);
+      const current = { ...snapshot.data(), id: snapshot.id };
+      const values = prepareCalendarMove(
+        current,
+        { time: "12:30", room: "Dvorana 2" },
+        [current],
+      );
+      transaction.update(ref, { ...values, updatedAt: serverTimestamp() });
     }),
   );
   await assertFails(

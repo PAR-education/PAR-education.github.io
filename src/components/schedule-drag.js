@@ -93,7 +93,11 @@ export function bindScheduleDrag(
     const moved = gesture.moved,
       slot = moved ? target(event.clientX, event.clientY) : null;
     const value = slot
-      ? { room: slot.dataset.room, time: slot.dataset.time }
+      ? {
+          room: slot.dataset.room,
+          time: slot.dataset.time,
+          date: slot.dataset.date,
+        }
       : null;
     cleanup();
     if (button.hasPointerCapture(event.pointerId))

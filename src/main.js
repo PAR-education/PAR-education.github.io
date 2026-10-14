@@ -461,12 +461,13 @@ function drawTable() {
   const visual = shownRows.length
     ? visualRecords(active, shownRows, badge)
     : null;
-  if (!shownRows.length)
+  if (!shownRows.length && active !== "calendarEvents")
     $("table-area").innerHTML =
       `<div class="empty"><h2>${rows.length ? "Nema rezultata" : "Još nema zapisa"}</h2><p>${rows.length ? "Pokušajte s drugim pojmom ili filtrom." : canCreate(active) ? "Dodajte prvi zapis. Podaci se spremaju tek nakon potvrde baze." : "Zapisi će se prikazati kada ih administrator ili nadležna služba doda."}</p></div>`;
   else if (active === "calendarEvents") {
     const current = context;
     mountSchedule($("table-area"), shownRows, {
+      allEvents: rows,
       canEdit: canManage(current.profile.role, "calendarEvents"),
       onDetails: (record) => showDetails("calendarEvents", record),
       onMove: async (record, target) => {

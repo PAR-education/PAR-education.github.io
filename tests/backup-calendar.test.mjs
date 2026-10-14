@@ -27,7 +27,50 @@ import {
   foldICS,
 } from "../src/utils/calendar.js";
 import { rangeBounds } from "../src/utils/backup-range.js";
-import { prepareCalendarMove } from "../src/utils/schedule.js";
+import {
+  prepareCalendarMove,
+  scheduleConflicts,
+} from "../src/utils/schedule.js";
+
+test("Room availability detects partial overlap, adjacent slots, other dates and excludes the edited event", () => {
+  const events = [
+    {
+      id: "a",
+      date: "2026-10-14",
+      room: "PAR",
+      time: "09:30",
+      endTime: "11:00",
+      title: "Nastava",
+      instructorName: "Profesor A",
+    },
+  ];
+  const target = {
+    date: "2026-10-14",
+    room: "PAR",
+    time: "10:00",
+    endTime: "12:00",
+  };
+  assert.equal(
+    scheduleConflicts(events, target)[0].instructorName,
+    "Profesor A",
+  );
+  assert.equal(
+    scheduleConflicts(events, { ...target, time: "11:00" }).length,
+    0,
+  );
+  assert.equal(
+    scheduleConflicts(events, { ...target, date: "2026-10-15" }).length,
+    0,
+  );
+  assert.equal(
+    scheduleConflicts(events, { ...target, room: "Druga" }).length,
+    0,
+  );
+  assert.equal(scheduleConflicts(events, target, "a").length, 0);
+  assert.throws(() =>
+    scheduleConflicts(events, { ...target, endTime: "09:00" }),
+  );
+});
 const source = { projectId: "demo", uid: "demo-admin" };
 test("Date-range backup uses inclusive Zagreb dates, timestamp fallback, and does not advance incremental baseline", async () => {
   const rows = [

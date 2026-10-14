@@ -20,6 +20,23 @@ export const durationOf = (row) =>
   row.endTime
     ? minutes(row.endTime) - minutes(row.time)
     : Math.min(120, 1439 - minutes(row.time));
+export function scheduleConflicts(events, target, excludeId) {
+  const start = minutes(target.time),
+    end = minutes(target.endTime);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(target.date || "") || !target.room?.trim())
+    throw new Error("Odaberite datum i dvoranu.");
+  if (end <= start) throw new Error("Završetak mora biti nakon početka.");
+  return events
+    .filter(
+      (row) =>
+        row.id !== excludeId &&
+        row.date === target.date &&
+        row.room.trim() === target.room.trim() &&
+        minutes(row.time) < end &&
+        start < minutes(row.time) + durationOf(row),
+    )
+    .sort((a, b) => a.time.localeCompare(b.time));
+}
 export function prepareCalendarMove(record, target, events = []) {
   const { date, time, room } = validateFields(
     [
@@ -38,19 +55,22 @@ export function prepareCalendarMove(record, target, events = []) {
     : minutes(time) + durationOf(record);
   if (end <= minutes(time) || end >= 1440)
     throw new Error("Završetak mora biti nakon početka i unutar istog dana.");
-  const collision = events.find(
-    (row) =>
-      row.id !== record.id &&
-      row.date === date &&
-      row.room === room &&
-      minutes(row.time) < end &&
-      minutes(time) < minutes(row.time) + durationOf(row),
-  );
+  const collision = scheduleConflicts(
+    events,
+    { date, time, endTime: timeAt(end), room },
+    record.id,
+  )[0];
   if (collision)
     throw new Error(
       "Termin se preklapa s događajem „" +
         collision.title +
-        "” u ovoj dvorani.",
+        "” (" +
+        (collision.instructorName || "nastavnik nije naveden") +
+        ") · " +
+        collision.time +
+        "–" +
+        timeAt(minutes(collision.time) + durationOf(collision)) +
+        ".",
     );
   const day = ["Ned", "Pon", "Uto", "Sri", "Čet", "Pet", "Sub"][
     new Date(date + "T12:00:00Z").getUTCDay()
