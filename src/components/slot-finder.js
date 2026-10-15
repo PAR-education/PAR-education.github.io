@@ -2,6 +2,7 @@ import { escapeHTML as e } from "../utils/helpers.js";
 import {
   availableSlots,
   scheduleConflicts,
+  teachingConflicts,
   durationOf,
   minutes,
   timeAt,
@@ -66,6 +67,9 @@ export function mountSlotFinder(root, form, repository, record = {}) {
         days,
         limit,
         excludeId: record.id,
+        instructorUid: form.elements.instructorUid?.value || "",
+        group: form.elements.group?.value || "",
+        study: form.elements.study?.value || "",
       });
       $("find-results").innerHTML =
         `<p class="panel-note">${date ? e(dateLabel(date)) : `Pretraga sljedećih ${days} dana`} · ${slots.length} prikazanih prijedloga</p>` +
@@ -152,7 +156,7 @@ export function mountSlotFinder(root, form, repository, record = {}) {
       repository.list("calendarEvents"));
     const endTime =
       values.endTime || timeAt(minutes(values.time) + durationOf(values));
-    const conflicts = scheduleConflicts(
+    const conflicts = teachingConflicts(
       fresh,
       { ...values, endTime },
       record.id,

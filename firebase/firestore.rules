@@ -48,11 +48,13 @@ service cloud.firestore {
         && d.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt']) && updated(d);
     }
     function valid_students(d) {
-      return d.keys().hasOnly(['ownerUid', 'name', 'jmbag', 'email', 'departmentId', 'year', 'status', 'gpa', 'ects', 'createdAt', 'createdBy', 'updatedAt'])
-        && d.keys().hasAll(['ownerUid', 'name', 'jmbag', 'email', 'departmentId', 'year', 'status', 'createdAt', 'createdBy', 'updatedAt'])
-        && (d.ownerUid is string && d.ownerUid.size() <= 200 && d.ownerUid.size() > 0)
+      return d.keys().hasOnly(['ownerUid', 'name', 'jmbag', 'study', 'group', 'email', 'departmentId', 'year', 'status', 'gpa', 'ects', 'createdAt', 'createdBy', 'updatedAt'])
+        && d.keys().hasAll(['name', 'jmbag', 'email', 'departmentId', 'year', 'status', 'createdAt', 'createdBy', 'updatedAt'])
+        && (!('ownerUid' in d) || (d.ownerUid is string && d.ownerUid.size() <= 200))
         && (d.name is string && d.name.size() <= 200 && d.name.size() > 0)
         && (d.jmbag is string && d.jmbag.size() <= 200 && d.jmbag.size() > 0)
+        && (!('study' in d) || (d.study is string && d.study.size() <= 200))
+        && (!('group' in d) || (d.group is string && d.group.size() <= 200))
         && (d.email is string && d.email.size() <= 200 && d.email.size() > 0 && d.email.matches('^[^ @]+@[^ @]+[.][^ @]+$'))
         && (d.departmentId is string && d.departmentId.size() <= 200 && d.departmentId.size() > 0)
         && (d.year is int && d.year >= 1 && d.year <= 6)
@@ -134,9 +136,17 @@ service cloud.firestore {
         && (d.status is string && d.status.size() <= 200 && d.status.size() > 0 && d.status in ['Na čekanju', 'Odobreno', 'Odbijeno']);
     }
     function valid_calendarEvents(d) {
-      return d.keys().hasOnly(['title', 'date', 'time', 'endTime', 'room', 'day', 'instructorName', 'description', 'createdAt', 'createdBy', 'updatedAt'])
+      return d.keys().hasOnly(['title', 'courseId', 'instructorUid', 'study', 'group', 'academicYear', 'semester', 'teachingType', 'seriesId', 'date', 'time', 'endTime', 'room', 'day', 'instructorName', 'description', 'createdAt', 'createdBy', 'updatedAt'])
         && d.keys().hasAll(['title', 'date', 'time', 'room', 'createdAt', 'createdBy', 'updatedAt'])
         && (d.title is string && d.title.size() <= 200 && d.title.size() > 0)
+        && (!('courseId' in d) || (d.courseId is string && d.courseId.size() <= 200))
+        && (!('instructorUid' in d) || (d.instructorUid is string && d.instructorUid.size() <= 200))
+        && (!('study' in d) || (d.study is string && d.study.size() <= 200))
+        && (!('group' in d) || (d.group is string && d.group.size() <= 200))
+        && (!('academicYear' in d) || (d.academicYear is string && d.academicYear.size() <= 200))
+        && (!('semester' in d) || (d.semester is string && d.semester.size() <= 200 && d.semester in ['Zimski', 'Ljetni']))
+        && (!('teachingType' in d) || (d.teachingType is string && d.teachingType.size() <= 200))
+        && (!('seriesId' in d) || (d.seriesId is string && d.seriesId.size() <= 200))
         && (d.date is string && d.date.size() <= 200 && d.date.size() > 0 && d.date.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$'))
         && (d.time is string && d.time.size() <= 200 && d.time.size() > 0 && d.time.matches('^([01][0-9]|2[0-3]):[0-5][0-9]$'))
         && (!('endTime' in d) || (d.endTime is string && d.endTime.size() <= 200 && d.endTime.matches('^([01][0-9]|2[0-3]):[0-5][0-9]$')))
@@ -322,11 +332,11 @@ service cloud.firestore {
     }
     match /calendarEvents/{id} {
       allow read: if active();
-      allow create: if (admin()) && valid_calendarEvents(request.resource.data) && created(request.resource.data);
+      allow create: if (admin() || (role('profesor') && assignedCourse(request.resource.data))) && valid_calendarEvents(request.resource.data) && created(request.resource.data);
       allow create: if admin() && valid_calendarEvents(request.resource.data) && restored(request.resource.data);
-      allow update: if (admin()) && valid_calendarEvents(request.resource.data) && updated(request.resource.data);
+      allow update: if (admin() || (instructor(resource.data) && assignedCourse(request.resource.data))) && valid_calendarEvents(request.resource.data) && updated(request.resource.data);
       allow update: if admin() && valid_calendarEvents(request.resource.data) && updated(request.resource.data);
-      allow delete: if admin();
+      allow delete: if admin() || instructor(resource.data);
     }
     match /exams/{id} {
       allow read: if active() && profile().role in ['admin', 'dept_head', 'profesor', 'student'];

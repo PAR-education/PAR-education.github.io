@@ -33,7 +33,7 @@ const readers = {
 };
 const writers = {
   courses: ["admin"],
-  calendarEvents: ["admin"],
+  calendarEvents: ["admin", "profesor"],
   exams: ["admin", "profesor"],
   grades: ["admin", "profesor"],
   projects: ["admin", "dept_head"],
@@ -56,6 +56,21 @@ export function canManage(role, collection) {
 }
 export function isActiveProfile(profile) {
   return profile?.active === true && Object.hasOwn(roles, profile.role);
+}
+export function canEditCalendar(role, uid, record) {
+  return (
+    role === "admin" || (role === "profesor" && record.instructorUid === uid)
+  );
+}
+export function canImport(role, name) {
+  if (role === "admin") return Object.hasOwn(readers, name);
+  if (role === "profesor")
+    return ["calendarEvents", "workEntries", "research"].includes(name);
+  if (role === "dept_head")
+    return ["projects", "workEntries", "research"].includes(name);
+  if (role === "lab_assistant")
+    return ["labs", "workEntries", "research"].includes(name);
+  return false;
 }
 export function scopeFor(role, collection) {
   if (role === "admin") return null;

@@ -6,14 +6,7 @@ Dodani su administratorski Control panel i backup (JSON, CSV, ZIP; svi ili odabr
 
 UI koristi izgled i sadržaj dostavljenog profesorova koda: kartice, ikone, raspored po dvoranama, kanban, studentski prosjek/ECTS i zaposlenički profili. `demo.html` odmah prikazuje ogledne podatke.
 
-Za popunjavanje Firebase radnog prostora:
-1. Pushajte izmijenjene datoteke na GitHub Pages.
-2. U Firebase Console → Firestore → Rules zamijenite cijeli sadržaj aktualnom datotekom `firebase/firestore.rules` i objavite pravila.
-3. Prijavite se kao aktivni administrator. Na nadzornoj ploči odaberite **Uvezi podatke predloška**, pa **Uvezi ogledne podatke**.
-
-Uvoz preskače kolekcije koje već imaju podatke; ponovni uvoz ne duplicira zapise. ID-evi počinju s template-. Korisnički profili/Authentication računi ne uvoze se niti im se dodjeljuju prava. Ogledne osobe nisu povezane s pravim Firebase UID-evima; stvarne studente i nastavnike povezuje administrator pri uređivanju. Podaci su iz prototipa, nisu potvrđene evidencije. Izvor ne sadrži stvarni PDF pravilnika, bankovne podatke niti ISVU API.
-
-Provjera: 12 unit testova, 13 Firestore testova uključujući uvoz svih zapisa, pregled modula i mobilnog rasporeda.
+Postojeće evidencije ostaju u bazi. Gumb za ogledni uvoz uklonjen je. Novi podaci uvoze se iz Excela u odgovarajućem modulu; upute: [EXCEL_IMPORT.md](./EXCEL_IMPORT.md). Prije objave potrebno je ažurirati cijeli sadržaj Firebase pravila.
 
 # PAR Education ERP
 

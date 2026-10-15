@@ -37,6 +37,57 @@ export function scheduleConflicts(events, target, excludeId) {
     )
     .sort((a, b) => a.time.localeCompare(b.time));
 }
+export function teachingConflicts(events, target, excludeId) {
+  const end = minutes(
+    target.endTime || timeAt(minutes(target.time) + durationOf(target)),
+  );
+  if (end <= minutes(target.time))
+    throw new Error("Završetak mora biti nakon početka.");
+  if (!target.date || !target.room?.trim())
+    throw new Error("Odaberite datum i dvoranu.");
+  return events.filter(
+    (row) =>
+      row.id !== excludeId &&
+      row.date === target.date &&
+      (row.room.trim() === target.room.trim() ||
+        (target.instructorUid && row.instructorUid === target.instructorUid) ||
+        (target.group &&
+          target.study &&
+          row.group === target.group &&
+          row.study === target.study)) &&
+      minutes(row.time) < end &&
+      minutes(target.time) < minutes(row.time) + durationOf(row),
+  );
+}
+export function calendarLanes(events) {
+  const sorted = [...events].sort((a, b) => minutes(a.time) - minutes(b.time)),
+    result = [];
+  let cluster = [],
+    end = -1;
+  function flush() {
+    const ends = [];
+    for (const event of cluster) {
+      let lane = ends.findIndex((e) => e <= minutes(event.time));
+      if (lane < 0) lane = ends.length;
+      ends[lane] = minutes(event.time) + durationOf(event);
+      result.push({ event, lane, cluster });
+    }
+    result
+      .filter((r) => r.cluster === cluster)
+      .forEach((r) => (r.columns = ends.length));
+    cluster = [];
+  }
+  for (const event of sorted) {
+    if (minutes(event.time) >= end && cluster.length) flush();
+    cluster.push(event);
+    end = Math.max(
+      cluster.length === 1 ? -1 : end,
+      minutes(event.time) + durationOf(event),
+    );
+  }
+  if (cluster.length) flush();
+  return result;
+}
 export function availableSlots(
   events,
   {
@@ -48,6 +99,9 @@ export function availableSlots(
     days = 14,
     limit = 12,
     excludeId,
+    instructorUid = "",
+    group = "",
+    study = "",
   } = {},
 ) {
   duration = Number(duration);
@@ -73,12 +127,15 @@ export function availableSlots(
       if (start + duration > (time ? 1439 : 1200)) continue;
       for (const location of rooms) {
         const target = {
+          instructorUid,
+          group,
+          study,
           date: day,
           room: location,
           time: timeAt(start),
           endTime: timeAt(start + duration),
         };
-        if (!scheduleConflicts(events, target, excludeId).length)
+        if (!teachingConflicts(events, target, excludeId).length)
           result.push(target);
         if (result.length === limit) return result;
       }
@@ -104,9 +161,9 @@ export function prepareCalendarMove(record, target, events = []) {
     : minutes(time) + durationOf(record);
   if (end <= minutes(time) || end >= 1440)
     throw new Error("Završetak mora biti nakon početka i unutar istog dana.");
-  const collision = scheduleConflicts(
+  const collision = teachingConflicts(
     events,
-    { date, time, endTime: timeAt(end), room },
+    { ...record, date, time, endTime: timeAt(end), room },
     record.id,
   )[0];
   if (collision)

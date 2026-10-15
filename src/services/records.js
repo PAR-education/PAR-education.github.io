@@ -4,6 +4,7 @@ import {
   canManage,
   scopeFor,
   staffRoles,
+  canEditCalendar,
 } from "../auth/permissions.js";
 import { tuitionInstallments } from "../utils/tuition.js";
 import { prepareCalendarMove, revisionOf } from "../utils/schedule.js";
@@ -30,7 +31,7 @@ export class Records {
   async moveCalendar(record, target) {
     if (
       this.profile.active !== true ||
-      !canManage(this.profile.role, "calendarEvents")
+      !canEditCalendar(this.profile.role, this.user.uid, record)
     )
       throw new Error("Nemate ovlasti za promjenu rasporeda.");
     const events = await this.listAll("calendarEvents");
@@ -40,6 +41,8 @@ export class Records {
         snapshot = await transaction.get(ref);
       if (!snapshot.exists()) throw new Error("Događaj više ne postoji.");
       const latest = { ...snapshot.data(), id: record.id };
+      if (!canEditCalendar(this.profile.role, this.user.uid, latest))
+        throw new Error("Nemate ovlasti za tuđu nastavu.");
       if (revisionOf(latest) !== revisionOf(record))
         throw new Error(
           "Raspored je u međuvremenu izmijenjen. Osvježite prikaz pa ponovite premještanje.",
@@ -87,6 +90,15 @@ export class Records {
       throw new Error("Nemate ovlasti za spremanje.");
     const { db, firestore: sdk } = await getFirebase();
     const data = { ...values, updatedAt: sdk.serverTimestamp() };
+    if (name === "calendarEvents" && role === "profesor") {
+      data.instructorUid = this.user.uid;
+      const course = await sdk.getDocFromServer(
+        sdk.doc(db, "courses", data.courseId || "_missing"),
+      );
+      if (!course.exists() || course.data().instructorUid !== this.user.uid)
+        throw new Error("Odaberite vlastiti dodijeljeni kolegij.");
+      data.instructorName = this.profile.name;
+    }
     if (!canManage(role, name) || (name === "research" && role !== "admin"))
       data.ownerUid = this.user.uid;
     if (!id) {

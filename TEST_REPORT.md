@@ -1,3 +1,7 @@
+## Excel uvoz i raspored — 15.10.2026.
+
+28 unit/integracijskih testova i 17 Firestore testova prolazi. Novi XLSX predlošci imaju listove Podaci, Upute i Izbori. Testirani su ponavljanja i iznimke, provjera kolizija, ponovno učitavanje bez duplikata, studentski JMBAG i očuvanje veza na račune, te zabrana nastavniku da mijenja tuđu nastavu. Browser demo: preuzet stvarni predložak, uvezena 2 termina uz izostavljen neispravan redak i jedan student bez računa. Produkcijska baza nije mijenjana. Detalji: EXCEL_IMPORT.md.
+
 ## Backup/calendar provjera 14.10.2026.
 
 19 unit + 15 Firestore testova prolazi. Provjeren puni JSON i inkrementalni ZIP kroz demo UI, djelomičan import 10 kolegija te export/import JSON i CSV u stvarnom Auth/Firestore emulatoru. Export je paginiran (provjera 510 dokumenata); ispravan inkrementalni lanac, promjene i brisanja, UTC Zagreb/DST i ICS escaping imaju testove. Preuzeto 10 događaja u ICS. Vanjski Google račun nije mijenjan. Detalji: BACKUP_CALENDAR.md.

@@ -604,3 +604,59 @@ test("Calendar end times may be defined only by admin and must follow the start 
     }),
   );
 });
+
+test("Teachers may create and update only their assigned teaching, never another teacher or course", async () => {
+  const db = database("teacher"),
+    ref = doc(db, "calendarEvents", "teacher-import");
+  const value = {
+    title: "Ekonomija",
+    courseId: "c1",
+    instructorUid: "teacher",
+    instructorName: "Profesor",
+    date: "2026-10-19",
+    time: "10:00",
+    endTime: "11:30",
+    room: "PAR",
+    study: "Poslovanje",
+    group: "1A",
+    academicYear: "2026/2027",
+    semester: "Zimski",
+    seriesId: "series-test",
+    createdBy: "teacher",
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  };
+  await assertSucceeds(setDoc(ref, value));
+  await assertSucceeds(
+    updateDoc(ref, {
+      time: "12:00",
+      endTime: "13:30",
+      updatedAt: serverTimestamp(),
+    }),
+  );
+  await assertFails(
+    updateDoc(doc(database("teacher-b"), "calendarEvents", "teacher-import"), {
+      room: "Other",
+      updatedAt: serverTimestamp(),
+    }),
+  );
+  await assertFails(
+    updateDoc(ref, {
+      instructorUid: "teacher-b",
+      updatedAt: serverTimestamp(),
+    }),
+  );
+  await assertFails(
+    setDoc(doc(db, "calendarEvents", "foreign-course"), {
+      ...value,
+      courseId: "missing",
+    }),
+  );
+  await assertFails(
+    setDoc(doc(database("student-a"), "calendarEvents", "student-import"), {
+      ...value,
+      createdBy: "student-a",
+    }),
+  );
+  await assertSucceeds(deleteDoc(ref));
+});

@@ -110,6 +110,13 @@ export async function demoData() {
     labBookings: [],
     calendarEvents: old.courses.map((r) => ({
       id: String(r.id),
+      courseId: String(r.id),
+      instructorUid: "demo-profesor",
+      study: "Poslovno upravljanje",
+      group: "1A",
+      academicYear: "2026/2027",
+      semester: "Zimski",
+      teachingType: "Predavanje",
       title: r.title,
       date:
         "2026-10-" +

@@ -6,13 +6,21 @@ import {
   durationOf,
   defaultRooms,
   scheduleConflicts,
+  teachingConflicts,
 } from "../utils/schedule.js";
 import { openDialog, closeDialog } from "./dialog.js";
 import { bindScheduleDrag } from "./schedule-drag.js";
 export function mountSchedule(
   root,
   events,
-  { canEdit, onMove, onDetails, allEvents = events },
+  {
+    canEdit,
+    onMove,
+    onDetails,
+    allEvents = events,
+    canEditRecord = () => canEdit,
+    initialDay = "",
+  },
 ) {
   const rooms = [
     ...new Set([...allEvents.map((r) => r.room), ...defaultRooms]),
@@ -27,7 +35,7 @@ export function mountSchedule(
       ...events.map((r) => Math.floor(minutes(r.time) / 120) * 2),
     ]),
   ].sort((a, b) => a - b);
-  let day = root.querySelector("#schedule-day")?.value || "",
+  let day = root.querySelector("#schedule-day")?.value ?? initialDay,
     busy = false,
     suppressClick = false;
   root.innerHTML = `<div class="schedule-tools"><label>Prikaži datum<input id="schedule-day" type="date"></label><button id="schedule-all-days" class="button">Svi dani</button><p>${canEdit ? "Povucite događaj u drugi termin ili dvoranu. Trajanje se zadržava. Tipkovnica: Alt + strelice; gumb „Satnica” omogućuje točan datum, početak i završetak." : "Raspored je dostupan za pregled. Izmjene radi administrator."}</p></div><div id="schedule-message" role="status" aria-live="polite"></div><section class="panel availability-panel"><h2>Provjeri slobodan termin</h2><p>Odaberite datum, dvoranu i točan vremenski raspon. Provjera uključuje i događaje skrivene pretraživanjem.</p><div class="availability-fields"><label>Datum<input id="available-date" type="date"></label><label>Dvorana<select id="available-room">${rooms.map((r) => `<option>${e(r)}</option>`).join("")}</select></label><label>Početak<input id="available-start" type="time" value="08:00"></label><label>Završetak<input id="available-end" type="time" value="10:00"></label></div><div id="available-result" role="status" aria-live="polite"></div></section><div id="schedule-grid"></div>`;
@@ -43,7 +51,13 @@ export function mountSchedule(
     });
   function availability(target, excludeId) {
     try {
-      const conflicts = scheduleConflicts(allEvents, target, excludeId);
+      const conflicts = excludeId
+        ? teachingConflicts(
+            allEvents,
+            { ...find(excludeId), ...target },
+            excludeId,
+          )
+        : scheduleConflicts(allEvents, target);
       return {
         blocked: conflicts.length > 0,
         html: conflicts.length
@@ -96,7 +110,7 @@ export function mountSchedule(
                           r.room === room &&
                           Math.floor(minutes(r.time) / 120) * 2 === h,
                       );
-                      return `<div class="room-slot drop-slot ${occupied.length ? "slot-occupied" : "slot-free"}" data-date="${e(date)}" data-room="${e(room)}" data-time="${timeAt(h * 60)}" aria-label="${e(dateLabel(date))} ${e(room)} ${timeAt(h * 60)}"><span class="slot-status">${occupied.length ? "ZAUZETO · provjerite točne minute" : "SLOBODNO"}</span>${cards.map((r) => `<div class="schedule-event"><button class="lesson" data-event="${e(r.id)}" title="${canEdit ? "Povuci za premještanje · Alt + strelice" : "Detalji događaja"}"><small>${icon("clock")} ${e(r.time)} – ${e(timeAt(minutes(r.time) + durationOf(r)))}</small><strong>${e(r.title)}</strong><small>${e(r.instructorName || "Nastavnik nije naveden")}</small><small>${e(dateLabel(r.date))}</small></button>${canEdit ? `<button class="schedule-edit" data-move="${e(r.id)}" aria-label="Promijeni satnicu: ${e(r.title)}">${icon("arrows-up-down-left-right")} Satnica</button>` : ""}</div>`).join("")}${occupied
+                      return `<div class="room-slot drop-slot ${occupied.length ? "slot-occupied" : "slot-free"}" data-date="${e(date)}" data-room="${e(room)}" data-time="${timeAt(h * 60)}" aria-label="${e(dateLabel(date))} ${e(room)} ${timeAt(h * 60)}"><span class="slot-status">${occupied.length ? "ZAUZETO · provjerite točne minute" : "SLOBODNO"}</span>${cards.map((r) => `<div class="schedule-event"><button class="lesson" data-event="${e(r.id)}" title="${canEdit ? "Povuci za premještanje · Alt + strelice" : "Detalji događaja"}"><small>${icon("clock")} ${e(r.time)} – ${e(timeAt(minutes(r.time) + durationOf(r)))}</small><strong>${e(r.title)}</strong><small>${e(r.instructorName || "Nastavnik nije naveden")}</small><small>${e(dateLabel(r.date))}</small></button>${canEditRecord(r) ? `<button class="schedule-edit" data-move="${e(r.id)}" aria-label="Promijeni satnicu: ${e(r.title)}">${icon("arrows-up-down-left-right")} Satnica</button>` : ""}</div>`).join("")}${occupied
                         .filter((r) => !cards.some((c) => c.id === r.id))
                         .map(
                           (r) =>
@@ -115,7 +129,7 @@ export function mountSchedule(
       button.addEventListener("click", () => {
         if (!suppressClick && !busy) onDetails(record);
       });
-      if (!canEdit) return;
+      if (!canEditRecord(record)) return;
       bindScheduleDrag(button, root, record, {
         isBusy: () => busy,
         onStart: () => {
@@ -160,7 +174,7 @@ export function mountSchedule(
       );
   }
   async function move(record, target) {
-    if (busy || !canEdit) return;
+    if (busy || !canEditRecord(record)) return;
     busy = true;
     $("schedule-message").className = "notice";
     $("schedule-message").textContent = "Spremanje nove satnice…";

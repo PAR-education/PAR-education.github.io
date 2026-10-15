@@ -1,5 +1,12 @@
 import { observeSession, logout } from "./auth/auth.js";
-import { roles, canRead, canManage, staffRoles } from "./auth/permissions.js";
+import {
+  roles,
+  canRead,
+  canManage,
+  staffRoles,
+  canEditCalendar,
+  canImport,
+} from "./auth/permissions.js";
 import { Records } from "./services/records.js";
 import { modules, labelFor } from "./modules/catalog.js";
 import {
@@ -22,10 +29,10 @@ import { printReport, exportCSV } from "./components/export.js";
 import { loadEvaluationTemplates } from "./data/evaluations.js";
 import { tuitionInstallments } from "./utils/tuition.js";
 import { icon, visualRecords } from "./modules/visuals.js";
-import { importTemplate } from "./services/import-template.js";
+import { showExcelImport } from "./components/excel-import.js";
+import { mountCalendarView } from "./components/calendar-view.js";
 import { mountControlPanel } from "./components/control-panel.js";
 import { mountCalendarIntegration } from "./components/calendar-integration.js";
-import { mountSchedule } from "./components/schedule.js";
 import { mountSlotFinder } from "./components/slot-finder.js";
 const $ = (id) => document.getElementById(id);
 let context = null;
@@ -38,20 +45,6 @@ let statusFilter = "";
 let month = "";
 let toastTimer;
 theme();
-document.addEventListener("click", async (event) => {
-  if (event.target.id !== "confirm-import") return;
-  const current = context;
-  event.target.disabled = true;
-  try {
-    const count = await importTemplate(current.profile, current.user.uid);
-    closeDialog();
-    notify(count + " oglednih zapisa uvezeno.");
-    if (current === context) await loadView("dashboard");
-  } catch (error) {
-    event.target.disabled = false;
-    notify(errorMessage(error));
-  }
-});
 $("global-search")?.addEventListener("input", (event) => {
   const value = event.target.value.trim().toLocaleLowerCase("hr");
   const results = $("global-results");
@@ -301,7 +294,7 @@ async function drawDashboard(ticket, current) {
     heading(
       "Nadzorna ploča",
       `Dobrodošli, ${current.profile.name || current.user.email}. ${new Date().toLocaleDateString("hr-HR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}`,
-      `${current.profile.role === "admin" ? '<a class="button" href="#control-panel">Control panel i backup</a>' : ""}${current.profile.role === "admin" && !current.demo ? '<button id="import-template" class="button primary">Uvezi podatke predloška</button>' : ""}<button id="refresh" class="button">Osvježi podatke</button>`,
+      `${current.profile.role === "admin" ? '<a class="button" href="#control-panel">Control panel i backup</a>' : ""}<button id="refresh" class="button">Osvježi podatke</button>`,
     ) +
     (failures.length
       ? `<div class="notice error">Neki podaci nisu dostupni. ${e(errorMessage(failures[0].reason))}</div>`
@@ -321,12 +314,6 @@ async function drawDashboard(ticket, current) {
       .join(
         "",
       )}</div></section><section class="panel"><div class="panel-title"><h2>Sljedeći događaji</h2><a href="#calendarEvents">Kalendar</a></div>${scheduleResult[0].status === "rejected" ? '<p class="panel-note">Kalendar nije dostupan.</p>' : upcoming.length ? `<div class="calendar-list">${upcoming.map((row) => `<div class="calendar-row"><div class="date-box">${e(row.date)}</div><div><h3>${e(row.title)}</h3><p>${e(row.time)} · ${e(row.room)}</p></div></div>`).join("")}</div>` : '<p class="panel-note">Nema nadolazećih događaja.</p>'}</section></div><section class="panel"><div class="panel-title"><h2>Obavijesti</h2><a href="#notifications">Sve obavijesti</a></div>${scheduleResult[1].status === "rejected" ? '<p class="panel-note">Obavijesti nisu dostupne.</p>' : notices.length ? `<div class="calendar-list">${notices.map((row) => `<div class="calendar-row"><div><h3>${e(row.title)}</h3><p>${e(row.message)}</p></div></div>`).join("")}</div>` : '<p class="panel-note">Trenutno nema novih obavijesti.</p>'}</section>`;
-  $("import-template")?.addEventListener("click", () =>
-    openDialog(
-      "Uvoz izvornog predloška",
-      '<p>Uvoz oglednih zapisa iz profesorova koda u prazne kolekcije. Postojeći zapisi i korisnički računi ostaju sačuvani. Ogledne financijske obveze nisu stvarni nalozi za uplatu.</p><p>Uvoze se studenti, zaposlenici, kolegiji, ispiti, projekti, ocjene, rasporedi i ostale evidencije. Zapisi imaju oznaku template- u ID-u.</p><button id="confirm-import" class="button primary">Uvezi ogledne podatke</button>',
-    ),
-  );
   $("refresh").addEventListener("click", () => loadView("dashboard"));
   $("content")
     .querySelectorAll("[data-nav]")
@@ -348,6 +335,8 @@ function canCreate(name) {
   );
 }
 function canEdit(name, record) {
+  if (name === "calendarEvents")
+    return canEditCalendar(context.profile.role, context.user.uid, record);
   if (["enrollments", "examBookings", "labBookings"].includes(name))
     return false;
   if (["evaluations"].includes(name)) return false;
@@ -374,9 +363,12 @@ function drawModule() {
     heading(
       config.title,
       config.description,
-      `${canCreate(active) ? '<button id="create" class="button primary">+ Novi zapis</button>' : ""}<button id="refresh" class="button">Osvježi</button><button id="print" class="button">Ispis / PDF</button><button id="csv" class="button">CSV</button>`,
+      `${canCreate(active) ? '<button id="create" class="button primary">+ Novi zapis</button>' : ""}${canImport(context.profile.role, active) ? '<button id="excel-open" class="button">Uvezi iz Excela</button>' : ""}<button id="refresh" class="button">Osvježi</button><button id="print" class="button">Ispis / PDF</button><button id="csv" class="button">CSV</button>`,
     ) +
     `<section class="panel"><div class="toolbar"><label for="search">Pretraživanje <input class="search" id="search" type="search" placeholder="Pretraži zapise…" autocomplete="off"></label>${filters}${monthly}</div><div id="table-area"></div><div class="table-footer" id="record-count"></div></section>`;
+  $("excel-open")?.addEventListener("click", () =>
+    showExcelImport(context, active, () => loadView(active)),
+  );
   $("create")?.addEventListener("click", () => showForm(active));
   $("refresh").addEventListener("click", () => loadView(active));
   $("search").addEventListener("input", (event) => {
@@ -467,9 +459,12 @@ function drawTable() {
       `<div class="empty"><h2>${rows.length ? "Nema rezultata" : "Još nema zapisa"}</h2><p>${rows.length ? "Pokušajte s drugim pojmom ili filtrom." : canCreate(active) ? "Dodajte prvi zapis. Podaci se spremaju tek nakon potvrde baze." : "Zapisi će se prikazati kada ih administrator ili nadležna služba doda."}</p></div>`;
   else if (active === "calendarEvents") {
     const current = context;
-    mountSchedule($("table-area"), shownRows, {
+    mountCalendarView($("table-area"), shownRows, {
+      context: current,
       allEvents: rows,
       canEdit: canManage(current.profile.role, "calendarEvents"),
+      canEditRecord: (record) =>
+        canEditCalendar(current.profile.role, current.user.uid, record),
       onDetails: (record) => showDetails("calendarEvents", record),
       onMove: async (record, target) => {
         if (context !== current || active !== "calendarEvents")
@@ -517,7 +512,7 @@ function showDetails(name, record) {
   openDialog(
     record.name || record.title || modules[name].title,
     detailsHTML(modules[name].fields, record) +
-      `<p class="muted">ID: ${e(record.id)}</p><div class="detail-actions">${canEdit(name, record) ? '<button id="edit-record" class="button primary">Uredi</button>' : ""}<button id="print-record" class="button">Ispis / PDF</button>${record.url && /^https:\/\//i.test(record.url) ? `<a class="button" href="${e(record.url)}" target="_blank" rel="noopener noreferrer">Otvori dokument ↗</a>` : ""}${role === "student" && bookingTarget ? '<button id="book-record" class="button primary">Pošalji prijavu</button>' : ""}${canDecide && record.status === "Na čekanju" && ["vacations", "enrollments", "examBookings", "labBookings"].includes(name) ? '<button id="approve" class="button primary">Odobri</button><button id="reject" class="button">Odbij</button>' : ""}${canManage(role, name) && !["users", "evaluations"].includes(name) ? '<button id="delete-record" class="button danger">Izbriši</button>' : ""}</div><div id="detail-error" role="alert"></div>`,
+      `<p class="muted">ID: ${e(record.id)}</p><div class="detail-actions">${canEdit(name, record) ? '<button id="edit-record" class="button primary">Uredi</button>' : ""}<button id="print-record" class="button">Ispis / PDF</button>${record.url && /^https:\/\//i.test(record.url) ? `<a class="button" href="${e(record.url)}" target="_blank" rel="noopener noreferrer">Otvori dokument ↗</a>` : ""}${role === "student" && bookingTarget ? '<button id="book-record" class="button primary">Pošalji prijavu</button>' : ""}${canDecide && record.status === "Na čekanju" && ["vacations", "enrollments", "examBookings", "labBookings"].includes(name) ? '<button id="approve" class="button primary">Odobri</button><button id="reject" class="button">Odbij</button>' : ""}${canManage(role, name) && (name !== "calendarEvents" || canEdit(name, record)) && !["users", "evaluations"].includes(name) ? '<button id="delete-record" class="button danger">Izbriši</button>' : ""}</div><div id="detail-error" role="alert"></div>`,
   );
   $("edit-record")?.addEventListener("click", () => {
     closeDialog();
@@ -685,11 +680,19 @@ function showForm(name, record = {}) {
     (name === "exams" && role === "profesor")
   )
     defaults.instructorUid = context.user.uid;
+  if (name === "calendarEvents" && role === "profesor") {
+    defaults.instructorUid = context.user.uid;
+    defaults.instructorName = context.profile.name;
+  }
   if (name === "users" && !record.id) defaults.active = true;
   const readonly = (field) =>
     (mine &&
       ["ownerUid", "ownerName", "status", "response"].includes(field.key)) ||
-    (role === "profesor" && field.key === "instructorUid");
+    (role === "profesor" &&
+      [
+        "instructorUid",
+        ...(name === "calendarEvents" ? ["instructorName"] : []),
+      ].includes(field.key));
   const questions =
     name === "evaluations"
       ? '<div class="evaluation-questions"><div class="field"><label for="eval-template">Predložak upitnika</label><select id="eval-template"><option value="">Opći osvrt</option></select></div><strong>Pitanja za osvrt</strong><ol id="eval-questions"><li>Jesu li upute i materijali jasni?</li><li>Koliko je jednostavno obaviti zadatak?</li><li>Je li podrška pravodobna i korisna?</li><li>Što biste poboljšali?</li></ol><p class="muted">Pitanja iz izvornog prototipa uključuju procjenu budućih integracija.</p></div>'
@@ -711,6 +714,35 @@ function showForm(name, record = {}) {
   $("cancel-form").addEventListener("click", closeDialog);
   const current = context;
   const form = $("record-form");
+  if (name === "calendarEvents" && role === "profesor") {
+    current.repository
+      .list("courses")
+      .then((courses) => {
+        if ($("record-form") !== form) return;
+        const input = form.elements.courseId,
+          select = document.createElement("select");
+        select.name = "courseId";
+        select.id = input.id;
+        select.required = true;
+        select.innerHTML =
+          '<option value="">Odaberite svoj kolegij</option>' +
+          courses
+            .filter((c) => c.instructorUid === current.user.uid)
+            .map(
+              (c) =>
+                `<option value="${e(c.id)}" ${c.id === record.courseId ? "selected" : ""}>${e(c.title)}</option>`,
+            )
+            .join("");
+        input.replaceWith(select);
+        select.addEventListener("change", () => {
+          form.elements.title.value =
+            courses.find((c) => c.id === select.value)?.title || "";
+        });
+      })
+      .catch((error) => {
+        $("form-error").textContent = errorMessage(error);
+      });
+  }
   const checkSlot =
     name === "calendarEvents"
       ? mountSlotFinder($("slot-finder"), form, current.repository, record)

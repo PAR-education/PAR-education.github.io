@@ -1,4 +1,4 @@
-import { scopeFor, canRead } from "../auth/permissions.js";
+import { scopeFor, canRead, canEditCalendar } from "../auth/permissions.js";
 import { tuitionInstallments } from "../utils/tuition.js";
 import { prepareCalendarMove, revisionOf } from "../utils/schedule.js";
 export class DemoRecords {
@@ -8,7 +8,10 @@ export class DemoRecords {
     this.profile = profile;
   }
   async moveCalendar(record, target) {
-    if (this.profile.role !== "admin" || this.profile.active !== true)
+    if (
+      !canEditCalendar(this.profile.role, this.user.uid, record) ||
+      this.profile.active !== true
+    )
       throw new Error("Nemate ovlasti za promjenu rasporeda.");
     const current = this.data.calendarEvents.find(
       (row) => row.id === record.id,
@@ -37,6 +40,21 @@ export class DemoRecords {
   }
   async save(name, values, id) {
     const old = this.data[name].find((row) => row.id === id);
+    if (name === "calendarEvents" && this.profile.role === "profesor") {
+      if (old && old.instructorUid !== this.user.uid)
+        throw new Error("Nemate ovlasti za tuđu nastavu.");
+      if (
+        !this.data.courses.some(
+          (c) => c.id === values.courseId && c.instructorUid === this.user.uid,
+        )
+      )
+        throw new Error("Odaberite vlastiti dodijeljeni kolegij.");
+      values = {
+        ...values,
+        instructorUid: this.user.uid,
+        instructorName: this.profile.name,
+      };
+    }
     if (old) Object.assign(old, values);
     else
       this.data[name].push({

@@ -122,7 +122,14 @@ const policies = {
     write: "admin()",
   },
   courses: { read: "active()", write: "admin()" },
-  calendarEvents: { read: "active()", write: "admin()" },
+  calendarEvents: {
+    read: "active()",
+    write:
+      "admin() || (role('profesor') && assignedCourse(request.resource.data))",
+    update:
+      "admin() || (instructor(resource.data) && assignedCourse(request.resource.data))",
+    remove: "admin() || instructor(resource.data)",
+  },
   exams: {
     read: "active() && profile().role in ['admin', 'dept_head', 'profesor', 'student']",
     write:
