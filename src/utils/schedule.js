@@ -20,6 +20,18 @@ export const durationOf = (row) =>
   row.endTime
     ? minutes(row.endTime) - minutes(row.time)
     : Math.min(120, 1439 - minutes(row.time));
+// The pointer is anchored at the original grab point, snapped to 15 minutes.
+export function calendarDropTime(
+  startMinute,
+  pointerOffset,
+  grabOffset,
+  duration,
+  scale = 1.2,
+) {
+  const start =
+    Math.round((startMinute + (pointerOffset - grabOffset) / scale) / 15) * 15;
+  return start >= 0 && start + duration < 1440 ? timeAt(start) : null;
+}
 export function scheduleConflicts(events, target, excludeId) {
   const start = minutes(target.time),
     end = minutes(target.endTime);

@@ -3,7 +3,7 @@ export function bindScheduleDrag(
   button,
   root,
   record,
-  { isBusy, onStart, onEnd, onDrop },
+  { isBusy, onStart, onEnd, onDrop, resolveDrop },
 ) {
   let gesture = null,
     ghost = null,
@@ -27,10 +27,12 @@ export function bindScheduleDrag(
     if (!gesture?.moved || !root.isConnected) return;
     if (gesture.y > innerHeight - 45) window.scrollBy(0, 12);
     else if (gesture.y < 90) window.scrollBy(0, -12);
-    const grid = root.querySelector(".timetable"),
-      box = grid.getBoundingClientRect();
-    if (gesture.x > box.right - 30) grid.scrollLeft += 12;
-    else if (gesture.x < box.left + 30) grid.scrollLeft -= 12;
+    const grid = root.querySelector(".timetable, .calendar-week");
+    if (grid) {
+      const box = grid.getBoundingClientRect();
+      if (gesture.x > box.right - 30) grid.scrollLeft += 12;
+      else if (gesture.x < box.left + 30) grid.scrollLeft -= 12;
+    }
     paint();
     frame = requestAnimationFrame(scroll);
   }
@@ -74,12 +76,14 @@ export function bindScheduleDrag(
       root.classList.add("schedule-dragging");
       ghost = button.cloneNode(true);
       ghost.removeAttribute("data-event");
+      ghost.removeAttribute("data-calendar-id");
       ghost.removeAttribute("title");
       ghost.tabIndex = -1;
       ghost.setAttribute("aria-hidden", "true");
       ghost.classList.remove("dragging");
       ghost.classList.add("schedule-ghost");
       ghost.style.width = button.getBoundingClientRect().width + "px";
+      ghost.style.height = button.getBoundingClientRect().height + "px";
       document.body.append(ghost);
       frame = requestAnimationFrame(scroll);
     }
@@ -93,11 +97,17 @@ export function bindScheduleDrag(
     const moved = gesture.moved,
       slot = moved ? target(event.clientX, event.clientY) : null;
     const value = slot
-      ? {
-          room: slot.dataset.room,
-          time: slot.dataset.time,
-          date: slot.dataset.date,
-        }
+      ? resolveDrop
+        ? resolveDrop(
+            slot,
+            { x: event.clientX, y: event.clientY, offsetY: gesture.offsetY },
+            record,
+          )
+        : {
+            room: slot.dataset.room,
+            time: slot.dataset.time,
+            date: slot.dataset.date,
+          }
       : null;
     cleanup();
     if (button.hasPointerCapture(event.pointerId))

@@ -9,7 +9,15 @@ import {
   parseCSV,
 } from "../src/services/excel-files.js";
 import { canImport, canEditCalendar } from "../src/auth/permissions.js";
-import { teachingConflicts } from "../src/utils/schedule.js";
+import { teachingConflicts, calendarDropTime } from "../src/utils/schedule.js";
+
+test("Calendar drag snaps to 15 minutes using grab offset and rejects crossing midnight", () => {
+  assert.equal(calendarDropTime(480, 144 + 35, 35, 120), "10:00");
+  assert.equal(calendarDropTime(480, 164 + 35, 35, 120), "10:15");
+  assert.equal(calendarDropTime(480, 0, 30, 120), "07:30");
+  assert.equal(calendarDropTime(0, 0, 30, 120), null);
+  assert.equal(calendarDropTime(480, 1000, 0, 180), null);
+});
 globalThis.ExcelJS = Excel;
 const course = {
   id: "c1",

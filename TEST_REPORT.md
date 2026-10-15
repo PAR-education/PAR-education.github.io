@@ -73,3 +73,7 @@ The Auth-only account migration was also verified: a login for an existing Authe
 ## Profile-write denial recovery
 
 Reproduced registration against the previous administrator-only user-create policy in local Auth/Firestore emulators. Confirmed Auth account creation succeeds while profile creation is denied. The login now shows a distinct profile error and retry action instead of approval pending. Loading the current restricted self-provisioning rules and clicking retry created the inactive profile successfully. No live project rules or records were changed.
+## Drag & drop regresija — 15.10.2026.
+
+Povlačenje ponovno spojeno na tjedni i dnevni prikaz, uz postojeći prikaz dvorana. Browser demo: stvarnim povlačenjem promijenjen ponedjeljak u utorak, zauzeti termin 10–12 odbijen bez promjene podataka, zatim stvarnim povlačenjem spremljen termin 12–14 u dnevnom prikazu. Tipkovnicom provjereni pomak dana i početak 12:15. 29 unit/integracijskih testova prolazi; nova provjera pokriva 15-minutno zaokruživanje, točku hvatanja i zabranu prelaska ponoći. Firebase pravila nisu mijenjana.
+

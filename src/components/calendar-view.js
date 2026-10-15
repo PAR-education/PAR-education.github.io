@@ -5,8 +5,11 @@ import {
   durationOf,
   timeAt,
   calendarLanes,
+  calendarDropTime,
 } from "../utils/schedule.js";
 import { escapeHTML as e } from "../utils/helpers.js";
+import { errorMessage } from "../utils/helpers.js";
+import { bindScheduleDrag } from "./schedule-drag.js";
 
 export function mountCalendarView(root, events, options) {
   root.classList.add("calendar-layout");
@@ -56,7 +59,9 @@ export function mountCalendarView(root, events, options) {
   for (const [id, value] of Object.entries(priorFilters))
     if (Array.from($(id).options).some((o) => o.value === value))
       $(id).value = value;
-  let enrolled = null;
+  let enrolled = null,
+    busy = false,
+    suppressClick = false;
   const label = (date) =>
     new Date(date + "T12:00:00Z").toLocaleDateString("hr-HR", {
       weekday: "long",
@@ -120,46 +125,128 @@ export function mountCalendarView(root, events, options) {
       );
     const card = (r) =>
       `<button class="calendar-lesson" data-calendar-id="${e(r.id)}" title="${e([r.title, r.time, r.endTime, r.room, r.instructorName, r.study, r.group, r.teachingType].filter(Boolean).join(" · "))}"><strong>${e(r.title)}</strong><span>${e(r.time)}–${e(r.endTime || timeAt(minutes(r.time) + durationOf(r)))}</span><span>${e(r.room)} · ${e(r.instructorName || "Nastavnik nije naveden")}</span><small>${e([r.study, r.group, r.teachingType].filter(Boolean).join(" · "))}</small></button>`;
-    $("calendar-body").innerHTML = `${
-      view !== "semester"
-        ? `<h2 class="calendar-period">${e(label(dates[0]))}${dates.length > 1 ? " – " + e(label(dates.at(-1))) : ""}</h2><div class="calendar-week" style="--day-count:${dates.length}">${dates
-            .map(
-              (day) =>
-                `<section class="calendar-week-day"><h3>${e(label(day))}</h3><div class="calendar-time-track" style="height:${(hi - lo) * 1.2}px">${Array.from({ length: Math.ceil((hi - lo) / 60) }, (_, i) => `<div class="calendar-hour" style="top:${i * 72}px">${timeAt(lo + i * 60)}</div>`).join("")}${calendarLanes(
-                  visible.filter((r) => r.date === day),
-                )
-                  .map(
-                    ({ event: r, lane, columns }) =>
-                      `<div class="calendar-position" style="left:calc(22px + (100% - 24px) * ${lane / columns});width:calc((100% - 24px) / ${columns});top:${(minutes(r.time) - lo) * 1.2}px;height:${Math.max(60, durationOf(r) * 1.2 - 4)}px">${card(r)}</div>`,
+    $("calendar-body").innerHTML =
+      `<div id="calendar-move-message" role="status" aria-live="polite"></div>${options.canEdit ? '<p class="panel-note">Povucite svoju nastavu na drugi dan ili vrijeme (korak 15 min). Trajanje i dvorana ostaju isti. Za promjenu dvorane otvorite Dvorane i dostupnost ili Uredi. Tipkovnica: Alt + strelice.</p>' : ""}${
+        view !== "semester"
+          ? `<h2 class="calendar-period">${e(label(dates[0]))}${dates.length > 1 ? " – " + e(label(dates.at(-1))) : ""}</h2><div class="calendar-week" style="--day-count:${dates.length}">${dates
+              .map(
+                (day) =>
+                  `<section class="calendar-week-day"><h3>${e(label(day))}</h3><div class="calendar-time-track drop-slot" data-date="${e(day)}" style="height:${(hi - lo) * 1.2}px">${Array.from({ length: Math.ceil((hi - lo) / 60) }, (_, i) => `<div class="calendar-hour" style="top:${i * 72}px">${timeAt(lo + i * 60)}</div>`).join("")}${calendarLanes(
+                    visible.filter((r) => r.date === day),
                   )
-                  .join("")}</div></section>`,
-            )
-            .join("")}</div>`
-        : ""
-    }<div class="calendar-agenda ${view === "semester" ? "semester-agenda" : ""}">${
-      dates
-        .map(
-          (day) =>
-            `<section><h3>${e(label(day))}</h3>${
-              visible
-                .filter((r) => r.date === day)
-                .sort((a, b) => a.time.localeCompare(b.time))
-                .map(card)
-                .join("") || '<p class="panel-note">Nema nastave.</p>'
-            }</section>`,
+                    .map(
+                      ({ event: r, lane, columns }) =>
+                        `<div class="calendar-position" style="left:calc(22px + (100% - 24px) * ${lane / columns});width:calc((100% - 24px) / ${columns});top:${(minutes(r.time) - lo) * 1.2}px;height:${Math.max(60, durationOf(r) * 1.2 - 4)}px">${card(r)}</div>`,
+                    )
+                    .join("")}</div></section>`,
+              )
+              .join("")}</div>`
+          : ""
+      }<div class="calendar-agenda ${view === "semester" ? "semester-agenda" : ""}">${
+        dates
+          .map(
+            (day) =>
+              `<section class="drop-slot" data-date="${e(day)}"><h3>${e(label(day))}</h3>${
+                visible
+                  .filter((r) => r.date === day)
+                  .sort((a, b) => a.time.localeCompare(b.time))
+                  .map(card)
+                  .join("") || '<p class="panel-note">Nema nastave.</p>'
+              }</section>`,
+          )
+          .join("") ||
+        '<p class="panel-note">Nema termina za odabrane filtre.</p>'
+      }</div>`;
+    root.querySelectorAll("[data-calendar-id]").forEach((button) => {
+      const record = events.find((r) => r.id === button.dataset.calendarId);
+      button.addEventListener("click", () => {
+        if (!busy && !suppressClick) options.onDetails(record);
+      });
+      if (!options.canEditRecord?.(record)) return;
+      bindScheduleDrag(button, root, record, {
+        isBusy: () => busy,
+        onStart: () => {
+          suppressClick = true;
+        },
+        onEnd: () =>
+          setTimeout(() => {
+            suppressClick = false;
+          }, 150),
+        resolveDrop: (slot, point, row) => {
+          const time = slot.classList.contains("calendar-time-track")
+            ? calendarDropTime(
+                lo,
+                point.y - slot.getBoundingClientRect().top,
+                point.offsetY,
+                durationOf(row),
+              )
+            : row.time;
+          return time
+            ? { date: slot.dataset.date, time, room: row.room }
+            : null;
+        },
+        onDrop: move,
+      });
+      button.addEventListener("keydown", (event) => {
+        if (
+          !event.altKey ||
+          !["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(
+            event.key,
+          ) ||
+          busy
         )
-        .join("") ||
-      '<p class="panel-note">Nema termina za odabrane filtre.</p>'
-    }</div>`;
-    root
-      .querySelectorAll("[data-calendar-id]")
-      .forEach((button) =>
-        button.addEventListener("click", () =>
-          options.onDetails(
-            events.find((r) => r.id === button.dataset.calendarId),
+          return;
+        event.preventDefault();
+        const delta =
+          event.key === "ArrowDown" ? 15 : event.key === "ArrowUp" ? -15 : 0;
+        const start = minutes(record.time) + delta;
+        if (start < 0 || start + durationOf(record) >= 1440) return;
+        move(record, {
+          date: add(
+            record.date,
+            event.key === "ArrowRight" ? 1 : event.key === "ArrowLeft" ? -1 : 0,
           ),
-        ),
+          time: timeAt(start),
+          room: record.room,
+        });
+      });
+    });
+  }
+  async function move(record, target) {
+    if (busy || !options.canEditRecord?.(record)) return;
+    busy = true;
+    const show = (text, error = false) => {
+      const el = $("calendar-move-message");
+      if (root.isConnected && el) {
+        el.className = "notice" + (error ? " error" : "");
+        el.textContent = text;
+      }
+    };
+    show("Spremanje nove satnice…");
+    root
+      .querySelectorAll("button,input,select")
+      .forEach((el) => (el.disabled = true));
+    try {
+      await options.onMove(record, target);
+      show(
+        `Satnica je spremljena: ${target.date} · ${target.time} · ${target.room}.`,
       );
+      Array.from(root.querySelectorAll("[data-calendar-id]"))
+        .find(
+          (el) =>
+            el.dataset.calendarId === record.id && el.getClientRects().length,
+        )
+        ?.focus({ preventScroll: true });
+    } catch (error) {
+      show(errorMessage(error), true);
+    } finally {
+      busy = false;
+      suppressClick = false;
+      if (root.isConnected)
+        root
+          .querySelectorAll("button,input,select")
+          .forEach((el) => (el.disabled = false));
+    }
   }
   root
     .querySelectorAll(".calendar-filters input,.calendar-filters select")

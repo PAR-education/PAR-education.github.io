@@ -38,6 +38,8 @@ Provjeravaju se preklapanja dvorane, istog nastavnika i iste grupe unutar istog 
 
 ## Pregled rasporeda
 
+Povlačenje je dostupno i u tjednom/dnevnom prikazu: zadržava trajanje i dvoranu, a početak se zaokružuje na 15 minuta prema mjestu ispuštanja. U dnevnom popisu/semestarskom pregledu povlačenje na drugi datum zadržava vrijeme. Alt + lijevo/desno mijenja datum, Alt + gore/dolje pomiče početak 15 minuta. Sve koristi iste ovlasti, provjeru kolizija i spremanje kao prikaz dvorana.
+
 Početni pogled je **Tjedan**, s vremenom po visini. Tu su **Dan**, **Semestar / pregled datuma** i **Dvorane i dostupnost**. Na mobitelu se tjedan prikazuje kao dnevni popis. Filtri: studij, grupa, semestar i akademska godina. **Moj raspored** za nastavnika koristi `instructorUid`; za studenta odobrene upise kolegija. Ako kolegij ima više grupa, student odabire svoju grupu. Stari termini bez veza ostaju pod **Sva nastava**. Dvorane zadržavaju provjeru slobodnih termina i ovlašteni drag & drop.
 
 ## Ograničenja i provjera
