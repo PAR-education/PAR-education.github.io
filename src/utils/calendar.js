@@ -120,7 +120,24 @@ export function calendarItems(
             " · " +
             (row.activity || "Godišnji odmor"),
         location: row.room || row.location || "",
-        description: row.description || row.details || row.instructorName || "",
+        instructorName: row.instructorName || row.instructor || "",
+        description: [
+          row.title || row.courseTitle
+            ? "Naziv: " + (row.title || row.courseTitle)
+            : "",
+          row.room || row.location
+            ? "Dvorana / lokacija: " + (row.room || row.location)
+            : "",
+          row.instructorName || row.instructor
+            ? "Profesor: " + (row.instructorName || row.instructor)
+            : "",
+          row.description,
+          row.details,
+        ]
+          .filter(
+            (value, index, values) => value && values.indexOf(value) === index,
+          )
+          .join("\n"),
         start,
         end,
         allDay,

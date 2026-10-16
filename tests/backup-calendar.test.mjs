@@ -551,7 +551,7 @@ test("ICS escaping/folding and Google Calendar links preserve event times and li
   const ics = calendarICS([item], new Date("2026-10-14T10:00:00Z"));
   assert.match(ics, /DTSTART:20261014T060000Z/);
   assert.match(ics, /SUMMARY:Naslov\\, test\\;\\nBEGIN:VEVENT/);
-  assert.equal(ics.split("BEGIN:VEVENT").length, 3); // one real event plus escaped literal text
+  assert.equal(ics.split("\r\n").filter((line) => line === "BEGIN:VEVENT").length, 1); // literal text cannot create another event
   const folded = foldICS("SUMMARY:" + "Ž".repeat(100));
   assert.ok(
     folded
@@ -566,4 +566,21 @@ test("ICS escaping/folding and Google Calendar links preserve event times and li
     "20261014T060000Z/20261014T070000Z",
   );
   assert.equal(url.searchParams.get("text"), item.title);
+});
+
+test("Bulk ICS and Google links include professor, room and original description", () => {
+  const items = calendarItems({ calendarEvents: [
+    { ...row("one", "Ekonomija"), room: "Dvorana PAR", instructorName: "Profesor A", description: "Ponesite bilježnicu" },
+    { ...row("two", "Menadžment"), instructorName: "Profesor B" },
+  ] });
+  assert.equal(items.length, 2);
+  const ics = calendarICS(items).replaceAll("\r\n ", "");
+  assert.equal(ics.split("\r\n").filter(line => line === "BEGIN:VEVENT").length, 2);
+  assert.ok(ics.includes("Profesor: Profesor A"));
+  assert.ok(ics.includes("Profesor: Profesor B"));
+  const details = new URL(googleCalendarURL(items[0])).searchParams.get("details");
+  assert.ok(details.includes("Naziv: Ekonomija"));
+  assert.ok(details.includes("Dvorana / lokacija: Dvorana PAR"));
+  assert.ok(details.includes("Profesor: Profesor A"));
+  assert.ok(details.includes("Ponesite bilježnicu"));
 });
