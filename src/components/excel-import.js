@@ -8,6 +8,7 @@ import {
   makeWorkbook,
   readExcelFile,
   downloadFile,
+  flatTemplate,
 } from "../services/excel-files.js";
 import { teachingConflicts } from "../utils/schedule.js";
 import { csvContent } from "./export.js";
@@ -16,8 +17,8 @@ export function showExcelImport(context, name, onDone) {
   if (!canImport(context.profile.role, name))
     throw new Error("Nemate ovlasti za uvoz.");
   openDialog(
-    "Excel uvoz · " + modules[name].title,
-    `<section id="excel-import"><p>Preuzmite predložak i ispunite list <strong>Podaci</strong>. Upute i dopušteni izbori nalaze se u datoteci. Prihvaćamo .xlsx i .csv, do 2000 redaka / 10 MB.</p><p>${name === "calendarEvents" ? "Jedan redak = termin ili serija. Ponavljanje: Jednom, Tjedno ili Svaka dva tjedna; navedite Do datuma i iznimke. Provjeravaju se dvorana, nastavnik i grupa, na svim datumima." : name === "students" ? "JMBAG je ključ za postojeće studente. Uvoz evidencija ne stvara račune za prijavu." : "ID povezuje ažuriranje s postojećim zapisom. Prazno za novi zapis."}</p><button type="button" class="button" id="excel-template">Preuzmi Excel predložak</button><details><summary>Stupci i ovlasti</summary><p>${context.profile.role === "admin" ? "Administrator može uvoziti ovaj modul." : "Uvoz je ograničen na vaše ovlasti. Nastava mora pripadati vašim kolegijima, identitet se dodjeljuje automatski."}</p><ul>${importFields(
+    "Uvoz podataka · " + modules[name].title,
+    `<section id="excel-import"><p>Preuzmite predložak i ispunite list <strong>Podaci</strong>. Upute i dopušteni izbori nalaze se u datoteci. Prihvaćamo .xlsx, .json i .csv, do 2000 redaka / 10 MB.</p><p>${name === "calendarEvents" ? "Jedan redak = termin ili serija. Ponavljanje: Jednom, Tjedno ili Svaka dva tjedna; navedite Do datuma i iznimke. Provjeravaju se dvorana, nastavnik i grupa, na svim datumima." : name === "students" ? "JMBAG je ključ za postojeće studente. Uvoz evidencija ne stvara račune za prijavu." : "ID povezuje ažuriranje s postojećim zapisom. Prazno za novi zapis."}</p><button type="button" class="button" id="excel-template">Preuzmi Excel predložak</button><button type="button" class="button" id="json-template">JSON predložak</button><button type="button" class="button" id="csv-template">CSV predložak</button><details><summary>Kako uvesti: Excel, JSON i CSV</summary><p>Excel: ispunite list Podaci od retka 2. CSV: prvi red su nazivi stupaca iz predloška; jedan red = jedan zapis, razdjelnik zarez ili točka-zarez, kodiranje UTF-8. JSON: popis objekata u uglatim zagradama, jedan objekt = jedan zapis. Datumi YYYY-MM-DD, vrijeme HH:mm, JMBAG i ID kao tekst. Sva tri formata prolaze iste provjere ovlasti, duplikata i rasporeda. Za JSON koristite stvarne brojeve i true/false. Backup JSON nije ovaj format.</p><p>${context.profile.role === "admin" ? "Administrator može uvoziti ovaj modul." : "Uvoz je ograničen na vaše ovlasti. Nastava mora pripadati vašim kolegijima, identitet se dodjeljuje automatski."}</p><ul>${importFields(
       name,
       context.profile.role,
     )
@@ -27,10 +28,20 @@ export function showExcelImport(context, name, onDone) {
       )
       .join(
         "",
-      )}</ul></details>${name === "calendarEvents" ? '<div class="availability-fields"><label>Akademska godina<input id="excel-year" placeholder="2026/2027"></label><label>Semestar<select id="excel-semester"><option value="">Iz datoteke</option><option>Zimski</option><option>Ljetni</option></select></label><label>Studij<input id="excel-study"></label></div>' : ""}<label>Postojeći zapisi<select id="excel-mode"><option value="skip">Preskoči postojeće</option><option value="update">Ažuriraj postojeće</option></select></label><label class="file-label">Odaberi Excel ili CSV<input id="excel-file" type="file" accept=".xlsx,.csv"></label><button class="button" id="excel-preview">Provjeri datoteku</button><div id="excel-message" role="status" aria-live="polite"></div><div id="excel-results"></div></section>`,
+      )}</ul></details>${name === "calendarEvents" ? '<div class="availability-fields"><label>Akademska godina<input id="excel-year" placeholder="2026/2027"></label><label>Semestar<select id="excel-semester"><option value="">Iz datoteke</option><option>Zimski</option><option>Ljetni</option></select></label><label>Studij<input id="excel-study"></label></div>' : ""}<label>Postojeći zapisi<select id="excel-mode"><option value="skip">Preskoči postojeće</option><option value="update">Ažuriraj postojeće</option></select></label><label class="file-label">Odaberi Excel, JSON ili CSV<input id="excel-file" type="file" accept=".xlsx,.json,.csv"></label><button class="button" id="excel-preview">Provjeri datoteku</button><div id="excel-message" role="status" aria-live="polite"></div><div id="excel-results"></div></section>`,
   );
   const root = document.getElementById("excel-import"),
     $ = (id) => root.querySelector("#" + id);
+  const inputRow = (value) =>
+    /\.json$/i.test($("excel-file").files[0]?.name || "") ? value - 1 : value;
+  for (const format of ["json", "csv"])
+    $(format + "-template").addEventListener("click", () =>
+      downloadFile(
+        flatTemplate(name, context.profile.role, format),
+        `PAR-${name}-predlozak.${format}`,
+        format === "json" ? "application/json" : "text/csv;charset=utf-8",
+      ),
+    );
   let parsed,
     plan,
     busy = false;
@@ -130,11 +141,11 @@ export function showExcelImport(context, name, onDone) {
         `Spremno ${good.length} · preskočeno ${skipped.length} · neispravnih redaka ${errors.length}. Još ništa nije spremljeno.`,
       );
       $("excel-results").innerHTML =
-        `<div class="import-preview"><table><thead><tr><th>Excel redak</th><th>Rezultat</th><th>Podaci / razlog</th></tr></thead><tbody>${plan
+        `<div class="import-preview"><table><thead><tr><th>Redak / zapis</th><th>Rezultat</th><th>Podaci / razlog</th></tr></thead><tbody>${plan
           .slice(0, 500)
           .map(
             (p) =>
-              `<tr><td>${p.row}</td><td>${p.error ? "Greška" : p.action === "skip" ? "Preskoči" : p.action === "update" ? "Ažuriraj" : "Dodaj"}</td><td>${e(p.error || [p.data.name || p.data.title || p.id, p.data.date, p.data.time, p.data.room].filter(Boolean).join(" · "))}</td></tr>`,
+              `<tr><td>${inputRow(p.row)}</td><td>${p.error ? "Greška" : p.action === "skip" ? "Preskoči" : p.action === "update" ? "Ažuriraj" : "Dodaj"}</td><td>${e(p.error || [p.data.name || p.data.title || p.id, p.data.date, p.data.time, p.data.room].filter(Boolean).join(" · "))}</td></tr>`,
           )
           .join(
             "",
@@ -149,12 +160,12 @@ export function showExcelImport(context, name, onDone) {
           "\uFEFF" +
             csvContent(
               [
-                { key: "row", label: "Excel redak" },
+                { key: "row", label: "Redak / zapis" },
                 { key: "action", label: "Radnja" },
                 { key: "id", label: "ID" },
                 { key: "error", label: "Greška" },
               ],
-              plan,
+              plan.map((p) => ({ ...p, row: inputRow(p.row) })),
             ),
           `PAR-${name}-provjera.csv`,
           "text/csv;charset=utf-8",
@@ -201,7 +212,7 @@ export function showExcelImport(context, name, onDone) {
             )
           )
             throw new Error(
-              `Raspored/podaci su izmijenjeni: redak ${p.row}: ${p.error}. Ponovno provjerite datoteku.`,
+              `Raspored/podaci su izmijenjeni: redak ${inputRow(p.row)}: ${p.error}. Ponovno provjerite datoteku.`,
             );
           continue;
         }

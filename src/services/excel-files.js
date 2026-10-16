@@ -197,10 +197,11 @@ export function rowsToObjects(rows) {
 export async function readExcelFile(file) {
   if (file.size > 10 * 1024 * 1024)
     throw new Error("Datoteka smije imati najviše 10 MB.");
+  if (/\.json$/i.test(file.name)) return parseImportJSON(await file.text());
   if (/\.csv$/i.test(file.name))
     return rowsToObjects(parseCSV(await file.text()));
   if (!/\.xlsx$/i.test(file.name))
-    throw new Error("Podržani su .xlsx i .csv, bez makronaredbi.");
+    throw new Error("Podržani su .xlsx, .json i .csv, bez makronaredbi.");
   const bytes = new Uint8Array(await file.arrayBuffer());
   let size = 0;
   unzipSync(bytes, {
@@ -240,4 +241,43 @@ export async function readExcelFile(file) {
   )
     rows.pop();
   return rowsToObjects(rows);
+}
+export function parseImportJSON(text) {
+  let value;
+  try {
+    value = JSON.parse(text.replace(/^\uFEFF/, ""));
+  } catch {
+    throw new Error(
+      "JSON nije ispravan. Koristite popis zapisa u uglatim zagradama [...].",
+    );
+  }
+  if (!Array.isArray(value))
+    throw new Error(
+      "Uvoz modula očekuje JSON popis zapisa [...]. PAR backup učitajte u Control panelu.",
+    );
+  if (!value.length || value.length > 2000)
+    throw new Error("JSON mora sadržavati 1 do 2000 zapisa.");
+  return value.map((row, i) => {
+    if (!row || Array.isArray(row) || typeof row !== "object")
+      throw new Error(`JSON zapis ${i + 1} mora biti objekt.`);
+    if (Object.keys(row).length > 80)
+      throw new Error(`JSON zapis ${i + 1}: najviše 80 polja.`);
+    for (const [key, v] of Object.entries(row)) {
+      if (["__proto__", "constructor", "prototype"].includes(key))
+        throw new Error("Nedopušten naziv JSON polja.");
+      if (v !== null && !["string", "number", "boolean"].includes(typeof v))
+        throw new Error(
+          `JSON zapis ${i + 1}, ${key}: koristite običnu vrijednost, bez ugniježđenih objekata ili popisa.`,
+        );
+    }
+    return row;
+  });
+}
+export function flatTemplate(name, role, format) {
+  const fields = importFields(name, role),
+    row = Object.fromEntries(
+      fields.map((f) => [f.key, f.type === "checkbox" ? false : ""]),
+    );
+  if (format === "json") return JSON.stringify([row], null, 2);
+  return "\uFEFF" + fields.map((f) => f.key).join(";") + "\r\n";
 }

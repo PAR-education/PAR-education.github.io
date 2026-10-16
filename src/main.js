@@ -34,8 +34,11 @@ import { mountCalendarView } from "./components/calendar-view.js";
 import { mountControlPanel } from "./components/control-panel.js";
 import { mountCalendarIntegration } from "./components/calendar-integration.js";
 import { mountSlotFinder } from "./components/slot-finder.js";
+import { canUseDemo, createAdminDemo } from "./services/admin-demo.js";
+import { mountTemplateCleanup } from "./components/template-cleanup.js";
 const $ = (id) => document.getElementById(id);
 let context = null;
+let authenticatedSession = null;
 let version = 0;
 let rows = [];
 let shownRows = [];
@@ -103,6 +106,10 @@ function heading(title, description, actions = "") {
 function clearPrivateContent() {
   version++;
   context = null;
+  authenticatedSession = null;
+  document.getElementById("private-demo-banner")?.remove();
+  document.getElementById("demo-toggle")?.remove();
+  document.body.classList.remove("is-private-demo");
   rows = [];
   shownRows = [];
   $("app").hidden = true;
@@ -118,21 +125,53 @@ function route() {
   const key = location.hash.slice(1);
   return key === "help" ||
     key === "calendar-integration" ||
-    (key === "control-panel" && context?.profile.role === "admin") ||
+    (["control-panel", "template-cleanup"].includes(key) &&
+      context?.profile.role === "admin") ||
     key === "dashboard" ||
     (Object.hasOwn(modules, key) && canRead(context?.profile.role, key))
     ? key
     : "dashboard";
 }
-export async function startApplication(
+async function startApplication(
   user,
   profile,
   repository = new Records(user, profile),
   demo = false,
 ) {
+  if (
+    demo &&
+    (!canUseDemo(authenticatedSession?.user, authenticatedSession?.profile) ||
+      authenticatedSession.user.uid !== user.uid)
+  )
+    throw new Error("Demo je dostupan samo administratoru.");
   version++;
   closeDialog();
   context = { user, profile, repository, demo };
+  document.getElementById("private-demo-banner")?.remove();
+  document.body.classList.toggle("is-private-demo", demo);
+  let toggle = document.getElementById("demo-toggle");
+  if (!toggle) {
+    toggle = document.createElement("button");
+    toggle.id = "demo-toggle";
+    toggle.className = "button";
+    toggle.addEventListener("click", toggleDemo);
+    document.querySelector(".header-actions").prepend(toggle);
+  }
+  toggle.hidden = !canUseDemo(
+    authenticatedSession?.user,
+    authenticatedSession?.profile,
+  );
+  toggle.textContent = demo ? "Izađi iz demo načina" : "Uključi demo";
+  toggle.setAttribute("aria-pressed", String(demo));
+  if (demo) {
+    const banner = document.createElement("div");
+    banner.id = "private-demo-banner";
+    banner.className = "private-demo-banner";
+    banner.setAttribute("role", "status");
+    banner.textContent =
+      "DEMO — samo vaša sesija. Promjene se ne spremaju u bazu. Osvježavanje ili izlazak odbacuje ogledne promjene.";
+    document.querySelector(".workspace").prepend(banner);
+  }
   $("account-name").textContent = profile.name || user.email;
   $("account-role").textContent = roles[profile.role];
   $("account-avatar").textContent = (profile.name || user.email || "P")
@@ -148,6 +187,33 @@ export async function startApplication(
   $("session-gate").hidden = true;
   drawNavigation();
   await loadView(route());
+}
+async function toggleDemo() {
+  const before = context,
+    real = authenticatedSession,
+    button = $("demo-toggle");
+  if (!before || !canUseDemo(real?.user, real?.profile)) return;
+  button.disabled = true;
+  try {
+    if (before.demo) await startApplication(real.user, real.profile);
+    else {
+      const state = await createAdminDemo(real.user, real.profile);
+      if (
+        context !== before ||
+        !canUseDemo(
+          authenticatedSession?.user,
+          authenticatedSession?.profile,
+        ) ||
+        authenticatedSession.user.uid !== real.user.uid
+      )
+        return;
+      await startApplication(state.user, state.profile, state.repository, true);
+    }
+  } catch (error) {
+    notify(errorMessage(error));
+  } finally {
+    if (button.isConnected) button.disabled = false;
+  }
 }
 function drawNavigation() {
   const groups = [
@@ -175,6 +241,11 @@ function drawNavigation() {
   html += `<a class="nav-item ${active === "calendar-integration" ? "active" : ""}" href="#calendar-integration"><span class="nav-symbol">${icon("calendar-days")}</span>Integracija kalendara</a>`;
   if (context.profile.role === "admin")
     html += `<a class="nav-item ${active === "control-panel" ? "active" : ""}" href="#control-panel"><span class="nav-symbol">${icon("sliders")}</span>Control panel i backup</a>`;
+  if (context.profile.role === "admin" && !context.demo)
+    html +=
+      '<a class="nav-item" href="#template-cleanup"><span class="nav-symbol">' +
+      icon("database") +
+      "</span>Priprema baze / ogledni podaci</a>";
   html += `<a class="nav-item ${active === "help" ? "active" : ""}" href="#help"><span class="nav-symbol">${icon("help")}</span>Pomoć i integracije</a>`;
   $("navigation").innerHTML = html;
 }
@@ -202,20 +273,28 @@ async function loadView(name) {
       ? "Nadzorna ploča"
       : name === "help"
         ? "Pomoć"
-        : name === "control-panel"
-          ? "Control panel"
-          : name === "calendar-integration"
-            ? "Integracija kalendara"
-            : modules[name].title;
+        : name === "template-cleanup"
+          ? "Priprema baze"
+          : name === "control-panel"
+            ? "Control panel"
+            : name === "calendar-integration"
+              ? "Integracija kalendara"
+              : modules[name].title;
   $("content").innerHTML =
     '<div class="loading" role="status">Učitavanje podataka…</div>';
   if (name === "help") {
     drawHelp();
     return;
   }
-  if (name === "control-panel" || name === "calendar-integration") {
+  if (
+    ["control-panel", "calendar-integration", "template-cleanup"].includes(name)
+  ) {
     const render =
-      name === "control-panel" ? mountControlPanel : mountCalendarIntegration;
+      name === "template-cleanup"
+        ? mountTemplateCleanup
+        : name === "control-panel"
+          ? mountControlPanel
+          : mountCalendarIntegration;
     render(
       $("content"),
       current,
@@ -363,7 +442,7 @@ function drawModule() {
     heading(
       config.title,
       config.description,
-      `${canCreate(active) ? '<button id="create" class="button primary">+ Novi zapis</button>' : ""}${canImport(context.profile.role, active) ? '<button id="excel-open" class="button">Uvezi iz Excela</button>' : ""}<button id="refresh" class="button">Osvježi</button><button id="print" class="button">Ispis / PDF</button><button id="csv" class="button">CSV</button>`,
+      `${canCreate(active) ? '<button id="create" class="button primary">+ Novi zapis</button>' : ""}${canImport(context.profile.role, active) ? '<button id="excel-open" class="button">Uvezi podatke</button>' : ""}<button id="refresh" class="button">Osvježi</button><button id="print" class="button">Ispis / PDF</button><button id="csv" class="button">CSV</button>`,
     ) +
     `<section class="panel"><div class="toolbar"><label for="search">Pretraživanje <input class="search" id="search" type="search" placeholder="Pretraži zapise…" autocomplete="off"></label>${filters}${monthly}</div><div id="table-area"></div><div class="table-footer" id="record-count"></div></section>`;
   $("excel-open")?.addEventListener("click", () =>
@@ -835,10 +914,6 @@ function drawHelp() {
     '<section class="panel"><div class="panel-title"><h2>Status integracija</h2></div><div class="panel-note"><p><strong>ISVU:</strong> ocjene su lokalna evidencija. Slanje Ministarstvu zahtijeva službeni API i zaštićenu poslužiteljsku integraciju.</p><p><strong>AI asistent:</strong> nije povezan. Za AI odgovore potreban je poslužitelj i ugovorena API usluga. U ovoj verziji nema simuliranih odgovora.</p><p><strong>PDF:</strong> otvorite ispis i odaberite „Spremi kao PDF”. Studentske potvrde trebaju odobrenje referade; ispis iz aplikacije nije službena potvrda.</p><p><strong>Plaćanja:</strong> financijski modul evidentira obveze. Ne izvršava bankovne transakcije niti generira neprovjeren barkod.</p><p><strong>Dokumenti:</strong> poveznice trebaju imati vlastitu kontrolu pristupa ako dokument nije javno objavljen. Privatna pohrana datoteka još nije povezana.</p></div></section>';
 }
 $("logout").addEventListener("click", async () => {
-  if (context?.demo) {
-    location.assign(pageURL("./index.html"));
-    return;
-  }
   $("logout").disabled = true;
   try {
     await logout();
@@ -851,7 +926,7 @@ $("logout").addEventListener("click", async () => {
   }
 });
 // The public static shell contains no records. Data is loaded only after an active profile is confirmed.
-if (document.body.dataset.mode !== "demo") {
+{
   observeSession(
     (session) => {
       if (session.loading) {
@@ -865,6 +940,13 @@ if (document.body.dataset.mode !== "demo") {
         location.replace(pageURL("./index.html"));
         return;
       }
+      authenticatedSession = { user: session.user, profile: session.profile };
+      if (
+        context?.demo &&
+        context.user.uid === session.user.uid &&
+        canUseDemo(session.user, session.profile)
+      )
+        return;
       // Backup restores may refresh profile metadata without changing access.
       // Keep an in-progress operation mounted when the user's permissions are unchanged.
       if (

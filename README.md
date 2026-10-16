@@ -4,9 +4,9 @@ Dodani su administratorski Control panel i backup (JSON, CSV, ZIP; svi ili odabr
 
 ## Obnovljen izvorni PAR predložak (14.10.2026.)
 
-UI koristi izgled i sadržaj dostavljenog profesorova koda: kartice, ikone, raspored po dvoranama, kanban, studentski prosjek/ECTS i zaposlenički profili. `demo.html` odmah prikazuje ogledne podatke.
+UI koristi izgled i sadržaj dostavljenog profesorova koda: kartice, ikone, raspored po dvoranama, kanban, studentski prosjek/ECTS i zaposlenički profili. Privatni demo uključuje samo prijavljeni aktivni administrator gumbom **Uključi demo**.
 
-Postojeće evidencije ostaju u bazi. Gumb za ogledni uvoz uklonjen je. Novi podaci uvoze se iz Excela u odgovarajućem modulu; upute: [EXCEL_IMPORT.md](./EXCEL_IMPORT.md). Prije objave potrebno je ažurirati cijeli sadržaj Firebase pravila.
+Postojeće evidencije ostaju u bazi. Gumb za ogledni uvoz uklonjen je. Novi podaci uvoze se iz Excela, JSON-a ili CSV-a u odgovarajućem modulu; upute: [EXCEL_IMPORT.md](./EXCEL_IMPORT.md). Prije objave potrebno je ažurirati cijeli sadržaj Firebase pravila.
 
 # PAR Education ERP
 
@@ -31,7 +31,7 @@ npm run dev
 
 Open `http://127.0.0.1:4173/` or `http://127.0.0.1:4173/par/`. Firebase SDKs are loaded from Google's versioned CDN. `npm ci` is for development/tests; GitHub Pages needs only the committed static files.
 
-`demo.html` uses the supplied professor's prototype fixtures. All changes stay in memory and disappear on reload. It never initializes Firebase or supplies real authentication. The separate administrator import on the authenticated homepage can populate empty Firestore collections. Remove the demo link/page if you do not want a public preview.
+Demo mode requires a real active administrator session. Application data and changes stay in memory and reset on exit or reload; real profile observation remains active for access revocation. The old demo.html redirects to the guarded workspace. See [DEMO_I_PRIPREMA_BAZE.md](DEMO_I_PRIPREMA_BAZE.md) before removing old template records.
 
 ## Architecture
 

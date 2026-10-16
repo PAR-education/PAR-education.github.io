@@ -38,6 +38,9 @@ export class DemoRecords {
       this.data[name].filter((row) => !field || row[field] === value),
     );
   }
+  async listAll(name) {
+    return this.list(name);
+  }
   async save(name, values, id) {
     const old = this.data[name].find((row) => row.id === id);
     if (name === "calendarEvents" && this.profile.role === "profesor") {
@@ -55,13 +58,14 @@ export class DemoRecords {
         instructorName: this.profile.name,
       };
     }
-    if (old) Object.assign(old, values);
+    if (old)
+      Object.assign(old, values, { updatedAt: new Date().toISOString() });
     else
       this.data[name].push({
         ...values,
         id: id || crypto.randomUUID(),
-        createdAt: "Ogledna sesija",
-        updatedAt: "Ogledna sesija",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
         createdBy: this.user.uid,
       });
   }

@@ -6,9 +6,9 @@ Pushati sve izmjene, uključujući `assets/vendor/exceljs/` (ExcelJS 4.4.0, MIT)
 
 ## Postupak uvoza
 
-U odgovarajućem modulu otvoriti **Uvezi iz Excela** → **Preuzmi Excel predložak**. List `Podaci` sadrži zaglavlja koja ne treba mijenjati; popunjavanje počinje u retku 2. List `Upute` objašnjava stupce, obavezna polja, formate i ovlasti. `Izbori` daje padajuće liste; za raspored postoji i popis `Kolegiji` s ID-evima i nazivima. Predložak je prazan, primjeri iz uputa ne uvoze se automatski.
+U odgovarajućem modulu otvoriti **Uvezi podatke** → **Preuzmi Excel predložak**. List `Podaci` sadrži zaglavlja koja ne treba mijenjati; popunjavanje počinje u retku 2. List `Upute` objašnjava stupce, obavezna polja, formate i ovlasti. `Izbori` daje padajuće liste; za raspored postoji i popis `Kolegiji` s ID-evima i nazivima. Predložak je prazan, primjeri iz uputa ne uvoze se automatski.
 
-Podržani su `.xlsx` i UTF-8 `.csv` (zarez ili točka-zarez). Najviše 10 MB, 2000 ulaznih redaka, 5000 proširenih termina. Datumi: `YYYY-MM-DD` ili `DD.MM.YYYY.`; vrijeme `HH:mm`, trajanja su stvarne minute. Excel datumske i vremenske ćelije također se čitaju. ID-evi i JMBAG trebaju biti tekst; brojčani JMBAG odbija se jer su početne nule možda već izgubljene. Formule, spojene ćelije i makronaredbe nisu podržane.
+Podržani su `.xlsx`, `.json` i UTF-8 `.csv` (zarez ili točka-zarez). Najviše 10 MB, 2000 ulaznih redaka, 5000 proširenih termina. Datumi: `YYYY-MM-DD` ili `DD.MM.YYYY.`; vrijeme `HH:mm`, trajanja su stvarne minute. Excel datumske i vremenske ćelije također se čitaju. ID-evi i JMBAG trebaju biti tekst; brojčani JMBAG odbija se jer su početne nule možda već izgubljene. Formule, spojene ćelije i makronaredbe nisu podržane.
 
 Odabrati **Preskoči postojeće** ili **Ažuriraj postojeće**, učitati datoteku pa kliknuti **Provjeri datoteku**. Pregled pokazuje Excel redak, dodavanje/ažuriranje/preskakanje i razlog greške. Prikazuje prvih 500 rezultata, brojači obuhvaćaju sve. Prije spremanja treba potvrditi pregled. Neispravni retci mogu se izostaviti samo izričitom potvrdom; kod ponavljanja izostavlja se cijela neispravna serija. Nema brisanja zapisa izvan datoteke.
 
@@ -18,13 +18,13 @@ Uvoz studenta stvara samo evidenciju. Prazan `ownerUid` dopušten je za dosje be
 
 ## Ovlasti
 
-| Uloga | Moduli za Excel uvoz |
-| --- | --- |
-| Administrator | Svi moduli |
-| Nastavnik | Vlastita nastava na dodijeljenim kolegijima, vlastiti radni sati i radovi |
-| Pročelnik | EU projekti, vlastiti radni sati i radovi |
-| Voditelj laboratorija | Oprema, vlastiti radni sati i radovi |
-| Student / alumni | Bez skupnog uvoza |
+| Uloga                 | Moduli za Excel uvoz                                                      |
+| --------------------- | ------------------------------------------------------------------------- |
+| Administrator         | Svi moduli                                                                |
+| Nastavnik             | Vlastita nastava na dodijeljenim kolegijima, vlastiti radni sati i radovi |
+| Pročelnik             | EU projekti, vlastiti radni sati i radovi                                 |
+| Voditelj laboratorija | Oprema, vlastiti radni sati i radovi                                      |
+| Student / alumni      | Bez skupnog uvoza                                                         |
 
 Predložak za nastavnika ne prihvaća stupce kojima bi promijenio svoj UID ili ime. U stvarnoj bazi Firestore dodatno provjerava dodjelu kolegija i vlasništvo. Stari termini bez `instructorUid` ne postaju nastavnikovi samo zato što je njegovo ime u tekstu; njih povezuje administrator uređivanjem zapisa.
 
@@ -49,3 +49,9 @@ Prije upisa ponovno se provjeravaju podaci i kalendarski konflikti. Upisi su poj
 28 unit/integracijskih testova + 17 Firestore testova prošlo je 15.10.2026. Testovi pokrivaju stvarni XLSX round-trip, CSV, ponavljanja/iznimke, duplikate, očuvanje UID-a/JMBAG-a, vlasništvo, kolizije i zabranu tuđe nastave. U pregledniku su provjereni preuzimanje predloška, uvoz ponavljanja s jednim neispravnim retkom i uvoz studenta bez računa, u oglednoj sesiji bez produkcijskih upisa.
 
 ExcelJS služi za pregledničko čitanje/pisanje i lokalno je spremljen. Npm audit za njegov UUID navodi bounds-check problem u v3/v5/v6 pri prosljeđivanju buffera; aplikacija te funkcije ne poziva niti UUID iz biblioteke koristi za ovlasti ili tokene. ID-evi uvoza temelje se na SHA-256. Pravila za veličinu datoteka i tipove ćelija vrijede i za uvoz u oglednoj sesiji.
+
+## JSON i CSV predlošci
+
+U istom prozoru postoje gumbi za preuzimanje praznih predložaka za sva tri formata. JSON mora biti niz ravnih objekata: svaki objekt je jedan zapis, ključevi su nazivi stupaca iz predloška. Primjer strukture: `[{"title":"Predavanje","date":"2026-10-19","time":"08:00","endTime":"10:00","room":"Dvorana PAR"}]` (ostala obavezna polja ovise o modulu). Koristite predložak svojeg modula za potpuni popis polja. ID/JMBAG su tekst u navodnicima; brojčana i logička polja mogu biti brojevi i true/false. Ugniježđeni objekti i nizovi nisu podržani. Backup JSON ima drugi format i vraća se kroz Control panel.
+
+Sva tri formata prolaze istu provjeru ovlasti, obaveznih polja, ponavljanja i preklapanja rasporeda prije spremanja. Provjeravaju se i međusobni sukobi termina u datoteci. JSON pregled numerira zapise od 1, a Excel/CSV retke od 2 nakon zaglavlja.

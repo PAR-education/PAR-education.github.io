@@ -2640,6 +2640,70 @@ td {
 #table-area.calendar-layout {
   padding: 20px;
 }
-#excel-results > label { display:flex; align-items:flex-start; gap:10px; margin:16px 0; line-height:1.6; }
-#excel-results > label input { flex:none; margin-top:5px; }
-#excel-results > button { margin:8px 0; }
+#excel-results > label {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 16px 0;
+  line-height: 1.6;
+}
+#excel-results > label input {
+  flex: none;
+  margin-top: 5px;
+}
+#excel-results > button {
+  margin: 8px 0;
+}
+.private-demo-banner {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  padding: 14px 22px;
+  background: #fff0b5;
+  color: #493807;
+  border-bottom: 2px solid #e3b42d;
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.5;
+}
+.is-private-demo #mode-label {
+  background: #fff0b5;
+  color: #493807;
+}
+.cleanup-panel {
+  padding: 24px;
+}
+.cleanup-panel p {
+  line-height: 1.6;
+}
+#cleanup-results > label {
+  display: block;
+  margin: 18px 0;
+}
+#cleanup-confirm {
+  display: block;
+  margin-top: 8px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font: inherit;
+}
+#cleanup-message {
+  margin: 18px 0;
+}
+#demo-toggle {
+  white-space: normal;
+}
+@media (max-width: 650px) {
+  .header-actions {
+    flex-wrap: wrap;
+  }
+  #demo-toggle {
+    font-size: 11px;
+    padding: 8px;
+  }
+  .private-demo-banner {
+    font-size: 11px;
+    padding: 10px 14px;
+  }
+}
