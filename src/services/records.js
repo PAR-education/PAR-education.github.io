@@ -23,6 +23,21 @@ export async function readAllRecords(sdk, db, name, field, value) {
     cursor = snapshot.docs.at(-1);
   }
 }
+// Import IDs must be created deterministically, not updated before they exist.
+export async function writeImportedRecord(sdk, db, name, id, values, uid) {
+  const ref = sdk.doc(db, name, id);
+  return sdk.runTransaction(db, async (tx) => {
+    const current = await tx.get(ref);
+    const data = { ...values, updatedAt: sdk.serverTimestamp() };
+    if (current.exists()) tx.update(ref, data);
+    else
+      tx.set(ref, {
+        ...data,
+        createdAt: sdk.serverTimestamp(),
+        createdBy: uid,
+      });
+  });
+}
 export class Records {
   constructor(user, profile) {
     this.user = user;
@@ -77,7 +92,7 @@ export class Records {
     const snapshot = await sdk.getDocsFromServer(query);
     return snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
   }
-  async save(name, values, id) {
+  async save(name, values, id, options = {}) {
     const role = this.profile.role;
     const ownCreation =
       ["requests", "evaluations"].includes(name) ||
@@ -105,6 +120,8 @@ export class Records {
       data.createdAt = sdk.serverTimestamp();
       data.createdBy = this.user.uid;
     }
+    if (options.import && id && name !== "users")
+      return writeImportedRecord(sdk, db, name, id, data, this.user.uid);
     if (name === "users") {
       if (!id) throw new Error("Potreban je Firebase Authentication UID.");
       // Profiles may be preprovisioned only by an existing administrator.

@@ -1,3 +1,5 @@
+Za Erasmus evidencije bez JMBAG-a i računa pogledati [ERASMUS_IMPORT.md](ERASMUS_IMPORT.md). Za tu prilagodbu treba objaviti nova Firestore pravila.
+
 # Excel uvoz i nastavni raspored
 
 ## Objava
@@ -12,7 +14,7 @@ Podržani su `.xlsx`, `.json` i UTF-8 `.csv` (zarez ili točka-zarez). Najviše 
 
 Odabrati **Preskoči postojeće** ili **Ažuriraj postojeće**, učitati datoteku pa kliknuti **Provjeri datoteku**. Pregled pokazuje Excel redak, dodavanje/ažuriranje/preskakanje i razlog greške. Prikazuje prvih 500 rezultata, brojači obuhvaćaju sve. Prije spremanja treba potvrditi pregled. Neispravni retci mogu se izostaviti samo izričitom potvrdom; kod ponavljanja izostavlja se cijela neispravna serija. Nema brisanja zapisa izvan datoteke.
 
-Ponovni uvoz ne stvara iste zapise dvaput. Povezivanje: studenti po JMBAG-u, zaposlenici po e-mailu, oprema po oznaci, kolegiji po nazivu i semestru, raspored po kolegiju/nazivu, datumu, početku, studiju i grupi. Za ostale module ili promjenu ključnog polja koristiti ID iz detalja postojećeg zapisa. Kod više istih ključeva potreban je ID. Ažuriranje zadržava opcionalne vrijednosti koje nisu navedene u datoteci, uključujući postojeći studentski UID. Obavezna polja i dalje treba ispuniti. Za namjerno brisanje opcionalne vrijednosti koristiti obrazac Uredi.
+Ponovni uvoz ne stvara iste zapise dvaput. Povezivanje: studenti po JMBAG-u, zatim e-adresi, a ako oboje nedostaje po imenu (jednoznačnost treba provjeriti), zaposlenici po e-mailu, oprema po oznaci, kolegiji po nazivu i semestru, raspored po kolegiju/nazivu, datumu, početku, studiju i grupi. Za ostale module ili promjenu ključnog polja koristiti ID iz detalja postojećeg zapisa. Kod više istih ključeva potreban je ID. Ažuriranje zadržava opcionalne vrijednosti koje nisu navedene u datoteci, uključujući postojeći studentski UID. Obavezna polja i dalje treba ispuniti. Za namjerno brisanje opcionalne vrijednosti koristiti obrazac Uredi.
 
 Uvoz studenta stvara samo evidenciju. Prazan `ownerUid` dopušten je za dosje bez računa; za pristup osobnim podacima administrator naknadno povezuje stvarni Firebase UID. Uvoz `users` upravlja profilima, ne stvara Authentication račune ili lozinke; ID mora biti postojeći/namjenski Authentication UID koji administrator provjeri.
 

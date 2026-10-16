@@ -62,7 +62,7 @@ export function visualRecords(name, rows, badge) {
           cells = [
             `<span class="student-name"><span class="student-avatar">${e(initials(r.name))}</span><strong>${e(r.name)}</strong></span>`,
             `${e(r.jmbag)}<small class="cell-note">${e(r.email)}</small>`,
-            `${e(r.year)}. godina<small class="cell-note">${badge(r.status)}</small>`,
+            `${r.year ? e(r.year) + ". godina" : "Godina nije navedena"}<small class="cell-note">${badge(r.status)}</small>`,
             r.gpa
               ? `<strong class="${r.gpa < 3 ? "risk-grade" : ""}">${e(r.gpa)}</strong><small class="cell-note">${e(r.ects)} ECTS</small>`
               : "—",
@@ -102,7 +102,7 @@ export function visualRecords(name, rows, badge) {
     return cards(
       rows,
       (r, i) =>
-        `<article class="record-card course-card"><div class="card-top">${badge(r.courseType || "Kolegij")}<strong class="ects">${e(r.ects)} ECTS</strong></div><h2>${e(r.title)}</h2><p class="card-description">${e(r.description)}</p><p class="instructor">${icon("chalkboard-user")} ${e(r.instructorName)}</p>${open(i, "Silabus i detalji")}</article>`,
+        `<article class="record-card course-card"><div class="card-top">${badge(r.courseType || "Kolegij")}<strong class="ects">${r.ects == null ? "ECTS nije naveden" : e(r.ects) + " ECTS"}</strong></div><h2>${e(r.title)}</h2><p class="card-description">${e(r.description)}</p><p class="instructor">${icon("chalkboard-user")} ${e(r.instructorName || "Nastavnik nije naveden")}</p>${open(i, "Silabus i detalji")}</article>`,
     );
   if (name === "projects")
     return cards(

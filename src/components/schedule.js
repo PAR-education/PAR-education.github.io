@@ -23,7 +23,7 @@ export function mountSchedule(
   },
 ) {
   const rooms = [
-    ...new Set([...allEvents.map((r) => r.room), ...defaultRooms]),
+    ...new Set([...allEvents.map((r) => r.room || ""), ...defaultRooms]),
   ];
   const hours = [
     ...new Set([
@@ -38,7 +38,7 @@ export function mountSchedule(
   let day = root.querySelector("#schedule-day")?.value ?? initialDay,
     busy = false,
     suppressClick = false;
-  root.innerHTML = `<div class="schedule-tools"><label>Prikaži datum<input id="schedule-day" type="date"></label><button id="schedule-all-days" class="button">Svi dani</button><p>${canEdit ? "Povucite događaj u drugi termin ili dvoranu. Trajanje se zadržava. Tipkovnica: Alt + strelice; gumb „Satnica” omogućuje točan datum, početak i završetak." : "Raspored je dostupan za pregled. Izmjene radi administrator."}</p></div><div id="schedule-message" role="status" aria-live="polite"></div><section class="panel availability-panel"><h2>Provjeri slobodan termin</h2><p>Odaberite datum, dvoranu i točan vremenski raspon. Provjera uključuje i događaje skrivene pretraživanjem.</p><div class="availability-fields"><label>Datum<input id="available-date" type="date"></label><label>Dvorana<select id="available-room">${rooms.map((r) => `<option>${e(r)}</option>`).join("")}</select></label><label>Početak<input id="available-start" type="time" value="08:00"></label><label>Završetak<input id="available-end" type="time" value="10:00"></label></div><div id="available-result" role="status" aria-live="polite"></div></section><div id="schedule-grid"></div>`;
+  root.innerHTML = `<div class="schedule-tools"><label>Prikaži datum<input id="schedule-day" type="date"></label><button id="schedule-all-days" class="button">Svi dani</button><p>${canEdit ? "Povucite događaj u drugi termin ili dvoranu. Trajanje se zadržava. Tipkovnica: Alt + strelice; gumb „Satnica” omogućuje točan datum, početak i završetak." : "Raspored je dostupan za pregled. Izmjene radi administrator."}</p></div><div id="schedule-message" role="status" aria-live="polite"></div><section class="panel availability-panel"><h2>Provjeri slobodan termin</h2><p>Odaberite datum, dvoranu i točan vremenski raspon. Provjera uključuje i događaje skrivene pretraživanjem. Termini bez određene dvorane ne potvrđuju slobodnu dvoranu; treba ih dopuniti.</p><div class="availability-fields"><label>Datum<input id="available-date" type="date"></label><label>Dvorana<select id="available-room">${rooms.map((r) => `<option value="${e(r)}">${e(r || "Dvorana nije određena")}</option>`).join("")}</select></label><label>Početak<input id="available-start" type="time" value="08:00"></label><label>Završetak<input id="available-end" type="time" value="10:00"></label></div><div id="available-result" role="status" aria-live="polite"></div></section><div id="schedule-grid"></div>`;
   const $ = (id) => root.querySelector("#" + id);
   const find = (id) => events.find((r) => r.id === id);
   const dateLabel = (date) =>
@@ -62,7 +62,7 @@ export function mountSchedule(
         blocked: conflicts.length > 0,
         html: conflicts.length
           ? `<div class="notice error"><strong>Zauzeto</strong><p>${e(dateLabel(target.date))} · ${e(target.room)}</p>${conflicts.map((r) => `<p><strong>${e(r.title)}</strong><br>${e(r.time)}–${e(timeAt(minutes(r.time) + durationOf(r)))} · ${e(r.instructorName || "Nastavnik nije naveden")}</p>`).join("")}<p>Za dogovor o zamjeni javite se navedenom nastavniku.</p></div>`
-          : `<div class="notice availability-free"><strong>Slobodno</strong><p>${e(dateLabel(target.date))} · ${e(target.room)} · ${e(target.time)}–${e(target.endTime)}</p></div>`,
+          : `<div class="notice availability-free"><strong>Nema evidentirane rezervacije</strong><p>${e(dateLabel(target.date))} · ${e(target.room)} · ${e(target.time)}–${e(target.endTime)}</p></div>`,
       };
     } catch (error) {
       return {
@@ -95,22 +95,22 @@ export function mountSchedule(
             `<section class="schedule-date-section"><h2 class="schedule-date-heading">${e(dateLabel(date))}</h2><div class="timetable"><div class="time-labels" style="grid-template-columns:repeat(${hours.length},minmax(160px,1fr))">${hours.map((h) => `<span>${timeAt(h * 60)} – ${h === 22 ? "24:00" : timeAt((h + 2) * 60)}</span>`).join("")}</div>${rooms
               .map(
                 (room) =>
-                  `<section class="room-row"><h3>${icon("door-open")} ${e(room)}</h3><div class="room-slots" style="grid-template-columns:repeat(${hours.length},minmax(160px,1fr))">${hours
+                  `<section class="room-row"><h3>${icon("door-open")} ${e(room || "Dvorana nije određena")}</h3><div class="room-slots" style="grid-template-columns:repeat(${hours.length},minmax(160px,1fr))">${hours
                     .map((h) => {
                       const occupied = allEvents.filter(
                         (r) =>
                           r.date === date &&
-                          r.room === room &&
+                          (r.room || "") === room &&
                           minutes(r.time) < (h + 2) * 60 &&
                           minutes(r.time) + durationOf(r) > h * 60,
                       );
                       const cards = events.filter(
                         (r) =>
                           r.date === date &&
-                          r.room === room &&
+                          (r.room || "") === room &&
                           Math.floor(minutes(r.time) / 120) * 2 === h,
                       );
-                      return `<div class="room-slot drop-slot ${occupied.length ? "slot-occupied" : "slot-free"}" data-date="${e(date)}" data-room="${e(room)}" data-time="${timeAt(h * 60)}" aria-label="${e(dateLabel(date))} ${e(room)} ${timeAt(h * 60)}"><span class="slot-status">${occupied.length ? "ZAUZETO · provjerite točne minute" : "SLOBODNO"}</span>${cards.map((r) => `<div class="schedule-event"><button class="lesson" data-event="${e(r.id)}" title="${canEdit ? "Povuci za premještanje · Alt + strelice" : "Detalji događaja"}"><small>${icon("clock")} ${e(r.time)} – ${e(timeAt(minutes(r.time) + durationOf(r)))}</small><strong>${e(r.title)}</strong><small>${e(r.instructorName || "Nastavnik nije naveden")}</small><small>${e(dateLabel(r.date))}</small></button>${canEditRecord(r) ? `<button class="schedule-edit" data-move="${e(r.id)}" aria-label="Promijeni satnicu: ${e(r.title)}">${icon("arrows-up-down-left-right")} Satnica</button>` : ""}</div>`).join("")}${occupied
+                      return `<div class="room-slot drop-slot ${occupied.length ? "slot-occupied" : "slot-free"}" data-date="${e(date)}" data-room="${e(room)}" data-time="${timeAt(h * 60)}" aria-label="${e(dateLabel(date))} ${e(room || "Dvorana nije određena")} ${timeAt(h * 60)}"><span class="slot-status">${!room ? "DVORANA NIJE ODREĐENA" : occupied.length ? "ZAUZETO · provjerite točne minute" : "SLOBODNO"}</span>${cards.map((r) => `<div class="schedule-event"><button class="lesson" data-event="${e(r.id)}" title="${canEdit ? "Povuci za premještanje · Alt + strelice" : "Detalji događaja"}"><small>${icon("clock")} ${e(r.time)} – ${e(timeAt(minutes(r.time) + durationOf(r)))}</small><strong>${e(r.title)}</strong><small>${e(r.instructorName || "Nastavnik nije naveden")}</small><small>${e(dateLabel(r.date))}</small></button>${canEditRecord(r) ? `<button class="schedule-edit" data-move="${e(r.id)}" aria-label="Promijeni satnicu: ${e(r.title)}">${icon("arrows-up-down-left-right")} Satnica</button>` : ""}</div>`).join("")}${occupied
                         .filter((r) => !cards.some((c) => c.id === r.id))
                         .map(
                           (r) =>

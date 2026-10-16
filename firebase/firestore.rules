@@ -48,17 +48,20 @@ service cloud.firestore {
         && d.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt']) && updated(d);
     }
     function valid_students(d) {
-      return d.keys().hasOnly(['ownerUid', 'name', 'jmbag', 'study', 'group', 'email', 'departmentId', 'year', 'status', 'gpa', 'ects', 'createdAt', 'createdBy', 'updatedAt'])
-        && d.keys().hasAll(['name', 'jmbag', 'email', 'departmentId', 'year', 'status', 'createdAt', 'createdBy', 'updatedAt'])
-        && (!('ownerUid' in d) || (d.ownerUid is string && d.ownerUid.size() <= 200))
+      return d.keys().hasOnly(['ownerUid', 'name', 'jmbag', 'study', 'group', 'email', 'departmentId', 'year', 'status', 'homeUniversity', 'country', 'exchangeSemester', 'gpa', 'ects', 'createdAt', 'createdBy', 'updatedAt'])
+        && d.keys().hasAll(['name', 'departmentId', 'status', 'createdAt', 'createdBy', 'updatedAt'])
+        && (!('ownerUid' in d) || d.ownerUid == '' || (d.ownerUid is string && d.ownerUid.size() <= 200))
         && (d.name is string && d.name.size() <= 200 && d.name.size() > 0)
-        && (d.jmbag is string && d.jmbag.size() <= 200 && d.jmbag.size() > 0)
-        && (!('study' in d) || (d.study is string && d.study.size() <= 200))
-        && (!('group' in d) || (d.group is string && d.group.size() <= 200))
-        && (d.email is string && d.email.size() <= 200 && d.email.size() > 0 && d.email.matches('^[^ @]+@[^ @]+[.][^ @]+$'))
+        && (!('jmbag' in d) || d.jmbag == '' || (d.jmbag is string && d.jmbag.size() <= 200))
+        && (!('study' in d) || d.study == '' || (d.study is string && d.study.size() <= 200))
+        && (!('group' in d) || d.group == '' || (d.group is string && d.group.size() <= 200))
+        && (!('email' in d) || d.email == '' || (d.email is string && d.email.size() <= 200 && d.email.matches('^[^ @]+@[^ @]+[.][^ @]+$')))
         && (d.departmentId is string && d.departmentId.size() <= 200 && d.departmentId.size() > 0)
-        && (d.year is int && d.year >= 1 && d.year <= 6)
-        && (d.status is string && d.status.size() <= 200 && d.status.size() > 0 && d.status in ['Redovni', 'Izvanredni', 'Alumni'])
+        && (!('year' in d) || (d.year is int && d.year >= 1 && d.year <= 6))
+        && (d.status is string && d.status.size() <= 200 && d.status.size() > 0 && d.status in ['Redovni', 'Izvanredni', 'Alumni', 'Erasmus'])
+        && (!('homeUniversity' in d) || d.homeUniversity == '' || (d.homeUniversity is string && d.homeUniversity.size() <= 200))
+        && (!('country' in d) || d.country == '' || (d.country is string && d.country.size() <= 200))
+        && (!('exchangeSemester' in d) || d.exchangeSemester == '' || (d.exchangeSemester is string && d.exchangeSemester.size() <= 200))
         && (!('gpa' in d) || (d.gpa is number && d.gpa >= 1 && d.gpa <= 5))
         && (!('ects' in d) || (d.ects is number && d.ects >= 0 && d.ects <= 360));
     }
@@ -68,34 +71,34 @@ service cloud.firestore {
         && (d.ownerUid is string && d.ownerUid.size() <= 200 && d.ownerUid.size() > 0)
         && (d.name is string && d.name.size() <= 200 && d.name.size() > 0)
         && (d.position is string && d.position.size() <= 200 && d.position.size() > 0)
-        && (!('departmentName' in d) || (d.departmentName is string && d.departmentName.size() <= 200))
+        && (!('departmentName' in d) || d.departmentName == '' || (d.departmentName is string && d.departmentName.size() <= 200))
         && (d.departmentId is string && d.departmentId.size() <= 200 && d.departmentId.size() > 0)
         && (d.email is string && d.email.size() <= 200 && d.email.size() > 0 && d.email.matches('^[^ @]+@[^ @]+[.][^ @]+$'));
     }
     function valid_courses(d) {
       return d.keys().hasOnly(['title', 'courseType', 'ects', 'semester', 'instructorUid', 'instructorName', 'room', 'day', 'startTime', 'endTime', 'description', 'outcomes', 'literature', 'createdAt', 'createdBy', 'updatedAt'])
-        && d.keys().hasAll(['title', 'ects', 'semester', 'instructorUid', 'instructorName', 'room', 'day', 'startTime', 'endTime', 'createdAt', 'createdBy', 'updatedAt'])
+        && d.keys().hasAll(['title', 'semester', 'createdAt', 'createdBy', 'updatedAt'])
         && (d.title is string && d.title.size() <= 200 && d.title.size() > 0)
-        && (!('courseType' in d) || (d.courseType is string && d.courseType.size() <= 200))
-        && (d.ects is number && d.ects >= 1 && d.ects <= 30)
+        && (!('courseType' in d) || d.courseType == '' || (d.courseType is string && d.courseType.size() <= 200))
+        && (!('ects' in d) || (d.ects is number && d.ects >= 1 && d.ects <= 30))
         && (d.semester is string && d.semester.size() <= 200 && d.semester.size() > 0 && d.semester in ['Zimski', 'Ljetni'])
-        && (d.instructorUid is string && d.instructorUid.size() <= 200 && d.instructorUid.size() > 0)
-        && (d.instructorName is string && d.instructorName.size() <= 200 && d.instructorName.size() > 0)
-        && (d.room is string && d.room.size() <= 200 && d.room.size() > 0)
-        && (d.day is string && d.day.size() <= 200 && d.day.size() > 0 && d.day in ['Pon', 'Uto', 'Sri', 'Čet', 'Pet'])
-        && (d.startTime is string && d.startTime.size() <= 200 && d.startTime.size() > 0 && d.startTime.matches('^([01][0-9]|2[0-3]):[0-5][0-9]$'))
-        && (d.endTime is string && d.endTime.size() <= 200 && d.endTime.size() > 0 && d.endTime.matches('^([01][0-9]|2[0-3]):[0-5][0-9]$'))
-        && (!('description' in d) || (d.description is string && d.description.size() <= 2000))
-        && (!('outcomes' in d) || (d.outcomes is string && d.outcomes.size() <= 2000))
-        && (!('literature' in d) || (d.literature is string && d.literature.size() <= 2000))
-        && d.endTime > d.startTime;
+        && (!('instructorUid' in d) || d.instructorUid == '' || (d.instructorUid is string && d.instructorUid.size() <= 200))
+        && (!('instructorName' in d) || d.instructorName == '' || (d.instructorName is string && d.instructorName.size() <= 200))
+        && (!('room' in d) || d.room == '' || (d.room is string && d.room.size() <= 200))
+        && (!('day' in d) || d.day == '' || (d.day is string && d.day.size() <= 200 && d.day in ['Pon', 'Uto', 'Sri', 'Čet', 'Pet']))
+        && (!('startTime' in d) || (d.startTime is string && d.startTime.size() <= 200 && d.startTime.matches('^([01][0-9]|2[0-3]):[0-5][0-9]$')))
+        && (!('endTime' in d) || (d.endTime is string && d.endTime.size() <= 200 && d.endTime.matches('^([01][0-9]|2[0-3]):[0-5][0-9]$')))
+        && (!('description' in d) || d.description == '' || (d.description is string && d.description.size() <= 20000))
+        && (!('outcomes' in d) || d.outcomes == '' || (d.outcomes is string && d.outcomes.size() <= 20000))
+        && (!('literature' in d) || d.literature == '' || (d.literature is string && d.literature.size() <= 20000))
+        && (!('startTime' in d) || !('endTime' in d) || d.endTime > d.startTime);
     }
     function valid_exams(d) {
       return d.keys().hasOnly(['courseId', 'instructorUid', 'instructorName', 'title', 'date', 'time', 'room', 'capacity', 'createdAt', 'createdBy', 'updatedAt'])
         && d.keys().hasAll(['courseId', 'instructorUid', 'title', 'date', 'time', 'room', 'capacity', 'createdAt', 'createdBy', 'updatedAt'])
         && (d.courseId is string && d.courseId.size() <= 200 && d.courseId.size() > 0)
         && (d.instructorUid is string && d.instructorUid.size() <= 200 && d.instructorUid.size() > 0)
-        && (!('instructorName' in d) || (d.instructorName is string && d.instructorName.size() <= 200))
+        && (!('instructorName' in d) || d.instructorName == '' || (d.instructorName is string && d.instructorName.size() <= 200))
         && (d.title is string && d.title.size() <= 200 && d.title.size() > 0)
         && (d.date is string && d.date.size() <= 200 && d.date.size() > 0 && d.date.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$'))
         && (d.time is string && d.time.size() <= 200 && d.time.size() > 0 && d.time.matches('^([01][0-9]|2[0-3]):[0-5][0-9]$'))
@@ -114,14 +117,16 @@ service cloud.firestore {
         && (d.date is string && d.date.size() <= 200 && d.date.size() > 0 && d.date.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$'));
     }
     function valid_enrollments(d) {
-      return d.keys().hasOnly(['ownerUid', 'ownerName', 'courseId', 'courseTitle', 'instructorUid', 'status', 'createdAt', 'createdBy', 'updatedAt'])
-        && d.keys().hasAll(['ownerUid', 'ownerName', 'courseId', 'courseTitle', 'instructorUid', 'status', 'createdAt', 'createdBy', 'updatedAt'])
-        && (d.ownerUid is string && d.ownerUid.size() <= 200 && d.ownerUid.size() > 0)
+      return d.keys().hasOnly(['ownerUid', 'studentId', 'ownerName', 'courseId', 'courseTitle', 'instructorUid', 'status', 'createdAt', 'createdBy', 'updatedAt'])
+        && d.keys().hasAll(['ownerName', 'courseId', 'courseTitle', 'status', 'createdAt', 'createdBy', 'updatedAt'])
+        && (!('ownerUid' in d) || d.ownerUid == '' || (d.ownerUid is string && d.ownerUid.size() <= 200))
+        && (!('studentId' in d) || d.studentId == '' || (d.studentId is string && d.studentId.size() <= 200))
         && (d.ownerName is string && d.ownerName.size() <= 200 && d.ownerName.size() > 0)
         && (d.courseId is string && d.courseId.size() <= 200 && d.courseId.size() > 0)
         && (d.courseTitle is string && d.courseTitle.size() <= 200 && d.courseTitle.size() > 0)
-        && (d.instructorUid is string && d.instructorUid.size() <= 200 && d.instructorUid.size() > 0)
-        && (d.status is string && d.status.size() <= 200 && d.status.size() > 0 && d.status in ['Na čekanju', 'Odobreno', 'Odbijeno']);
+        && (!('instructorUid' in d) || d.instructorUid == '' || (d.instructorUid is string && d.instructorUid.size() <= 200))
+        && (d.status is string && d.status.size() <= 200 && d.status.size() > 0 && d.status in ['Na čekanju', 'Odobreno', 'Odbijeno'])
+        && (('ownerUid' in d && d.ownerUid.size() > 0) || ('studentId' in d && d.studentId.size() > 0));
     }
     function valid_examBookings(d) {
       return d.keys().hasOnly(['ownerUid', 'ownerName', 'examId', 'courseId', 'instructorUid', 'title', 'date', 'status', 'createdAt', 'createdBy', 'updatedAt'])
@@ -137,23 +142,23 @@ service cloud.firestore {
     }
     function valid_calendarEvents(d) {
       return d.keys().hasOnly(['title', 'courseId', 'instructorUid', 'study', 'group', 'academicYear', 'semester', 'teachingType', 'seriesId', 'date', 'time', 'endTime', 'room', 'day', 'instructorName', 'description', 'createdAt', 'createdBy', 'updatedAt'])
-        && d.keys().hasAll(['title', 'date', 'time', 'room', 'createdAt', 'createdBy', 'updatedAt'])
+        && d.keys().hasAll(['title', 'date', 'time', 'createdAt', 'createdBy', 'updatedAt'])
         && (d.title is string && d.title.size() <= 200 && d.title.size() > 0)
-        && (!('courseId' in d) || (d.courseId is string && d.courseId.size() <= 200))
-        && (!('instructorUid' in d) || (d.instructorUid is string && d.instructorUid.size() <= 200))
-        && (!('study' in d) || (d.study is string && d.study.size() <= 200))
-        && (!('group' in d) || (d.group is string && d.group.size() <= 200))
-        && (!('academicYear' in d) || (d.academicYear is string && d.academicYear.size() <= 200))
-        && (!('semester' in d) || (d.semester is string && d.semester.size() <= 200 && d.semester in ['Zimski', 'Ljetni']))
-        && (!('teachingType' in d) || (d.teachingType is string && d.teachingType.size() <= 200))
-        && (!('seriesId' in d) || (d.seriesId is string && d.seriesId.size() <= 200))
+        && (!('courseId' in d) || d.courseId == '' || (d.courseId is string && d.courseId.size() <= 200))
+        && (!('instructorUid' in d) || d.instructorUid == '' || (d.instructorUid is string && d.instructorUid.size() <= 200))
+        && (!('study' in d) || d.study == '' || (d.study is string && d.study.size() <= 200))
+        && (!('group' in d) || d.group == '' || (d.group is string && d.group.size() <= 200))
+        && (!('academicYear' in d) || d.academicYear == '' || (d.academicYear is string && d.academicYear.size() <= 200))
+        && (!('semester' in d) || d.semester == '' || (d.semester is string && d.semester.size() <= 200 && d.semester in ['Zimski', 'Ljetni']))
+        && (!('teachingType' in d) || d.teachingType == '' || (d.teachingType is string && d.teachingType.size() <= 200))
+        && (!('seriesId' in d) || d.seriesId == '' || (d.seriesId is string && d.seriesId.size() <= 200))
         && (d.date is string && d.date.size() <= 200 && d.date.size() > 0 && d.date.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$'))
         && (d.time is string && d.time.size() <= 200 && d.time.size() > 0 && d.time.matches('^([01][0-9]|2[0-3]):[0-5][0-9]$'))
         && (!('endTime' in d) || (d.endTime is string && d.endTime.size() <= 200 && d.endTime.matches('^([01][0-9]|2[0-3]):[0-5][0-9]$')))
-        && (d.room is string && d.room.size() <= 200 && d.room.size() > 0)
-        && (!('day' in d) || (d.day is string && d.day.size() <= 200))
-        && (!('instructorName' in d) || (d.instructorName is string && d.instructorName.size() <= 200))
-        && (!('description' in d) || (d.description is string && d.description.size() <= 2000))
+        && (!('room' in d) || d.room == '' || (d.room is string && d.room.size() <= 200))
+        && (!('day' in d) || d.day == '' || (d.day is string && d.day.size() <= 200))
+        && (!('instructorName' in d) || d.instructorName == '' || (d.instructorName is string && d.instructorName.size() <= 200))
+        && (!('description' in d) || d.description == '' || (d.description is string && d.description.size() <= 2000))
         && (!('endTime' in d) || d.endTime > d.time);
     }
     function valid_projects(d) {
@@ -161,13 +166,13 @@ service cloud.firestore {
         && d.keys().hasAll(['title', 'fundingLine', 'budget', 'startDate', 'endDate', 'createdAt', 'createdBy', 'updatedAt'])
         && (d.title is string && d.title.size() <= 200 && d.title.size() > 0)
         && (d.fundingLine is string && d.fundingLine.size() <= 200 && d.fundingLine.size() > 0)
-        && (!('duration' in d) || (d.duration is string && d.duration.size() <= 200))
+        && (!('duration' in d) || d.duration == '' || (d.duration is string && d.duration.size() <= 200))
         && (d.budget is number && d.budget >= 0 && d.budget <= 1000000000)
         && (d.startDate is string && d.startDate.size() <= 200 && d.startDate.size() > 0 && d.startDate.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$'))
         && (d.endDate is string && d.endDate.size() <= 200 && d.endDate.size() > 0 && d.endDate.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$'))
-        && (!('partners' in d) || (d.partners is string && d.partners.size() <= 2000))
-        && (!('workPackages' in d) || (d.workPackages is string && d.workPackages.size() <= 2000))
-        && (!('description' in d) || (d.description is string && d.description.size() <= 2000))
+        && (!('partners' in d) || d.partners == '' || (d.partners is string && d.partners.size() <= 2000))
+        && (!('workPackages' in d) || d.workPackages == '' || (d.workPackages is string && d.workPackages.size() <= 2000))
+        && (!('description' in d) || d.description == '' || (d.description is string && d.description.size() <= 2000))
         && d.endDate >= d.startDate;
     }
     function valid_research(d) {
@@ -176,9 +181,9 @@ service cloud.firestore {
         && (d.ownerUid is string && d.ownerUid.size() <= 200 && d.ownerUid.size() > 0)
         && (d.title is string && d.title.size() <= 200 && d.title.size() > 0)
         && (d.authors is string && d.authors.size() <= 200 && d.authors.size() > 0)
-        && (!('projectId' in d) || (d.projectId is string && d.projectId.size() <= 200))
+        && (!('projectId' in d) || d.projectId == '' || (d.projectId is string && d.projectId.size() <= 200))
         && (d.status is string && d.status.size() <= 200 && d.status.size() > 0 && d.status in ['U pripremi', 'Recenzija', 'Objavljeno'])
-        && (!('description' in d) || (d.description is string && d.description.size() <= 2000));
+        && (!('description' in d) || d.description == '' || (d.description is string && d.description.size() <= 2000));
     }
     function valid_labs(d) {
       return d.keys().hasOnly(['title', 'tag', 'category', 'status', 'createdAt', 'createdBy', 'updatedAt'])
@@ -203,8 +208,8 @@ service cloud.firestore {
         && (d.title is string && d.title.size() <= 200 && d.title.size() > 0)
         && (d.category is string && d.category.size() <= 200 && d.category.size() > 0)
         && (d.date is string && d.date.size() <= 200 && d.date.size() > 0 && d.date.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$'))
-        && (!('url' in d) || (d.url is string && d.url.size() <= 2000 && d.url.matches('^https://.+$')))
-        && (!('description' in d) || (d.description is string && d.description.size() <= 2000));
+        && (!('url' in d) || d.url == '' || (d.url is string && d.url.size() <= 2000 && d.url.matches('^https://.+$')))
+        && (!('description' in d) || d.description == '' || (d.description is string && d.description.size() <= 2000));
     }
     function valid_requests(d) {
       return d.keys().hasOnly(['ownerUid', 'ownerName', 'type', 'details', 'status', 'response', 'createdAt', 'createdBy', 'updatedAt'])
@@ -214,7 +219,7 @@ service cloud.firestore {
         && (d.type is string && d.type.size() <= 200 && d.type.size() > 0 && d.type in ['Prijepis ocjena', 'Potvrda o statusu studenta', 'Ostalo'])
         && (d.details is string && d.details.size() <= 2000 && d.details.size() > 0)
         && (d.status is string && d.status.size() <= 200 && d.status.size() > 0 && d.status in ['Na čekanju', 'U obradi', 'Riješeno', 'Odbijeno'])
-        && (!('response' in d) || (d.response is string && d.response.size() <= 2000));
+        && (!('response' in d) || d.response == '' || (d.response is string && d.response.size() <= 2000));
     }
     function valid_finances(d) {
       return d.keys().hasOnly(['ownerUid', 'ownerName', 'title', 'amount', 'dueDate', 'status', 'paymentReference', 'createdAt', 'createdBy', 'updatedAt'])
@@ -225,7 +230,7 @@ service cloud.firestore {
         && (d.amount is number && d.amount >= 0 && d.amount <= 1000000)
         && (d.dueDate is string && d.dueDate.size() <= 200 && d.dueDate.size() > 0 && d.dueDate.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$'))
         && (d.status is string && d.status.size() <= 200 && d.status.size() > 0 && d.status in ['Dugovanje', 'Plaćeno'])
-        && (!('paymentReference' in d) || (d.paymentReference is string && d.paymentReference.size() <= 2000));
+        && (!('paymentReference' in d) || d.paymentReference == '' || (d.paymentReference is string && d.paymentReference.size() <= 2000));
     }
     function valid_employeeSchedules(d) {
       return d.keys().hasOnly(['ownerUid', 'ownerName', 'date', 'activity', 'startTime', 'endTime', 'departmentId', 'createdAt', 'createdBy', 'updatedAt'])
@@ -237,7 +242,7 @@ service cloud.firestore {
         && (d.startTime is string && d.startTime.size() <= 200 && d.startTime.size() > 0 && d.startTime.matches('^([01][0-9]|2[0-3]):[0-5][0-9]$'))
         && (d.endTime is string && d.endTime.size() <= 200 && d.endTime.size() > 0 && d.endTime.matches('^([01][0-9]|2[0-3]):[0-5][0-9]$'))
         && (d.departmentId is string && d.departmentId.size() <= 200 && d.departmentId.size() > 0)
-        && d.endTime > d.startTime;
+        && (!('startTime' in d) || !('endTime' in d) || d.endTime > d.startTime);
     }
     function valid_workEntries(d) {
       return d.keys().hasOnly(['ownerUid', 'ownerName', 'date', 'category', 'hours', 'projectId', 'description', 'createdAt', 'createdBy', 'updatedAt'])
@@ -247,7 +252,7 @@ service cloud.firestore {
         && (d.date is string && d.date.size() <= 200 && d.date.size() > 0 && d.date.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$'))
         && (d.category is string && d.category.size() <= 200 && d.category.size() > 0 && d.category in ['Administracija', 'Nastava', 'Rad na projektu', 'Znanstveni rad', 'Izvanredne aktivnosti'])
         && (d.hours is number && d.hours >= 0.25 && d.hours <= 24)
-        && (!('projectId' in d) || (d.projectId is string && d.projectId.size() <= 200))
+        && (!('projectId' in d) || d.projectId == '' || (d.projectId is string && d.projectId.size() <= 200))
         && (d.description is string && d.description.size() <= 2000 && d.description.size() > 0);
     }
     function valid_vacations(d) {
@@ -259,7 +264,7 @@ service cloud.firestore {
         && (d.endDate is string && d.endDate.size() <= 200 && d.endDate.size() > 0 && d.endDate.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$'))
         && (d.days is int && d.days >= 1 && d.days <= 60)
         && (d.status is string && d.status.size() <= 200 && d.status.size() > 0 && d.status in ['Na čekanju', 'Odobreno', 'Odbijeno'])
-        && (!('details' in d) || (d.details is string && d.details.size() <= 2000))
+        && (!('details' in d) || d.details == '' || (d.details is string && d.details.size() <= 2000))
         && d.endDate >= d.startDate;
     }
     function valid_alumniEvents(d) {
@@ -268,7 +273,7 @@ service cloud.firestore {
         && (d.title is string && d.title.size() <= 200 && d.title.size() > 0)
         && (d.date is string && d.date.size() <= 200 && d.date.size() > 0 && d.date.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$'))
         && (d.location is string && d.location.size() <= 200 && d.location.size() > 0)
-        && (!('description' in d) || (d.description is string && d.description.size() <= 2000));
+        && (!('description' in d) || d.description == '' || (d.description is string && d.description.size() <= 2000));
     }
     function valid_evaluations(d) {
       return d.keys().hasOnly(['ownerUid', 'subject', 'rating', 'answers', 'comments', 'createdAt', 'createdBy', 'updatedAt'])
@@ -277,7 +282,7 @@ service cloud.firestore {
         && (d.subject is string && d.subject.size() <= 200 && d.subject.size() > 0)
         && (d.rating is int && d.rating >= 1 && d.rating <= 5)
         && (d.answers is string && d.answers.size() <= 2000 && d.answers.size() > 0)
-        && (!('comments' in d) || (d.comments is string && d.comments.size() <= 2000));
+        && (!('comments' in d) || d.comments == '' || (d.comments is string && d.comments.size() <= 2000));
     }
     function valid_notifications(d) {
       return d.keys().hasOnly(['ownerUid', 'title', 'message', 'createdAt', 'createdBy', 'updatedAt'])
@@ -293,7 +298,7 @@ service cloud.firestore {
         && (d.email is string && d.email.size() <= 200 && d.email.size() > 0 && d.email.matches('^[^ @]+@[^ @]+[.][^ @]+$'))
         && (d.role is string && d.role.size() <= 200 && d.role.size() > 0 && d.role in ['admin', 'dept_head', 'profesor', 'lab_assistant', 'student', 'alumni'])
         && (!('active' in d) || (d.active is bool))
-        && (!('departmentId' in d) || (d.departmentId is string && d.departmentId.size() <= 200));
+        && (!('departmentId' in d) || d.departmentId == '' || (d.departmentId is string && d.departmentId.size() <= 200));
     }
 
     match /users/{uid} {

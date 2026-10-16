@@ -99,7 +99,7 @@ export function mountCalendarView(root, events, options) {
         ? "Učitavanje odobrenih upisa…"
         : mine
           ? "Osobni raspored prema dodijeljenoj nastavi ili odobrenim upisima. Odaberite svoju grupu ako kolegij ima više grupa. Termini bez ID-a kolegija/nastavnika nalaze se pod Sva nastava."
-          : "Zajednički raspored. Filtrirajte studij, grupu, semestar i akademsku godinu.";
+          : "Zajednički raspored. Filtrirajte studij, grupu, semestar i akademsku godinu. Termini bez dvorane ili nastavnika zahtijevaju dopunu; dostupnost tih resursa nije potvrđena.";
     if (view === "rooms") {
       roomDay =
         $("calendar-body").querySelector("#schedule-day")?.value ?? roomDay;
@@ -124,7 +124,7 @@ export function mountCalendarView(root, events, options) {
         ...visible.map((r) => minutes(r.time) + durationOf(r)),
       );
     const card = (r) =>
-      `<button class="calendar-lesson" data-calendar-id="${e(r.id)}" title="${e([r.title, r.time, r.endTime, r.room, r.instructorName, r.study, r.group, r.teachingType].filter(Boolean).join(" · "))}"><strong>${e(r.title)}</strong><span>${e(r.time)}–${e(r.endTime || timeAt(minutes(r.time) + durationOf(r)))}</span><span>${e(r.room)} · ${e(r.instructorName || "Nastavnik nije naveden")}</span><small>${e([r.study, r.group, r.teachingType].filter(Boolean).join(" · "))}</small></button>`;
+      `<button class="calendar-lesson" data-calendar-id="${e(r.id)}" title="${e([r.title, r.time, r.endTime, r.room, r.instructorName, r.study, r.group, r.teachingType].filter(Boolean).join(" · "))}"><strong>${e(r.title)}</strong><span>${e(r.time)}–${e(r.endTime || timeAt(minutes(r.time) + durationOf(r)))}</span><span>${e(r.room || "Dvorana nije određena")} · ${e(r.instructorName || "Nastavnik nije naveden")}</span><small>${e([r.study, r.group, r.teachingType].filter(Boolean).join(" · "))}</small></button>`;
     $("calendar-body").innerHTML =
       `<div id="calendar-move-message" role="status" aria-live="polite"></div>${options.canEdit ? '<p class="panel-note">Povucite svoju nastavu na drugi dan ili vrijeme (korak 15 min). Trajanje i dvorana ostaju isti. Za promjenu dvorane otvorite Dvorane i dostupnost ili Uredi. Tipkovnica: Alt + strelice.</p>' : ""}${
         view !== "semester"

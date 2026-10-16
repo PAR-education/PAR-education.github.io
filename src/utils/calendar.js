@@ -75,6 +75,13 @@ export function calendarItems(
   const items = [];
   for (const [module, rows] of Object.entries(records))
     for (const row of rows) {
+      if (
+        module === "courses" &&
+        (!["Pon", "Uto", "Sri", "Čet", "Pet"].includes(row.day) ||
+          !row.startTime)
+      )
+        continue;
+
       let date = row.date,
         time = row.time || row.startTime || "09:00",
         endTime = row.endTime,

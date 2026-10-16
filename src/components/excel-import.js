@@ -18,7 +18,7 @@ export function showExcelImport(context, name, onDone) {
     throw new Error("Nemate ovlasti za uvoz.");
   openDialog(
     "Uvoz podataka · " + modules[name].title,
-    `<section id="excel-import"><p>Preuzmite predložak i ispunite list <strong>Podaci</strong>. Upute i dopušteni izbori nalaze se u datoteci. Prihvaćamo .xlsx, .json i .csv, do 2000 redaka / 10 MB.</p><p>${name === "calendarEvents" ? "Jedan redak = termin ili serija. Ponavljanje: Jednom, Tjedno ili Svaka dva tjedna; navedite Do datuma i iznimke. Provjeravaju se dvorana, nastavnik i grupa, na svim datumima." : name === "students" ? "JMBAG je ključ za postojeće studente. Uvoz evidencija ne stvara račune za prijavu." : "ID povezuje ažuriranje s postojećim zapisom. Prazno za novi zapis."}</p><button type="button" class="button" id="excel-template">Preuzmi Excel predložak</button><button type="button" class="button" id="json-template">JSON predložak</button><button type="button" class="button" id="csv-template">CSV predložak</button><details><summary>Kako uvesti: Excel, JSON i CSV</summary><p>Excel: ispunite list Podaci od retka 2. CSV: prvi red su nazivi stupaca iz predloška; jedan red = jedan zapis, razdjelnik zarez ili točka-zarez, kodiranje UTF-8. JSON: popis objekata u uglatim zagradama, jedan objekt = jedan zapis. Datumi YYYY-MM-DD, vrijeme HH:mm, JMBAG i ID kao tekst. Sva tri formata prolaze iste provjere ovlasti, duplikata i rasporeda. Za JSON koristite stvarne brojeve i true/false. Backup JSON nije ovaj format.</p><p>${context.profile.role === "admin" ? "Administrator može uvoziti ovaj modul." : "Uvoz je ograničen na vaše ovlasti. Nastava mora pripadati vašim kolegijima, identitet se dodjeljuje automatski."}</p><ul>${importFields(
+    `<section id="excel-import"><p>Preuzmite predložak i ispunite list <strong>Podaci</strong>. Upute i dopušteni izbori nalaze se u datoteci. Prihvaćamo .xlsx, .json i .csv, do 2000 redaka / 10 MB.</p><p>${name === "calendarEvents" ? "Jedan redak = termin ili serija. Ponavljanje: Jednom, Tjedno ili Svaka dva tjedna; navedite Do datuma i iznimke. Provjeravaju se unesena dvorana, nastavnik i grupa, na svim datumima. Bez dvorane/nastavnika dostupnost tih resursa nije potvrđena." : name === "students" ? "Povezivanje dosjea: JMBAG, zatim e-adresa, zatim ime ako oboje nedostaje. Bez JMBAG-a preporučuje se e-adresa; ne izmišljajte brojeve. Uvoz ne stvara račune." : "ID povezuje ažuriranje s postojećim zapisom. Prazno za novi zapis."}</p><button type="button" class="button" id="excel-template">Preuzmi Excel predložak</button><button type="button" class="button" id="json-template">JSON predložak</button><button type="button" class="button" id="csv-template">CSV predložak</button><details><summary>Kako uvesti: Excel, JSON i CSV</summary><p>Excel: ispunite list Podaci od retka 2. CSV: prvi red su nazivi stupaca iz predloška; jedan red = jedan zapis, razdjelnik zarez ili točka-zarez, kodiranje UTF-8. JSON: popis objekata u uglatim zagradama, jedan objekt = jedan zapis. Datumi YYYY-MM-DD, vrijeme HH:mm, JMBAG i ID kao tekst. Sva tri formata prolaze iste provjere ovlasti, duplikata i rasporeda. Za JSON koristite stvarne brojeve i true/false. Backup JSON nije ovaj format.</p><p>${context.profile.role === "admin" ? "Administrator može uvoziti ovaj modul." : "Uvoz je ograničen na vaše ovlasti. Nastava mora pripadati vašim kolegijima, identitet se dodjeljuje automatski."}</p><ul>${importFields(
       name,
       context.profile.role,
     )
@@ -50,8 +50,14 @@ export function showExcelImport(context, name, onDone) {
     context.repository.listAll?.(name) || context.repository.list(name);
   async function sources() {
     const existing = await list(name),
-      courses = name === "calendarEvents" ? await list("courses") : [];
-    return { existing, courses };
+      courses = ["calendarEvents", "enrollments"].includes(name)
+        ? await list("courses")
+        : [],
+      students =
+        name === "enrollments" && context.profile.role === "admin"
+          ? await list("students")
+          : [];
+    return { existing, courses, students };
   }
   const message = (text) => {
     $("excel-message").textContent = text;
@@ -235,7 +241,7 @@ export function showExcelImport(context, name, onDone) {
                 p.data.time,
             );
         }
-        await context.repository.save(name, p.data, p.id);
+        await context.repository.save(name, p.data, p.id, { import: true });
         count++;
         message(`Spremljeno ${count} zapisa…`);
       }

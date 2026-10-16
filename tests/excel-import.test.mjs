@@ -177,3 +177,117 @@ test("Import permission matrix and calendar ownership stay scoped", () => {
   assert.equal(canImport("student", "calendarEvents"), false);
   assert.equal(canEditCalendar("profesor", "a", { instructorUid: "b" }), false);
 });
+
+test("Erasmus records allow genuine missing fields, retain student identities and require verified account linking", async () => {
+  const { validateStudentLink } =
+    await import("../src/services/student-link.js");
+  const courseRows = [
+    {
+      title: "Exchange course",
+      semester: "Zimski",
+      description: "Syllabus ".repeat(400),
+    },
+  ];
+  const common = { role: "admin", uid: "admin", profile: { name: "Admin" } };
+  const courses = await prepareImport({
+    ...common,
+    name: "courses",
+    rows: courseRows,
+  });
+  assert.ok(!courses[0].error);
+  const students = await prepareImport({
+    ...common,
+    name: "students",
+    rows: [
+      {
+        name: "Student A",
+        email: "a@example.test",
+        departmentId: "erasmus",
+        status: "Erasmus",
+      },
+      {
+        name: "Student B",
+        email: "b@example.test",
+        departmentId: "erasmus",
+        status: "Erasmus",
+      },
+    ],
+  });
+  assert.ok(students.every((p) => !p.error));
+  assert.notEqual(students[0].id, students[1].id);
+  const student = { ...students[0].data, id: students[0].id },
+    course = { ...courses[0].data, id: courses[0].id };
+  const enrollments = await prepareImport({
+    ...common,
+    name: "enrollments",
+    rows: [
+      {
+        studentId: student.id,
+        ownerName: student.name,
+        courseId: course.id,
+        courseTitle: course.title,
+        status: "Odobreno",
+      },
+    ],
+    courses: [course],
+    students: [student],
+  });
+  assert.ok(!enrollments[0].error);
+  const invalid = await prepareImport({
+    ...common,
+    name: "enrollments",
+    rows: [
+      {
+        ownerName: "Unknown",
+        courseId: course.id,
+        courseTitle: course.title,
+        status: "Odobreno",
+      },
+    ],
+    courses: [course],
+  });
+  assert.ok(invalid[0].error);
+  const events = await prepareImport({
+    ...common,
+    name: "calendarEvents",
+    rows: [
+      {
+        title: course.title,
+        courseId: course.id,
+        date: "2026-10-19",
+        time: "08:00",
+        endTime: "09:30",
+      },
+    ],
+    courses: [course],
+  });
+  assert.ok(!events[0].error);
+  assert.doesNotThrow(() =>
+    validateStudentLink(
+      student,
+      { email: student.email, role: "student", active: true },
+      "uid",
+    ),
+  );
+  assert.throws(() =>
+    validateStudentLink(
+      student,
+      { email: "other@example.test", role: "student", active: true },
+      "uid",
+    ),
+  );
+  assert.throws(() =>
+    validateStudentLink(
+      student,
+      { email: student.email, role: "admin", active: true },
+      "uid",
+    ),
+  );
+  assert.throws(() =>
+    validateStudentLink(
+      { ...student, ownerUid: "another" },
+      { email: student.email, role: "student", active: true },
+      "uid",
+    ),
+  );
+});

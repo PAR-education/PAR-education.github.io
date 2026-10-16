@@ -43,7 +43,7 @@ export function scheduleConflicts(events, target, excludeId) {
       (row) =>
         row.id !== excludeId &&
         row.date === target.date &&
-        row.room.trim() === target.room.trim() &&
+        (row.room || "").trim() === target.room.trim() &&
         minutes(row.time) < end &&
         start < minutes(row.time) + durationOf(row),
     )
@@ -55,13 +55,13 @@ export function teachingConflicts(events, target, excludeId) {
   );
   if (end <= minutes(target.time))
     throw new Error("Završetak mora biti nakon početka.");
-  if (!target.date || !target.room?.trim())
-    throw new Error("Odaberite datum i dvoranu.");
+  if (!target.date) throw new Error("Odaberite datum i dvoranu.");
   return events.filter(
     (row) =>
       row.id !== excludeId &&
       row.date === target.date &&
-      (row.room.trim() === target.room.trim() ||
+      ((target.room?.trim() &&
+        (row.room || "").trim() === target.room.trim()) ||
         (target.instructorUid && row.instructorUid === target.instructorUid) ||
         (target.group &&
           target.study &&
@@ -126,7 +126,12 @@ export function availableSlots(
   );
   const rooms = room
     ? [room]
-    : [...new Set([...defaultRooms, ...events.map((row) => row.room)])];
+    : [
+        ...new Set([
+          ...defaultRooms,
+          ...events.map((row) => row.room).filter(Boolean),
+        ]),
+      ];
   const result = [];
   for (let d = 0; d < (date ? 1 : days); d++) {
     const value = new Date(first + "T12:00:00Z");

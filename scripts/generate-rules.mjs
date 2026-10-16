@@ -22,7 +22,7 @@ function fieldCheck(field) {
   }
   return field.required
     ? `(${check})`
-    : `(!('${field.key}' in d) || (${check}))`;
+    : `(!('${field.key}' in d) || ${["time", "date", "number", "checkbox"].includes(field.type) ? "" : `d.${field.key} == '' || `}(${check}))`;
 }
 const schemas = Object.entries(modules)
   .map(([name, config]) => {
@@ -44,9 +44,15 @@ const schemas = Object.entries(modules)
     if (keys.includes("startDate") && keys.includes("endDate"))
       expressions.push("d.endDate >= d.startDate");
     if (keys.includes("startTime") && keys.includes("endTime"))
-      expressions.push("d.endTime > d.startTime");
+      expressions.push(
+        "(!('startTime' in d) || !('endTime' in d) || d.endTime > d.startTime)",
+      );
     if (keys.includes("time") && keys.includes("endTime"))
       expressions.push("(!('endTime' in d) || d.endTime > d.time)");
+    if (name === "enrollments")
+      expressions.push(
+        "(('ownerUid' in d && d.ownerUid.size() > 0) || ('studentId' in d && d.studentId.size() > 0))",
+      );
     return `    function valid_${name}(d) {\n      return ${expressions.join("\n        && ")};\n    }`;
   })
   .join("\n");

@@ -1,3 +1,4 @@
+import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { before, after, beforeEach, test } from "node:test";
 import {
@@ -659,4 +660,164 @@ test("Teachers may create and update only their assigned teaching, never another
     }),
   );
   await assertSucceeds(deleteDoc(ref));
+});
+
+test("Admin can import incomplete Erasmus dossiers, syllabi and unlinked enrollments without granting access", async () => {
+  const db = database("admin");
+  const metadata = {
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+    createdBy: "admin",
+  };
+  await assertSucceeds(
+    setDoc(doc(db, "students", "erasmus"), {
+      name: "Exchange Student",
+      departmentId: "erasmus",
+      status: "Erasmus",
+      ...metadata,
+    }),
+  );
+  await assertSucceeds(
+    setDoc(doc(db, "courses", "erasmus-course"), {
+      title: "Exchange Course",
+      semester: "Zimski",
+      description: "x".repeat(3000),
+      ...metadata,
+    }),
+  );
+  await assertSucceeds(
+    setDoc(doc(db, "calendarEvents", "erasmus-event"), {
+      title: "Exchange Course",
+      date: "2026-10-19",
+      time: "08:00",
+      endTime: "09:30",
+      ...metadata,
+    }),
+  );
+  await assertSucceeds(
+    setDoc(doc(db, "enrollments", "unlinked"), {
+      studentId: "erasmus",
+      ownerName: "Exchange Student",
+      courseId: "erasmus-course",
+      courseTitle: "Exchange Course",
+      status: "Odobreno",
+      ...metadata,
+    }),
+  );
+  await assertFails(
+    getDoc(doc(database("student-a"), "enrollments", "unlinked")),
+  );
+  await assertFails(
+    setDoc(doc(db, "enrollments", "no-identity"), {
+      ownerName: "Nobody",
+      courseId: "erasmus-course",
+      courseTitle: "Exchange Course",
+      status: "Odobreno",
+      ...metadata,
+    }),
+  );
+  await assertFails(
+    setDoc(doc(database("student-a"), "calendarEvents", "unauthorized"), {
+      title: "Exchange Course",
+      date: "2026-10-19",
+      time: "08:00",
+      endTime: "09:30",
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+      createdBy: "student-a",
+    }),
+  );
+});
+
+test("Real import creates deterministic IDs, preserves metadata on retry and links approved enrollments atomically", async () => {
+  const sdk = await import("firebase/firestore"),
+    db = database("admin");
+  const { writeImportedRecord } = await import("../src/services/records.js");
+  const { linkStudentAccount } =
+    await import("../src/services/student-link.js");
+  await updateDoc(doc(db, "users", "student-a"), {
+    email: "exchange@example.test",
+    updatedAt: serverTimestamp(),
+  });
+  await writeImportedRecord(
+    sdk,
+    db,
+    "students",
+    "excel-student",
+    {
+      name: "Exchange Student",
+      email: "exchange@example.test",
+      departmentId: "erasmus",
+      status: "Erasmus",
+    },
+    "admin",
+  );
+  const first = (await getDoc(doc(db, "students", "excel-student"))).data();
+  await writeImportedRecord(
+    sdk,
+    db,
+    "students",
+    "excel-student",
+    {
+      name: "Exchange Student",
+      email: "exchange@example.test",
+      departmentId: "erasmus",
+      status: "Erasmus",
+    },
+    "admin",
+  );
+  assert.equal(
+    (await getDoc(doc(db, "students", "excel-student")))
+      .data()
+      .createdAt.toMillis(),
+    first.createdAt.toMillis(),
+  );
+  await writeImportedRecord(
+    sdk,
+    db,
+    "enrollments",
+    "excel-enrollment",
+    {
+      studentId: "excel-student",
+      ownerName: "Exchange Student",
+      courseId: "c1",
+      courseTitle: "Business",
+      status: "Odobreno",
+    },
+    "admin",
+  );
+  const rows = [
+    {
+      ...(await getDoc(doc(db, "enrollments", "excel-enrollment"))).data(),
+      id: "excel-enrollment",
+    },
+  ];
+  const context = {
+    demo: false,
+    profile: { role: "admin", active: true },
+    repository: { listAll: async () => rows },
+  };
+  assert.equal(
+    await linkStudentAccount(
+      context,
+      "excel-student",
+      "student-a",
+      async () => ({ db, firestore: sdk }),
+    ),
+    1,
+  );
+  assert.equal(
+    (await getDoc(doc(db, "students", "excel-student"))).data().ownerUid,
+    "student-a",
+  );
+  assert.equal(
+    (
+      await getDoc(doc(database("student-a"), "enrollments", "c1__student-a"))
+    ).data().status,
+    "Odobreno",
+  );
+  assert.equal(
+    (await getDoc(doc(db, "enrollments", "excel-enrollment"))).exists(),
+    false,
+  );
 });

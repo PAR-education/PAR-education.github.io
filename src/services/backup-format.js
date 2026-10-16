@@ -175,7 +175,12 @@ export function validateRecord(name, id, data) {
     const value = data[field.key];
     if (typeof value === "string" && value.length > (field.maxLength || 2000))
       throw new Error("Predugačko polje " + field.label + ".");
-    if (field.options && value !== undefined && !field.options.includes(value))
+    if (
+      field.options &&
+      value !== undefined &&
+      !(value === "" && !field.required) &&
+      !field.options.includes(value)
+    )
       throw new Error("Neispravna opcija " + field.label + ".");
     if (
       ["date", "time", "email"].includes(field.type) &&

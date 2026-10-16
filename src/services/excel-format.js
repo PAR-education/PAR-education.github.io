@@ -87,6 +87,8 @@ export function normalizeRow(name, row, role, uid, profile, defaults = {}) {
   }
   if (name === "calendarEvents" && !values.endTime && values.time)
     values.endTime = timeAt(minutes(values.time) + 120);
+  if (name === "enrollments" && !values.ownerUid && !values.studentId)
+    throw new Error("Upis zahtijeva Firebase UID ili ID studentskog dosjea.");
   return validateFields(modules[name].fields, values);
 }
 export function expandTeaching(values, raw) {
@@ -136,6 +138,7 @@ export function expandTeaching(values, raw) {
 }
 const natural = {
   students: ["jmbag"],
+  enrollments: ["studentId", "ownerUid", "courseId"],
   employees: ["email"],
   users: ["id"],
   labs: ["tag"],
@@ -150,6 +153,7 @@ export async function prepareImport({
   rows,
   existing = [],
   courses = [],
+  students = [],
   defaults = {},
   mode = "skip",
 }) {
@@ -161,13 +165,23 @@ export async function prepareImport({
     results = [],
     proposed = [];
   const identity = (r) =>
-    JSON.stringify(
-      (natural[name] || []).map((k) =>
-        String(r[k] || "")
-          .trim()
-          .toLocaleLowerCase("hr"),
-      ),
-    );
+    name === "enrollments"
+      ? JSON.stringify([r.studentId || r.ownerUid || "", r.courseId || ""])
+      : name === "students"
+        ? JSON.stringify(
+            r.jmbag
+              ? ["jmbag", String(r.jmbag).trim()]
+              : r.email
+                ? ["email", r.email.trim().toLowerCase()]
+                : ["name", r.name.trim().toLowerCase()],
+          )
+        : JSON.stringify(
+            (natural[name] || []).map((k) =>
+              String(r[k] || "")
+                .trim()
+                .toLocaleLowerCase("hr"),
+            ),
+          );
   for (let i = 0; i < rows.length; i++) {
     const raw = rows[i];
     try {
@@ -197,6 +211,19 @@ export async function prepareImport({
         throw new Error(
           "Vlastiti administratorski račun ne možete deaktivirati ili promijeniti mu ulogu.",
         );
+      if (name === "enrollments") {
+        if (!courses.some((c) => c.id === values.courseId))
+          throw new Error(
+            "Kolegij nije pronađen. Prvo uvezite kolegije; provjerite ID.",
+          );
+        if (
+          values.studentId &&
+          !students.some((s) => s.id === values.studentId)
+        )
+          throw new Error(
+            "Studentski dosje nije pronađen. Prvo uvezite studente; provjerite ID.",
+          );
+      }
       if (name === "calendarEvents") {
         let course = courses.find((c) => c.id === values.courseId);
         if (!course && !values.courseId) {
@@ -210,8 +237,9 @@ export async function prepareImport({
         if (course) {
           values.courseId = course.id;
           values.title = course.title;
-          values.instructorUid = course.instructorUid;
-          values.instructorName = course.instructorName;
+          values.instructorUid = course.instructorUid || "";
+          values.instructorName =
+            course.instructorName || values.instructorName || "";
         }
         if (!values.endTime)
           throw new Error("Završetak je obavezan za raspored.");

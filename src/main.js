@@ -1,3 +1,4 @@
+import { linkStudentAccount } from "./services/student-link.js";
 import { observeSession, logout } from "./auth/auth.js";
 import {
   roles,
@@ -308,7 +309,8 @@ async function loadView(name) {
       return;
     }
     const result =
-      name === "calendarEvents" && current.repository.listAll
+      ["calendarEvents", "enrollments"].includes(name) &&
+      current.repository.listAll
         ? await current.repository.listAll(name)
         : await current.repository.list(name);
     if (
@@ -598,6 +600,55 @@ function showDetails(name, record) {
     showForm(name, record);
   });
   if (role === "admin" && name === "students") {
+    if (!current.demo) {
+      const linkButton = document.createElement("button");
+      linkButton.className = "button";
+      linkButton.textContent = "Poveži studentski račun i upise";
+      linkButton.addEventListener("click", async () => {
+        const context = current;
+        try {
+          const users = (await context.repository.listAll("users")).filter(
+            (u) =>
+              u.role === "student" &&
+              u.active &&
+              record.email &&
+              u.email?.trim().toLowerCase() ===
+                record.email.trim().toLowerCase(),
+          );
+          if (context !== current) return;
+          if (!users.length)
+            throw new Error(
+              "Nema aktivnog studentskog računa s e-adresom iz dosjea. Student se treba registrirati tom adresom, a administrator odobriti račun. Ako adresa nedostaje, prvo uredite dosje.",
+            );
+          openDialog(
+            "Poveži studentski račun",
+            `<p>Dosje: <strong>${e(record.name)}</strong> · ${e(record.email)}. Povezuju se i postojeći upisi ovog dosjea. Uloge i aktivacija računa se ne mijenjaju.</p><label>Provjerite račun<select id="student-link-user">${users.map((u) => `<option value="${e(u.id)}">${e(u.name)} · ${e(u.email)} · ${e(u.id)}</option>`).join("")}</select></label><button id="student-link-save" class="button primary">Poveži dosje i upise</button><p id="student-link-message" role="status"></p>`,
+          );
+          $("student-link-save").addEventListener("click", async () => {
+            const button = $("student-link-save"),
+              message = $("student-link-message"),
+              uid = $("student-link-user").value;
+            button.disabled = true;
+            try {
+              if (context !== current)
+                throw new Error("Sesija je promijenjena.");
+              const count = await linkStudentAccount(context, record.id, uid);
+              if (message.isConnected)
+                message.textContent = `Povezan dosje i ${count} upisa. Student sada vidi odobrene predmete u svom rasporedu.`;
+            } catch (error) {
+              if (message.isConnected)
+                message.textContent = errorMessage(error);
+            } finally {
+              if (button.isConnected) button.disabled = false;
+            }
+          });
+        } catch (error) {
+          if (context === current && $("detail-error"))
+            $("detail-error").textContent = errorMessage(error);
+        }
+      });
+      $("dialog-body").querySelector(".detail-actions").append(linkButton);
+    }
     const button = document.createElement("button");
     button.className = "button";
     button.textContent = "Školarina";
