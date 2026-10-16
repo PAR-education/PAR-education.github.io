@@ -47,6 +47,43 @@ const open = (i, label = "Detalji") =>
 const cards = (rows, render, classes = "") =>
   `<div class="record-grid ${classes}">${rows.map(render).join("")}</div>`;
 export function visualRecords(name, rows, badge) {
+  if (name === "enrollments") {
+    const groups = new Map();
+    rows.forEach((row, index) => {
+      const key = row.studentId
+        ? "student:" + row.studentId
+        : row.ownerUid
+          ? "uid:" + row.ownerUid
+          : "name:" +
+            String(row.ownerName || "Neimenovani student")
+              .trim()
+              .toLocaleLowerCase("hr");
+      if (!groups.has(key))
+        groups.set(key, {
+          name: row.ownerName || "Neimenovani student",
+          items: [],
+        });
+      groups.get(key).items.push({ row, index });
+    });
+    return `<div class="enrollment-groups">${[...groups.values()]
+      .sort((a, b) => a.name.localeCompare(b.name, "hr"))
+      .map(
+        (group) =>
+          `<section class="panel enrollment-student"><h2>${icon("user-graduate")} ${e(group.name)} <span class="muted">(${group.items.length})</span></h2><div class="table-scroll"><table><thead><tr><th scope="col">Kolegij</th><th scope="col">Status</th><th scope="col">Detalji</th></tr></thead><tbody>${group.items
+            .sort((a, b) =>
+              String(a.row.courseTitle || "").localeCompare(
+                String(b.row.courseTitle || ""),
+                "hr",
+              ),
+            )
+            .map(
+              ({ row, index }) =>
+                `<tr><td>${e(row.courseTitle)}</td><td>${badge(row.status)}</td><td>${open(index, "Otvori")}</td></tr>`,
+            )
+            .join("")}</tbody></table></div></section>`,
+      )
+      .join("")}</div>`;
+  }
   if (["students", "grades", "labs", "finances", "vacations"].includes(name)) {
     const headers = {
       students: ["Student", "Kontakt", "Status", "Prosjek"],
@@ -102,7 +139,7 @@ export function visualRecords(name, rows, badge) {
     return cards(
       rows,
       (r, i) =>
-        `<article class="record-card course-card"><div class="card-top">${badge(r.courseType || "Kolegij")}<strong class="ects">${r.ects == null ? "ECTS nije naveden" : e(r.ects) + " ECTS"}</strong></div><h2>${e(r.title)}</h2><p class="card-description">${e(r.description)}</p><p class="instructor">${icon("chalkboard-user")} ${e(r.instructorName || "Nastavnik nije naveden")}</p>${open(i, "Silabus i detalji")}</article>`,
+        `<article class="record-card course-card"><div class="card-top">${badge(r.courseType || "Kolegij")}<strong class="ects">${r.ects == null ? "ECTS nije naveden" : e(r.ects) + " ECTS"}</strong></div><h2>${e(r.title)}</h2><p class="instructor">${icon("chalkboard-user")} ${e(r.instructorName || "Nastavnik nije naveden")}</p>${open(i, "Silabus i detalji")}</article>`,
     );
   if (name === "projects")
     return cards(

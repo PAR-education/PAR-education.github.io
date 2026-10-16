@@ -2707,3 +2707,27 @@ td {
     padding: 10px 14px;
   }
 }
+
+.enrollment-groups {
+  display: grid;
+  gap: 1.25rem;
+}
+.enrollment-student {
+  overflow: hidden;
+}
+.enrollment-student h2 {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin: 0;
+  padding: 1.1rem 1.25rem;
+  font-size: 1.05rem;
+}
+.enrollment-student .table-scroll {
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+}
+.enrollment-student th:first-child {
+  width: 65%;
+}
