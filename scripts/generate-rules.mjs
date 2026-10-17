@@ -4,7 +4,9 @@ const quote = (value) => `'${value.replaceAll("'", "\\'")}'`;
 function fieldCheck(field) {
   const value = `d.${field.key}`;
   let check;
-  if (field.type === "checkbox") check = `${value} is bool`;
+  if (field.type === "uids")
+    check = `${value} is list && ${value}.size() <= 10`;
+  else if (field.type === "checkbox") check = `${value} is bool`;
   else if (field.type === "number")
     check = `${value} is ${field.integer ? "int" : "number"} && ${value} >= ${field.min} && ${value} <= ${field.max}`;
   else {
@@ -12,6 +14,8 @@ function fieldCheck(field) {
     if (field.required) check += ` && ${value}.size() > 0`;
     if (field.options)
       check += ` && ${value} in [${field.options.map(quote).join(", ")}]`;
+    if (field.pattern === "academicYear")
+      check += ` && ${value}.matches('^[0-9]{4}/[0-9]{4}$')`;
     if (field.type === "date")
       check += ` && ${value}.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')`;
     if (field.type === "time")
@@ -22,7 +26,7 @@ function fieldCheck(field) {
   }
   return field.required
     ? `(${check})`
-    : `(!('${field.key}' in d) || ${["time", "date", "number", "checkbox"].includes(field.type) ? "" : `d.${field.key} == '' || `}(${check}))`;
+    : `(!('${field.key}' in d) || ${["time", "date", "number", "checkbox", "uids"].includes(field.type) ? "" : `d.${field.key} == '' || `}(${check}))`;
 }
 const schemas = Object.entries(modules)
   .map(([name, config]) => {
@@ -64,14 +68,17 @@ service cloud.firestore {
     function signedIn() { return request.auth != null; }
     function profile() { return get(/databases/$(database)/documents/users/$(request.auth.uid)).data; }
     function active() {
-      return signedIn() && profile().active == true
-        && profile().role in ['admin', 'dept_head', 'profesor', 'lab_assistant', 'student', 'alumni'];
+      let p = profile();
+      return signedIn() && p.active == true
+        && p.role in ['admin', 'dept_head', 'profesor', 'lab_assistant', 'student', 'alumni']
+        && (!p.get('emailVerificationRequired', false) || request.auth.token.get('email_verified', false));
     }
     function role(r) { return active() && profile().role == r; }
     function admin() { return role('admin'); }
     function staff() { return active() && profile().role in ['admin', 'dept_head', 'profesor', 'lab_assistant']; }
     function own(d) { return active() && d.ownerUid == request.auth.uid; }
-    function instructor(d) { return role('profesor') && d.instructorUid == request.auth.uid; }
+    function assignedUid(d) { return (('instructorUid' in d) && d.instructorUid == request.auth.uid) || (('instructorUids' in d) && request.auth.uid in d.instructorUids); }
+    function instructor(d) { return role('profesor') && assignedUid(d); }
     function inDepartment(d) {
       return role('dept_head') && profile().departmentId is string
         && profile().departmentId.size() > 0 && d.departmentId == profile().departmentId;
@@ -87,19 +94,35 @@ service cloud.firestore {
     function pendingSelf(uid, d) {
       return signedIn() && uid == request.auth.uid
         && d.role == 'student' && d.active == false && d.departmentId == ''
-        && d.email == request.auth.token.email && created(d);
+        && d.email == request.auth.token.email && d.emailVerificationRequired == true
+        && d.emailVerified == request.auth.token.get('email_verified', false) && created(d);
     }
     function updated(d) {
       return d.updatedAt == request.time && d.createdAt == resource.data.createdAt
         && d.createdBy == resource.data.createdBy;
     }
     function assignedCourse(d) {
-      return get(/databases/$(database)/documents/courses/$(d.courseId)).data.instructorUid == request.auth.uid
-        && d.instructorUid == request.auth.uid;
+      let c = get(/databases/$(database)/documents/courses/$(d.courseId)).data;
+      return assignedUid(c) && d.instructorUid == c.instructorUid
+        && (!('instructorUids' in d) || d.instructorUids == c.get('instructorUids', [c.instructorUid]));
     }
+    function enrollmentKey(d, uid) { return d.courseId + '__' + uid + (d.get('academicYear','') == '' ? '' : '__' + d.academicYear.split('/')[0]); }
     function enrolledStudent(d) {
-      let enrollment = get(/databases/$(database)/documents/enrollments/$(d.courseId + '__' + d.ownerUid)).data;
+      let enrollment = get(/databases/$(database)/documents/enrollments/$(enrollmentKey(d, d.ownerUid))).data;
       return enrollment.ownerUid == d.ownerUid && enrollment.courseId == d.courseId && enrollment.status == 'Odobreno';
+    }
+    function teacherNotice(d) {
+      let source = get(/databases/$(database)/documents/$(d.sourceModule)/$(d.sourceId)).data;
+      return role('profesor') && d.sourceModule in ['calendarEvents','enrollments','examBookings'] && instructor(source)
+        && ((d.sourceModule in ['enrollments','examBookings'] && source.ownerUid == d.ownerUid)
+          || (d.sourceModule == 'calendarEvents' && enrolledStudent({'courseId':source.courseId,'ownerUid':d.ownerUid,'academicYear':source.get('academicYear','')})));
+    }
+    function studentEnrollment(d, id) {
+      let c = get(/databases/$(database)/documents/courses/$(d.courseId)).data;
+      return role('student') && d.ownerUid == request.auth.uid && d.status == 'Na čekanju'
+        && id == enrollmentKey(d, request.auth.uid) && d.instructorUid == c.instructorUid
+        && d.get('instructorUids', [d.instructorUid]) == c.get('instructorUids', [c.instructorUid])
+        && d.get('academicYear','') == c.get('academicYear','') && d.courseTitle == c.title;
     }
     function decision(d) {
       return resource.data.status == 'Na čekanju' && d.status in ['Odobreno', 'Odbijeno']
@@ -115,10 +138,14 @@ ${schemas}
       allow update: if admin() && valid_users(request.resource.data)
         && request.resource.data.active is bool && request.resource.data.updatedAt == request.time
         && (uid != request.auth.uid || (request.resource.data.role == 'admin' && request.resource.data.active == true));
+      allow update: if signedIn() && request.auth.uid == uid && request.auth.token.get('email_verified', false)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['emailVerified','updatedAt'])
+        && request.resource.data.emailVerified == true && request.resource.data.updatedAt == request.time;
       allow delete: if false;
     }
 `;
 const policies = {
+  rooms: { read: "active()", write: "admin()" },
   students: {
     read: "admin() || inDepartment(resource.data)",
     write: "admin()",
@@ -201,7 +228,12 @@ const policies = {
     update: "false",
     remove: "admin()",
   },
-  notifications: { read: "admin() || own(resource.data)", write: "admin()" },
+  notifications: {
+    read: "admin() || own(resource.data)",
+    write: "admin() || teacherNotice(request.resource.data)",
+    update: "admin()",
+    remove: "admin()",
+  },
 };
 let matches = "";
 for (const [name, policy] of Object.entries(policies)) {
@@ -215,16 +247,48 @@ for (const [name, policy] of Object.entries(policies)) {
     }\n`;
 }
 matches += `
+    match /calendarLocks/{date} {
+      allow read: if active();
+      allow create, update: if active() && profile().role in ['admin','profesor']
+        && request.resource.data.keys().hasOnly(['version','updatedAt','actorUid'])
+        && request.resource.data.version is int && request.resource.data.version > 0
+        && request.resource.data.actorUid == request.auth.uid && request.resource.data.updatedAt == request.time;
+      allow delete: if false;
+    }
+    match /auditLog/{id} {
+      allow read: if admin();
+      allow create: if active() && request.resource.data.keys().hasOnly(['module','recordId','action','before','after','actorUid','createdAt'])
+        && request.resource.data.actorUid == request.auth.uid && request.resource.data.createdAt == request.time
+        && request.resource.data.module in [${Object.keys(modules).map(quote).join(", ")}]
+        && request.resource.data.recordId is string && request.resource.data.recordId.size() <= 200
+        && request.resource.data.action in ['create','update','archive','restore']
+        && (admin() || (((request.resource.data.after != null
+          && request.resource.data.after == getAfter(/databases/$(database)/documents/$(request.resource.data.module)/$(request.resource.data.recordId)).data
+          && request.resource.data.after.updatedAt == request.time)
+          || (request.resource.data.action == 'archive' && !existsAfter(/databases/$(database)/documents/$(request.resource.data.module)/$(request.resource.data.recordId))))
+        && ((request.resource.data.before == null && !exists(/databases/$(database)/documents/$(request.resource.data.module)/$(request.resource.data.recordId)))
+          || request.resource.data.before == get(/databases/$(database)/documents/$(request.resource.data.module)/$(request.resource.data.recordId)).data)));
+      allow update, delete: if false;
+    }
+    match /archive/{id} {
+      allow read: if admin();
+      allow create: if active() && request.resource.data.actorUid == request.auth.uid && request.resource.data.createdAt == request.time
+        && request.resource.data.module != 'users'
+        && request.resource.data.data == get(/databases/$(database)/documents/$(request.resource.data.module)/$(request.resource.data.recordId)).data
+        && !existsAfter(/databases/$(database)/documents/$(request.resource.data.module)/$(request.resource.data.recordId));
+      allow update: if admin() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['restoredAt','restoredBy'])
+        && request.resource.data.restoredAt == request.time && request.resource.data.restoredBy == request.auth.uid;
+      allow delete: if false;
+    }
+`;
+
+matches += `
     match /enrollments/{id} {
       allow read: if admin() || instructor(resource.data) || (role('student') && own(resource.data));
       allow create: if admin() && id.matches('^template-.+$') && valid_enrollments(request.resource.data) && created(request.resource.data);
       allow create: if admin() && valid_enrollments(request.resource.data) && restored(request.resource.data);
       allow update: if admin() && valid_enrollments(request.resource.data) && updated(request.resource.data);
-      allow create: if role('student') && own(request.resource.data) && valid_enrollments(request.resource.data)
-        && created(request.resource.data) && request.resource.data.status == 'Na čekanju'
-        && id == request.resource.data.courseId + '__' + request.auth.uid
-        && request.resource.data.instructorUid == get(/databases/$(database)/documents/courses/$(request.resource.data.courseId)).data.instructorUid
-        && request.resource.data.courseTitle == get(/databases/$(database)/documents/courses/$(request.resource.data.courseId)).data.title;
+      allow create: if studentEnrollment(request.resource.data,id) && valid_enrollments(request.resource.data) && created(request.resource.data);
       allow update: if (admin() || instructor(resource.data)) && valid_enrollments(request.resource.data) && decision(request.resource.data);
       allow delete: if admin();
     }
@@ -237,6 +301,7 @@ matches += `
         && created(request.resource.data) && request.resource.data.status == 'Na čekanju'
         && id == request.resource.data.examId + '__' + request.auth.uid
         && request.resource.data.instructorUid == get(/databases/$(database)/documents/exams/$(request.resource.data.examId)).data.instructorUid
+        && (!('instructorUids' in request.resource.data) || request.resource.data.instructorUids == get(/databases/$(database)/documents/exams/$(request.resource.data.examId)).data.get('instructorUids', [request.resource.data.instructorUid]))
         && request.resource.data.courseId == get(/databases/$(database)/documents/exams/$(request.resource.data.examId)).data.courseId
         && request.resource.data.title == get(/databases/$(database)/documents/exams/$(request.resource.data.examId)).data.title
         && request.resource.data.date == get(/databases/$(database)/documents/exams/$(request.resource.data.examId)).data.date;

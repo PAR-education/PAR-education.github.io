@@ -1,3 +1,16 @@
+import {
+  actionMenu,
+  setupActionMenus,
+  groupRecordFields,
+} from "./components/ui-controls.js";
+import { revisionOf } from "./utils/schedule.js";
+import { planSeries } from "./services/calendar-series.js";
+import { setupLanguage } from "./utils/language.js";
+import { mountHistory } from "./components/history.js";
+import { mountDataQuality } from "./components/data-quality.js";
+import { dashboardModel } from "./services/dashboard.js";
+import { mountRecordSelectors } from "./components/record-selectors.js";
+import { isInstructor } from "./utils/instructors.js";
 import { roleNavigation, navigationLabel } from "./auth/navigation.js";
 import { linkStudentAccount } from "./services/student-link.js";
 import { observeSession, logout } from "./auth/auth.js";
@@ -36,7 +49,11 @@ import { mountCalendarView } from "./components/calendar-view.js";
 import { mountControlPanel } from "./components/control-panel.js";
 import { mountCalendarIntegration } from "./components/calendar-integration.js";
 import { mountSlotFinder } from "./components/slot-finder.js";
-import { canUseDemo, createAdminDemo } from "./services/admin-demo.js";
+import {
+  canUseDemo,
+  createAdminDemo,
+  createRolePreview,
+} from "./services/admin-demo.js";
 import { mountTemplateCleanup } from "./components/template-cleanup.js";
 const $ = (id) => document.getElementById(id);
 let context = null;
@@ -44,6 +61,8 @@ let authenticatedSession = null;
 let version = 0;
 let rows = [];
 let shownRows = [];
+let exportRows = [];
+let page = 1;
 let active = "dashboard";
 let search = "";
 let statusFilter = "";
@@ -103,12 +122,13 @@ document.addEventListener("keydown", (event) => {
   if (event.key === "Escape") mobileMenu(false);
 });
 function heading(title, description, actions = "") {
-  return `<div class="page-heading"><div><h1>${e(title)}</h1><p>${e(description)}</p></div><div class="page-actions">${actions}</div></div>`;
+  return `<div class="page-heading"><div><h1>${e(title)}</h1>${description ? `<p>${e(description)}</p>` : ""}</div><div class="page-actions">${actions}</div></div>`;
 }
 function clearPrivateContent() {
   version++;
   context = null;
   authenticatedSession = null;
+  document.getElementById("demo-role-tools")?.remove();
   document.getElementById("private-demo-banner")?.remove();
   document.getElementById("demo-toggle")?.remove();
   document.body.classList.remove("is-private-demo");
@@ -127,7 +147,9 @@ function route() {
   const key = location.hash.slice(1);
   return key === "help" ||
     key === "calendar-integration" ||
-    (["control-panel", "template-cleanup"].includes(key) &&
+    (["control-panel", "template-cleanup", "data-quality", "history"].includes(
+      key,
+    ) &&
       context?.profile.role === "admin") ||
     key === "dashboard" ||
     (Object.hasOwn(modules, key) && canRead(context?.profile.role, key))
@@ -143,12 +165,19 @@ async function startApplication(
   if (
     demo &&
     (!canUseDemo(authenticatedSession?.user, authenticatedSession?.profile) ||
-      authenticatedSession.user.uid !== user.uid)
+      repository.previewOwnerUid !== authenticatedSession.user.uid)
   )
     throw new Error("Demo je dostupan samo administratoru.");
   version++;
   closeDialog();
-  context = { user, profile, repository, demo };
+  context = {
+    user,
+    profile,
+    repository,
+    demo,
+    realAdminUid: demo ? authenticatedSession.user.uid : null,
+  };
+  document.getElementById("demo-role-tools")?.remove();
   document.getElementById("private-demo-banner")?.remove();
   document.body.classList.toggle("is-private-demo", demo);
   let toggle = document.getElementById("demo-toggle");
@@ -172,6 +201,61 @@ async function startApplication(
     banner.setAttribute("role", "status");
     banner.textContent =
       "DEMO — samo vaša sesija. Promjene se ne spremaju u bazu. Osvježavanje ili izlazak odbacuje ogledne promjene.";
+    banner.textContent = "PRIVATNI DEMO · Promjene su lokalne.";
+    const tools = document.createElement("div");
+    tools.id = "demo-role-tools";
+    tools.className = "demo-role-tools";
+    tools.innerHTML = `<label>Pregled kao uloga<select id="demo-role">${Object.entries(
+      roles,
+    )
+      .map(
+        ([key, label]) =>
+          `<option value="${key}" ${profile.role === key ? "selected" : ""}>${e(label)}</option>`,
+      )
+      .join(
+        "",
+      )}</select></label><button class="button" id="demo-reset">Resetiraj demo</button>`;
+    banner.append(tools);
+    tools
+      .querySelector("#demo-role")
+      .addEventListener("change", async (event) => {
+        const real = authenticatedSession,
+          before = context;
+        try {
+          const state = createRolePreview(
+            real.user,
+            real.profile,
+            before,
+            event.target.value,
+          );
+          await startApplication(
+            state.user,
+            state.profile,
+            state.repository,
+            true,
+          );
+        } catch (error) {
+          notify(errorMessage(error));
+        }
+      });
+    tools.querySelector("#demo-reset").addEventListener("click", async () => {
+      const real = authenticatedSession,
+        role = context.profile.role,
+        before = context;
+      try {
+        const initial = await createAdminDemo(real.user, real.profile);
+        if (context !== before) return;
+        const state = createRolePreview(real.user, real.profile, initial, role);
+        await startApplication(
+          state.user,
+          state.profile,
+          state.repository,
+          true,
+        );
+      } catch (error) {
+        notify(errorMessage(error));
+      }
+    });
     document.querySelector(".workspace").prepend(banner);
   }
   $("account-name").textContent = profile.name || user.email;
@@ -253,6 +337,10 @@ function drawNavigation() {
   html += `<a class="nav-item ${active === "calendar-integration" ? "active" : ""}" href="#calendar-integration"><span class="nav-symbol">${icon("calendar-days")}</span>Integracija kalendara</a>`;
   if (context.profile.role === "admin")
     html += `<a class="nav-item ${active === "control-panel" ? "active" : ""}" href="#control-panel"><span class="nav-symbol">${icon("sliders")}</span>Control panel i backup</a>`;
+  if (context.profile.role === "admin")
+    html += `<a class="nav-item ${active === "history" ? "active" : ""}" href="#history"><span class="nav-symbol">${icon("clock-rotate-left")}</span>Povijest i arhiva</a>`;
+  if (context.profile.role === "admin")
+    html += `<a class="nav-item ${active === "data-quality" ? "active" : ""}" href="#data-quality"><span class="nav-symbol">${icon("list-check")}</span>Kvaliteta podataka</a>`;
   if (context.profile.role === "admin" && !context.demo)
     html +=
       '<a class="nav-item" href="#template-cleanup"><span class="nav-symbol">' +
@@ -273,6 +361,7 @@ async function loadView(name) {
   const current = context;
   const ticket = ++version;
   active = name;
+  page = 1;
   search = "";
   statusFilter = "";
   month = "";
@@ -282,17 +371,14 @@ async function loadView(name) {
   window.scrollTo(0, 0);
   drawNavigation();
   $("header-title").textContent =
-    name === "dashboard"
-      ? "Nadzorna ploča"
-      : name === "help"
-        ? "Pomoć"
-        : name === "template-cleanup"
-          ? "Priprema baze"
-          : name === "control-panel"
-            ? "Control panel"
-            : name === "calendar-integration"
-              ? "Integracija kalendara"
-              : modules[name].title;
+    {
+      help: "Pomoć",
+      "template-cleanup": "Priprema baze",
+      "control-panel": "Control panel",
+      "calendar-integration": "Integracija kalendara",
+      history: "Povijest i arhiva",
+      "data-quality": "Kvaliteta podataka",
+    }[name] || navigationLabel(current.profile.role, name);
   $("content").innerHTML =
     '<div class="loading" role="status">Učitavanje podataka…</div>';
   if (name === "help") {
@@ -316,6 +402,26 @@ async function loadView(name) {
     return;
   }
   try {
+    if (name === "history") {
+      await mountHistory(
+        $("content"),
+        current,
+        () => context === current && version === ticket,
+      );
+      return;
+    }
+    if (name === "data-quality") {
+      await mountDataQuality(
+        $("content"),
+        current,
+        () => context === current && version === ticket,
+        async (issue) => {
+          await loadView(issue.module);
+          if (context === current) showDetails(issue.module, issue.row);
+        },
+      );
+      return;
+    }
     if (name === "dashboard") {
       await drawDashboard(ticket, current);
       return;
@@ -329,7 +435,7 @@ async function loadView(name) {
       result.splice(
         0,
         result.length,
-        ...result.filter((c) => c.instructorUid === current.user.uid),
+        ...result.filter((c) => isInstructor(c, current.user.uid)),
       );
     }
     if (
@@ -355,51 +461,27 @@ async function loadView(name) {
   }
 }
 async function drawDashboard(ticket, current) {
-  const choices =
-    current.profile.role === "student"
-      ? ["enrollments", "grades", "requests", "finances"]
-      : current.profile.role === "alumni"
-        ? ["alumniEvents", "requests", "documents", "notifications"]
-        : ["students", "employees", "projects", "vacations", "requests"].filter(
-            (name) => canRead(current.profile.role, name),
-          );
-  const result = await Promise.allSettled(
-    choices.map((name) => current.repository.list(name)),
-  );
-  const scheduleResult = await Promise.allSettled([
-    current.repository.list("calendarEvents"),
-    current.repository.list("notifications"),
-  ]);
+  const model = await dashboardModel(current);
   if (ticket !== version || current !== context) return;
-  const failures = result.filter((item) => item.status === "rejected");
-  const stats = choices
+  const { upcoming, notices } = model,
+    choices = model.stats,
+    failures = model.failures.map((reason) => ({ reason }));
+  const stats = model.stats
     .map(
-      (name, i) =>
-        `<a href="#${name}" class="stat stat-${name}"><span class="stat-icon">${icon(name)}</span><p>${e(modules[name].title)}</p><strong>${result[i].status === "fulfilled" ? (["vacations", "requests"].includes(name) ? result[i].value.filter((r) => r.status === "Na čekanju").length : result[i].value.length) : "—"}</strong><small>${["vacations", "requests"].includes(name) ? "Zahtjeva na čekanju" : "U vašem opsegu pristupa"}</small></a>`,
+      (stat) =>
+        `<a href="#${stat.name}" class="stat stat-${stat.name}"><span class="stat-icon">${icon(stat.name)}</span><p>${e(modules[stat.name]?.title === stat.label ? stat.label : modules[stat.label]?.title || stat.label)}</p><strong>${e(stat.value)}</strong><small>${e(stat.detail)}</small></a>`,
     )
     .join("");
-  const today = new Date().toLocaleDateString("sv-SE");
-  const upcoming =
-    scheduleResult[0].status === "fulfilled"
-      ? scheduleResult[0].value
-          .filter((row) => row.date >= today)
-          .sort((a, b) => a.date.localeCompare(b.date))
-          .slice(0, 5)
-      : [];
-  const notices =
-    scheduleResult[1].status === "fulfilled"
-      ? scheduleResult[1].value.slice(0, 3)
-      : [];
   $("content").innerHTML =
     heading(
-      "Nadzorna ploča",
+      navigationLabel(current.profile.role, "dashboard"),
       `Dobrodošli, ${current.profile.name || current.user.email}. ${new Date().toLocaleDateString("hr-HR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}`,
       `${current.profile.role === "admin" ? '<a class="button" href="#control-panel">Control panel i backup</a>' : ""}<button id="refresh" class="button">Osvježi podatke</button>`,
     ) +
     (failures.length
       ? `<div class="notice error">Neki podaci nisu dostupni. ${e(errorMessage(failures[0].reason))}</div>`
       : "") +
-    `<section class="stats stats-${choices.length}" aria-label="Pregled podataka"><article class="security-card"><span>${icon("shield-halved")}</span><h2>Sigurnosni kontekst</h2><p>Pristup sustavu prema dodijeljenoj ulozi.</p><div><strong>${e(roles[current.profile.role])}</strong><small>Prijavljeni korisnik · Zaštićeni podaci</small></div></article>${stats}</section><div class="dashboard-grid"><section class="panel"><div class="panel-title"><h2>Radni prostor</h2><span class="pill">${e(roles[current.profile.role])}</span></div><div class="link-list">${Object.entries(
+    `<section class="stats stats-${choices.length}" aria-label="Pregled podataka">${stats}</section><div class="dashboard-grid"><section class="panel"><div class="panel-title"><h2>Radni prostor</h2><span class="pill">${e(roles[current.profile.role])}</span></div><div class="link-list">${Object.entries(
       modules,
     )
       .filter(
@@ -416,7 +498,7 @@ async function drawDashboard(ticket, current) {
       )
       .join(
         "",
-      )}</div></section><section class="panel"><div class="panel-title"><h2>Sljedeći događaji</h2><a href="#calendarEvents">Kalendar</a></div>${scheduleResult[0].status === "rejected" ? '<p class="panel-note">Kalendar nije dostupan.</p>' : upcoming.length ? `<div class="calendar-list">${upcoming.map((row) => `<div class="calendar-row"><div class="date-box">${e(row.date)}</div><div><h3>${e(row.title)}</h3><p>${e(row.time)} · ${e(row.room)}</p></div></div>`).join("")}</div>` : '<p class="panel-note">Nema nadolazećih događaja.</p>'}</section></div><section class="panel"><div class="panel-title"><h2>Obavijesti</h2><a href="#notifications">Sve obavijesti</a></div>${scheduleResult[1].status === "rejected" ? '<p class="panel-note">Obavijesti nisu dostupne.</p>' : notices.length ? `<div class="calendar-list">${notices.map((row) => `<div class="calendar-row"><div><h3>${e(row.title)}</h3><p>${e(row.message)}</p></div></div>`).join("")}</div>` : '<p class="panel-note">Trenutno nema novih obavijesti.</p>'}</section>`;
+      )}</div></section><section class="panel"><div class="panel-title"><h2>Sljedeći događaji</h2><a href="#calendarEvents">Kalendar</a></div>${upcoming.length ? `<div class="calendar-list">${upcoming.map((row) => `<div class="calendar-row"><div class="date-box">${e(row.date)}</div><div><h3>${e(row.title)}</h3><p>${e(row.time)} · ${e(row.room)}</p></div></div>`).join("")}</div>` : '<p class="panel-note">Nema nadolazećih događaja.</p>'}</section></div><section class="panel"><div class="panel-title"><h2>Obavijesti</h2><a href="#notifications">Sve obavijesti</a></div>${model.unavailable?.includes("notifications") ? '<p class="panel-note">Obavijesti nisu dostupne.</p>' : notices.length ? `<div class="calendar-list">${notices.map((row) => `<div class="calendar-row"><div><h3>${e(row.title)}</h3><p>${e(row.message)}</p></div></div>`).join("")}</div>` : '<p class="panel-note">Trenutno nema novih obavijesti.</p>'}</section>`;
   $("refresh").addEventListener("click", () => loadView("dashboard"));
   $("content")
     .querySelectorAll("[data-nav]")
@@ -458,31 +540,85 @@ function drawModule() {
       : statusField
         ? `<label>Status <select id="status-filter"><option value="">Svi statusi</option>${statusField.options.map((option) => `<option value="${e(option)}">${e(option)}</option>`).join("")}</select></label>`
         : "";
+  const batchAllowed =
+    (context.profile.role === "admin" &&
+      ["enrollments", "examBookings", "labBookings", "vacations"].includes(
+        active,
+      )) ||
+    (context.profile.role === "profesor" &&
+      ["enrollments", "examBookings"].includes(active)) ||
+    (context.profile.role === "lab_assistant" && active === "labBookings");
   const monthly =
     active === "workEntries"
       ? '<label class="month-filter">Mjesec <input type="month" id="month-filter"></label>'
       : "";
   $("content").innerHTML =
     heading(
-      config.title,
-      config.description,
-      `${canCreate(active) ? '<button id="create" class="button primary">+ Novi zapis</button>' : ""}${canImport(context.profile.role, active) ? '<button id="excel-open" class="button">Uvezi podatke</button>' : ""}<button id="refresh" class="button">Osvježi</button><button id="print" class="button">Ispis / PDF</button><button id="csv" class="button">CSV</button>`,
+      navigationLabel(context.profile.role, active),
+      "",
+      `${canCreate(active) || canImport(context.profile.role, active) ? actionMenu("Dodaj", `${canCreate(active) ? '<button id="create" type="button">Ručni unos</button>' : ""}${canImport(context.profile.role, active) ? '<button id="excel-open" type="button">Uvoz iz datoteke</button>' : ""}`, true) : ""}${actionMenu("Izvoz", '<button id="print" type="button">Ispis / PDF</button><button id="csv" type="button">CSV tablica</button>')}<button id="refresh" class="button icon-button" title="Osvježi" aria-label="Osvježi">${icon("arrows-rotate")}</button>`,
     ) +
-    `<section class="panel"><div class="toolbar"><label for="search">Pretraživanje <input class="search" id="search" type="search" placeholder="Pretraži zapise…" autocomplete="off"></label>${filters}${monthly}</div><div id="table-area"></div><div class="table-footer" id="record-count"></div></section>`;
+    `<section class="panel module-panel"><div class="toolbar module-toolbar"><label class="module-search" for="search"><span class="sr-only">Pretraživanje</span>${icon("magnifying-glass")}<input class="search" id="search" type="search" placeholder="Pretraži…" autocomplete="off"></label><div class="toolbar-actions">${filters || monthly ? `<details class="module-filters" id="module-filters"><summary class="button">${icon("filter")} <span id="filter-label">Filtri</span></summary><div class="filter-fields">${filters}${monthly}<button class="button" id="clear-filters">Očisti filtre</button></div></details>` : ""}${batchAllowed ? '<button class="button" id="batch-approve">Odobri više…</button>' : ""}</div></div><div id="table-area"></div><div class="table-footer" id="record-count"></div></section>`;
+  if ($("status-filter")) $("status-filter").value = statusFilter;
+  if ($("month-filter")) $("month-filter").value = month;
+  $("clear-filters")?.addEventListener("click", () => {
+    statusFilter = "";
+    month = "";
+    page = 1;
+    if ($("status-filter")) $("status-filter").value = "";
+    if ($("month-filter")) $("month-filter").value = "";
+    drawTable();
+  });
   $("excel-open")?.addEventListener("click", () =>
     showExcelImport(context, active, () => loadView(active)),
   );
+  $("batch-approve")?.addEventListener("click", () => {
+    const current = context,
+      name = active,
+      targets = exportRows
+        .filter((r) => r.status === "Na čekanju")
+        .slice(0, 50);
+    openDialog(
+      "Provjerite skupno odobravanje",
+      `<p>Odobrit će se najviše 50 prijava koje odgovaraju trenutnim filtrima. Svaka prijava ponovno se provjerava prije odluke.</p><ul>${targets.map((r) => `<li>${e(r.ownerName)} · ${e(r.courseTitle || r.title || r.startDate)}</li>`).join("")}</ul><button class="button primary" id="batch-confirm" ${targets.length ? "" : "disabled"}>Odobri ${targets.length} prijava</button><p id="batch-result" role="status"></p>`,
+    );
+    $("batch-confirm").addEventListener("click", async (event) => {
+      event.currentTarget.disabled = true;
+      let success = 0;
+      const errors = [];
+      for (const row of targets) {
+        if (context !== current) break;
+        try {
+          await current.repository.decide(name, row.id, "Odobreno");
+          success++;
+        } catch (error) {
+          errors.push(`${row.ownerName}: ${errorMessage(error)}`);
+        }
+      }
+      if (context === current && $("batch-result"))
+        $("batch-result").textContent =
+          `Odobreno ${success}/${targets.length}. ${errors.join("; ")}`;
+      const latest = await current.repository.listAll(name);
+      if (context === current) {
+        rows = latest;
+        drawTable();
+      }
+    });
+  });
   $("create")?.addEventListener("click", () => showForm(active));
   $("refresh").addEventListener("click", () => loadView(active));
   $("search").addEventListener("input", (event) => {
+    page = 1;
     search = event.target.value.toLocaleLowerCase("hr");
     drawTable();
   });
   $("status-filter")?.addEventListener("change", (event) => {
+    page = 1;
     statusFilter = event.target.value;
     drawTable();
   });
   $("month-filter")?.addEventListener("change", (event) => {
+    page = 1;
     month = event.target.value;
     drawTable();
   });
@@ -490,12 +626,12 @@ function drawModule() {
     try {
       const total =
         active === "workEntries"
-          ? `Ukupno ${shownRows.reduce((sum, row) => sum + Number(row.hours || 0), 0)} sati · ${month || "Svi mjeseci"}`
-          : `${shownRows.length} zapisa`;
+          ? `Ukupno ${exportRows.reduce((sum, row) => sum + Number(row.hours || 0), 0)} sati · ${month || "Svi mjeseci"}`
+          : `${exportRows.length} zapisa`;
       printReport(
         config.title,
         config.columns.map((key) => ({ key, label: labelFor(active, key) })),
-        shownRows,
+        exportRows,
         total,
       );
     } catch (error) {
@@ -506,7 +642,7 @@ function drawModule() {
     exportCSV(
       active,
       config.columns.map((key) => ({ key, label: labelFor(active, key) })),
-      shownRows,
+      exportRows,
     ),
   );
   drawTable();
@@ -554,6 +690,33 @@ function drawTable() {
         "hr",
       ),
     );
+  exportRows = shownRows.slice();
+  const groups =
+    active === "enrollments"
+      ? [
+          ...new Set(
+            shownRows.map((r) => r.studentId || r.ownerUid || r.ownerName),
+          ),
+        ]
+      : null;
+  const pageCount =
+    active === "calendarEvents"
+      ? 1
+      : Math.max(
+          1,
+          Math.ceil(
+            (groups ? groups.length : shownRows.length) / (groups ? 20 : 50),
+          ),
+        );
+  page = Math.max(1, Math.min(page, pageCount));
+  if (active !== "calendarEvents") {
+    if (groups) {
+      const selected = new Set(groups.slice((page - 1) * 20, page * 20));
+      shownRows = shownRows.filter((r) =>
+        selected.has(r.studentId || r.ownerUid || r.ownerName),
+      );
+    } else shownRows = shownRows.slice((page - 1) * 50, page * 50);
+  }
   const visual = shownRows.length
     ? visualRecords(active, shownRows, badge)
     : null;
@@ -572,7 +735,8 @@ function drawTable() {
       onMove: async (record, target) => {
         if (context !== current || active !== "calendarEvents")
           throw new Error("Prikaz ili sesija su promijenjeni.");
-        await current.repository.moveCalendar(record, target);
+        const moved = await current.repository.moveCalendar(record, target);
+        if (moved?.warning && context === current) notify(moved.warning);
         if (context !== current || active !== "calendarEvents") return;
         rows = await (current.repository.listAll?.("calendarEvents") ||
           current.repository.list("calendarEvents"));
@@ -588,8 +752,19 @@ function drawTable() {
   else
     $("table-area").innerHTML =
       `<div class="table-scroll"><table><caption class="sr-only">${e(config.title)}</caption><thead><tr>${config.columns.map((key) => `<th scope="col">${e(labelFor(active, key))}</th>`).join("")}<th scope="col">Detalji</th></tr></thead><tbody>${shownRows.map((row, i) => `<tr>${config.columns.map((key) => `<td>${key === "status" ? badge(row[key]) : e(display(row[key]))}</td>`).join("")}<td><button class="button table-action" data-row="${i}" aria-label="Detalji: ${e(row.name || row.title || row.ownerName || config.title)}">Otvori →</button></td></tr>`).join("")}</tbody></table></div>`;
-  $("record-count").textContent =
-    `${shownRows.length} od ${rows.length} učitanih zapisa${rows.length === 250 ? " · Dosegnut limit 250. Za veće baze potrebna je paginacija." : ""}${active === "workEntries" ? ` · Ukupno ${shownRows.reduce((sum, row) => sum + Number(row.hours || 0), 0)} sati` : ""}`;
+  if ($("filter-label"))
+    $("filter-label").textContent =
+      `Filtri${[statusFilter, month].filter(Boolean).length ? ` (${[statusFilter, month].filter(Boolean).length})` : ""}`;
+  $("record-count").innerHTML =
+    `<span>${shownRows.length === exportRows.length ? `${exportRows.length} zapisa` : `${shownRows.length} od ${exportRows.length} zapisa`}</span>${pageCount > 1 ? `<div class="page-controls"><button class="button" id="records-prev" ${page === 1 ? "disabled" : ""}>Prethodna</button><span>Stranica ${page} / ${pageCount}</span><button class="button" id="records-next" ${page === pageCount ? "disabled" : ""}>Sljedeća</button></div>` : ""}`;
+  $("records-prev")?.addEventListener("click", () => {
+    page--;
+    drawTable();
+  });
+  $("records-next")?.addEventListener("click", () => {
+    page++;
+    drawTable();
+  });
   $("table-area")
     .querySelectorAll("[data-row]")
     .forEach((button) =>
@@ -599,6 +774,7 @@ function drawTable() {
     );
 }
 function showDetails(name, record) {
+  const current = context;
   const role = context.profile.role;
   const canDecide =
     role === "admin" ||
@@ -615,13 +791,104 @@ function showDetails(name, record) {
   openDialog(
     record.name || record.title || modules[name].title,
     detailsHTML(modules[name].fields, record) +
-      `<p class="muted">ID: ${e(record.id)}</p><div class="detail-actions">${canEdit(name, record) ? '<button id="edit-record" class="button primary">Uredi</button>' : ""}<button id="print-record" class="button">Ispis / PDF</button>${record.url && /^https:\/\//i.test(record.url) ? `<a class="button" href="${e(record.url)}" target="_blank" rel="noopener noreferrer">Otvori dokument ↗</a>` : ""}${role === "student" && bookingTarget ? '<button id="book-record" class="button primary">Pošalji prijavu</button>' : ""}${canDecide && record.status === "Na čekanju" && ["vacations", "enrollments", "examBookings", "labBookings"].includes(name) ? '<button id="approve" class="button primary">Odobri</button><button id="reject" class="button">Odbij</button>' : ""}${canManage(role, name) && (name !== "calendarEvents" || canEdit(name, record)) && !["users", "evaluations"].includes(name) ? '<button id="delete-record" class="button danger">Izbriši</button>' : ""}</div><div id="detail-error" role="alert"></div>`,
+      `${role === "admin" ? `<details class="context-help"><summary>Podaci o zapisu</summary><p>ID: ${e(record.id)}</p></details>` : ""}<div class="detail-actions">${canEdit(name, record) ? '<button id="edit-record" class="button primary">Uredi</button>' : ""}<button id="print-record" class="button">Ispis / PDF</button>${record.url && /^https:\/\//i.test(record.url) ? `<a class="button" href="${e(record.url)}" target="_blank" rel="noopener noreferrer">Otvori dokument ↗</a>` : ""}${role === "student" && bookingTarget ? '<button id="book-record" class="button primary">Pošalji prijavu</button>' : ""}${canDecide && record.status === "Na čekanju" && ["vacations", "enrollments", "examBookings", "labBookings"].includes(name) ? '<button id="approve" class="button primary">Odobri</button><button id="reject" class="button">Odbij</button>' : ""}${canManage(role, name) && (name !== "calendarEvents" || canEdit(name, record)) && !["users", "evaluations"].includes(name) ? '<button id="delete-record" class="button danger">Arhiviraj</button>' : ""}</div><div id="detail-error" role="alert"></div>`,
   );
   $("edit-record")?.addEventListener("click", () => {
     closeDialog();
     showForm(name, record);
   });
+  if (name === "calendarEvents" && record.seriesId && canEdit(name, record)) {
+    const seriesButton = document.createElement("button");
+    seriesButton.className = "button";
+    seriesButton.textContent = "Satnica cijele serije…";
+    seriesButton.addEventListener("click", () => {
+      openDialog(
+        "Promjena satnice serije",
+        `<p>Datumi, kolegij i nastavnici ostaju isti. Prije spremanja provjerava se cijeli raspored, a svaki termin ponovno pri spremanju. Ako se u međuvremenu pojavi sukob, obrada staje i prikazuje koliko je termina spremljeno.</p><form id="series-form"><div class="form-grid">${renderField({ key: "time", label: "Početak", type: "time", required: true }, record.time)}${renderField({ key: "endTime", label: "Završetak", type: "time", required: true }, record.endTime)}${renderField({ key: "room", label: "Dvorana", required: false }, record.room)}</div><button class="button" type="submit">Prikaži promjene</button></form><div id="series-preview"></div>`,
+      );
+      $("series-form").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const form = event.currentTarget,
+          button = form.querySelector("button");
+        button.disabled = true;
+        try {
+          const events = await current.repository.listAll("calendarEvents");
+          if (context !== current) return;
+          const plan = planSeries(
+            events,
+            record,
+            Object.fromEntries(new FormData(form)),
+            role,
+            current.user.uid,
+          );
+          $("series-preview").innerHTML =
+            `<p>${plan.length} termina. Datumi se ne mijenjaju.</p><ul>${plan.map((r) => `<li>${e(r.date)} · ${e(r.time)} – ${e(r.endTime)} · ${e(r.room)}</li>`).join("")}</ul><button class="button primary" id="series-confirm">Potvrdi promjenu serije</button><p id="series-result" role="status"></p>`;
+          $("series-confirm").addEventListener("click", async (event) => {
+            event.currentTarget.disabled = true;
+            button.disabled = true;
+            let count = 0;
+            try {
+              for (const row of plan) {
+                if (context !== current)
+                  throw new Error("Sesija je promijenjena.");
+                await current.repository.save(
+                  "calendarEvents",
+                  validateFields(modules.calendarEvents.fields, row),
+                  row.id,
+                  { expected: row.expectedRevision },
+                );
+                count++;
+              }
+              if ($("series-result"))
+                $("series-result").textContent =
+                  `Spremljeno ${count}/${plan.length} termina.`;
+            } catch (error) {
+              if ($("series-result"))
+                $("series-result").textContent =
+                  `Spremljeno ${count}/${plan.length}. ${errorMessage(error)} Preostali termini nisu promijenjeni. Ponovno otvorite seriju za novi pregled.`;
+            }
+          });
+        } catch (error) {
+          if ($("series-preview"))
+            $("series-preview").textContent = errorMessage(error);
+        } finally {
+          button.disabled = false;
+        }
+      });
+    });
+    $("dialog-body").querySelector(".detail-actions").append(seriesButton);
+  }
   if (role === "admin" && name === "students") {
+    const overview = document.createElement("button");
+    overview.className = "button";
+    overview.textContent = "Objedinjeni pregled studenta";
+    overview.addEventListener("click", async () => {
+      overview.disabled = true;
+      try {
+        const names = ["enrollments", "grades", "requests", "finances"];
+        const data = await Promise.all(
+          names.map(async (module) => [
+            module,
+            (await current.repository.listAll(module)).filter(
+              (r) =>
+                (record.ownerUid && r.ownerUid === record.ownerUid) ||
+                r.studentId === record.id,
+            ),
+          ]),
+        );
+        if (context !== current) return;
+        openDialog(
+          `Pregled · ${record.name}`,
+          `<p>${e(record.email || "Dosje još nema e-adresu")}${!record.ownerUid ? " · Račun nije povezan; osobne ocjene i financije možda nisu povezane s dosjeom." : ""}</p>${data.map(([module, list]) => `<section><h3>${e(modules[module].title)} (${list.length})</h3>${list.length ? `<ul>${list.map((r) => `<li>${e(r.courseTitle || r.title || r.studentName || "Zapis")} · ${e(r.status || r.grade || "")}${r.amount != null ? ` · ${e(r.amount)} €` : ""}</li>`).join("")}</ul>` : "<p>Nema povezanih zapisa.</p>"}</section>`).join("")}`,
+        );
+      } catch (error) {
+        if ($("detail-error"))
+          $("detail-error").textContent = errorMessage(error);
+      } finally {
+        overview.disabled = false;
+      }
+    });
+    $("dialog-body").querySelector(".detail-actions").append(overview);
     if (!current.demo) {
       const linkButton = document.createElement("button");
       linkButton.className = "button";
@@ -725,15 +992,15 @@ function showDetails(name, record) {
   );
   $("delete-record")?.addEventListener("click", () => {
     openDialog(
-      "Izbrisati zapis?",
-      `<p>Ovaj zapis bit će trajno izbrisan iz baze. ID: ${e(record.id)}</p><div class="form-actions"><button id="cancel-delete" class="button">Odustani</button><button id="confirm-delete" class="button danger">Izbriši zapis</button></div><div id="detail-error" role="alert"></div>`,
+      "Arhivirati zapis?",
+      `<p>Zapis će biti premješten u arhivu. Administrator ga može vratiti bez prepisivanja postojećih podataka. ID: ${e(record.id)}</p><div class="form-actions"><button id="cancel-delete" class="button">Odustani</button><button id="confirm-delete" class="button danger">Premjesti u arhivu</button></div><div id="detail-error" role="alert"></div>`,
     );
     $("cancel-delete").addEventListener("click", closeDialog);
     $("confirm-delete").addEventListener("click", (event) =>
       mutate(
         event.currentTarget,
         () => context.repository.remove(name, record.id),
-        "Zapis izbrisan.",
+        "Zapis je premješten u arhivu.",
       ),
     );
   });
@@ -800,10 +1067,10 @@ async function mutate(button, operation, message) {
   const original = context;
   button.disabled = true;
   try {
-    await operation();
+    const result = await operation();
     if (context !== original) return;
     closeDialog();
-    notify(message);
+    notify(result?.warning || message);
     await loadView(active);
   } catch (error) {
     if (context === original && $("detail-error")) {
@@ -843,58 +1110,47 @@ function showForm(name, record = {}) {
     (role === "profesor" &&
       [
         "instructorUid",
+        "instructorUids",
         ...(name === "calendarEvents" ? ["instructorName"] : []),
       ].includes(field.key));
+  const groups = groupRecordFields(
+    name,
+    modules[name].fields.filter(
+      (field) =>
+        !(mine && ["ownerUid", "ownerName", "response"].includes(field.key)),
+    ),
+  );
+  const fieldHTML = (fields) =>
+    fields
+      .map((field) => renderField(field, defaults[field.key], readonly(field)))
+      .join("");
   const questions =
     name === "evaluations"
-      ? '<div class="evaluation-questions"><div class="field"><label for="eval-template">Predložak upitnika</label><select id="eval-template"><option value="">Opći osvrt</option></select></div><strong>Pitanja za osvrt</strong><ol id="eval-questions"><li>Jesu li upute i materijali jasni?</li><li>Koliko je jednostavno obaviti zadatak?</li><li>Je li podrška pravodobna i korisna?</li><li>Što biste poboljšali?</li></ol><p class="muted">Pitanja iz izvornog prototipa uključuju procjenu budućih integracija.</p></div>'
+      ? '<div class="evaluation-questions"><p class="notice">Odgovori su povezani s vašim računom i nisu anonimni.</p><div class="field"><label for="eval-template">Predložak upitnika</label><select id="eval-template"><option value="">Opći osvrt</option></select></div><strong>Pitanja za osvrt</strong><ol id="eval-questions"><li>Jesu li upute i materijali jasni?</li><li>Koliko je jednostavno obaviti zadatak?</li><li>Je li podrška pravodobna i korisna?</li><li>Što biste poboljšali?</li></ol><p class="muted">Pitanja iz izvornog prototipa uključuju procjenu budućih integracija.</p></div>'
       : "";
   openDialog(
     `${record.id ? "Uredi" : "Novi zapis"} · ${modules[name].title}`,
-    `${questions}<form id="record-form">${name === "calendarEvents" ? '<div id="slot-finder"></div>' : ""}<div class="form-grid">${name === "users" && !record.id ? renderField({ key: "uid", label: "Firebase Authentication UID", required: true }, "") : ""}${modules[
-      name
-    ].fields
-      .filter(
-        (field) =>
-          !(mine && ["ownerUid", "ownerName", "response"].includes(field.key)),
-      )
-      .map((field) => renderField(field, defaults[field.key], readonly(field)))
-      .join(
-        "",
-      )}</div><div id="form-error" role="alert"></div><div class="form-actions"><button id="cancel-form" type="button" class="button">Odustani</button><button type="submit" class="button primary">Spremi zapis</button></div></form>`,
+    `${questions}<form id="record-form">${name === "calendarEvents" ? '<div id="slot-finder"></div>' : ""}<div class="form-grid">${name === "users" && !record.id ? renderField({ key: "uid", label: "Firebase Authentication UID", required: true }, "") : ""}${fieldHTML(groups.primary)}</div>${groups.secondary.length ? `<details class="form-additional"><summary>${name === "courses" ? "Silabus i dodatni podaci" : "Dodatni podaci"}</summary><div class="form-grid">${fieldHTML(groups.secondary)}</div></details>` : ""}<div id="form-error" role="alert"></div><div class="form-actions"><button id="cancel-form" type="button" class="button">Odustani</button><button type="submit" class="button primary">Spremi zapis</button></div></form>`,
   );
   $("cancel-form").addEventListener("click", closeDialog);
   const current = context;
   const form = $("record-form");
-  if (name === "calendarEvents" && role === "profesor") {
-    current.repository
-      .list("courses")
-      .then((courses) => {
-        if ($("record-form") !== form) return;
-        const input = form.elements.courseId,
-          select = document.createElement("select");
-        select.name = "courseId";
-        select.id = input.id;
-        select.required = true;
-        select.innerHTML =
-          '<option value="">Odaberite svoj kolegij</option>' +
-          courses
-            .filter((c) => c.instructorUid === current.user.uid)
-            .map(
-              (c) =>
-                `<option value="${e(c.id)}" ${c.id === record.courseId ? "selected" : ""}>${e(c.title)}</option>`,
-            )
-            .join("");
-        input.replaceWith(select);
-        select.addEventListener("change", () => {
-          form.elements.title.value =
-            courses.find((c) => c.id === select.value)?.title || "";
-        });
-      })
-      .catch((error) => {
+  const formSubmit = form.querySelector("[type=submit]");
+  formSubmit.disabled = true;
+  mountRecordSelectors(
+    form,
+    name,
+    current,
+    record,
+    () => context === current && $("record-form") === form,
+  )
+    .then(() => {
+      formSubmit.disabled = false;
+    })
+    .catch((error) => {
+      if ($("record-form") === form)
         $("form-error").textContent = errorMessage(error);
-      });
-  }
+    });
   const checkSlot =
     name === "calendarEvents"
       ? mountSlotFinder($("slot-finder"), form, current.repository, record)
@@ -938,6 +1194,10 @@ function showForm(name, record = {}) {
       const values = Object.fromEntries(new FormData(form));
       for (const field of modules[name].fields) {
         if (readonly(field)) values[field.key] = defaults[field.key];
+        if (field.type === "uids")
+          values[field.key] = [
+            ...(form.elements[field.key]?.selectedOptions || []),
+          ].map((o) => o.value);
         if (field.type === "checkbox")
           values[field.key] = form.elements[field.key].checked;
       }
@@ -958,15 +1218,22 @@ function showForm(name, record = {}) {
       const data = validateFields(modules[name].fields, values);
       if (checkSlot) await checkSlot(data);
       if (context !== current || $("record-form") !== form) return;
-      const saved = await current.repository.save(name, data, id);
+      const saved = await current.repository.save(
+        name,
+        data,
+        id,
+        name === "calendarEvents" && record.id
+          ? { expected: revisionOf(record) }
+          : {},
+      );
       if (context !== current) return;
       closeDialog();
       notify(
         current.demo
           ? "Spremljeno u oglednoj sesiji. Baza nije promijenjena."
           : name === "courses" && saved?.syncedEvents != null
-            ? `Kolegij je spremljen. Nastavnik je usklađen u ${saved.syncedEvents} termina rasporeda.`
-            : "Zapis je spremljen u bazu.",
+            ? `Kolegij je spremljen. Nastavnik je usklađen u ${saved.syncedEvents} termina rasporeda i ${(saved.syncedRecords || saved.syncedEvents) - saved.syncedEvents} ostalih evidencija.`
+            : saved?.warning || "Zapis je spremljen u bazu.",
       );
       await loadView(active);
     } catch (error) {
@@ -981,11 +1248,9 @@ function showForm(name, record = {}) {
 }
 function drawHelp() {
   $("content").innerHTML =
-    heading(
-      "Pomoć i integracije",
-      "Informacije o pristupu, evidencijama i dostupnim uslugama.",
-    ) +
+    heading("Pomoć i integracije", "") +
     '<section class="panel"><div class="panel-title"><h2>Pristup sustavu</h2></div><div class="panel-note"><p>Ulogu dodjeljuje administrator. Ako ne vidite potreban modul, obratite se nadležnoj službi. Odjavite se nakon rada na zajedničkom računalu.</p><p>Zapisi se spremaju u Cloud Firestore. Pogreška baze prikazuje se na zaslonu; ogledni podaci ne zamjenjuju produkcijske zapise.</p></div></section>' +
+    '<section class="panel"><div class="panel-title"><h2>Kalendar</h2></div><div class="panel-note"><p>Pod Filtri odaberite studij, grupu, semestar i akademsku godinu. Moj raspored prikazuje dodijeljenu nastavu ili odobrene upise.</p><p>Vlastitu nastavu možete povući na drugi dan ili vrijeme, u koracima od 15 minuta, ili koristiti Alt + strelice. Trajanje ostaje isto. Dvoranu mijenjate kroz Uredi ili Dvorane i dostupnost.</p></div></section>' +
     '<section class="panel"><div class="panel-title"><h2>Status integracija</h2></div><div class="panel-note"><p><strong>ISVU:</strong> ocjene su lokalna evidencija. Slanje Ministarstvu zahtijeva službeni API i zaštićenu poslužiteljsku integraciju.</p><p><strong>AI asistent:</strong> nije povezan. Za AI odgovore potreban je poslužitelj i ugovorena API usluga. U ovoj verziji nema simuliranih odgovora.</p><p><strong>PDF:</strong> otvorite ispis i odaberite „Spremi kao PDF”. Studentske potvrde trebaju odobrenje referade; ispis iz aplikacije nije službena potvrda.</p><p><strong>Plaćanja:</strong> financijski modul evidentira obveze. Ne izvršava bankovne transakcije niti generira neprovjeren barkod.</p><p><strong>Dokumenti:</strong> poveznice trebaju imati vlastitu kontrolu pristupa ako dokument nije javno objavljen. Privatna pohrana datoteka još nije povezana.</p></div></section>';
 }
 $("logout").addEventListener("click", async () => {
@@ -1018,7 +1283,7 @@ $("logout").addEventListener("click", async () => {
       authenticatedSession = { user: session.user, profile: session.profile };
       if (
         context?.demo &&
-        context.user.uid === session.user.uid &&
+        context.realAdminUid === session.user.uid &&
         canUseDemo(session.user, session.profile)
       )
         return;
@@ -1062,3 +1327,7 @@ $("logout").addEventListener("click", async () => {
       `<div class="notice error" role="alert">${e(errorMessage(error))}</div><a href="./index.html">Povratak na prijavu</a>`;
   });
 }
+
+setupLanguage();
+
+setupActionMenus();

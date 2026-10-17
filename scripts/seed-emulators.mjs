@@ -31,7 +31,22 @@ for (const role of [
       }),
     },
   );
-  const auth = await response.json();
+  let auth = await response.json();
+  if (auth.error?.message === "EMAIL_EXISTS") {
+    const signIn = await fetch(
+      "http://127.0.0.1:9099/identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=demo-key",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: `${role}@example.test`,
+          password: "Local-test-123!",
+          returnSecureToken: true,
+        }),
+      },
+    );
+    auth = await signIn.json();
+  }
   if (!auth.localId)
     throw new Error(`Cannot create emulator account: ${JSON.stringify(auth)}`);
   await environment.withSecurityRulesDisabled(async (context) => {

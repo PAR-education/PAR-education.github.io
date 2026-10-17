@@ -1,6 +1,6 @@
 import { demoData } from "../data/demoData.js";
 import { DemoRecords } from "./demo.js";
-import { isActiveProfile } from "../auth/permissions.js";
+import { roles, isActiveProfile } from "../auth/permissions.js";
 import { weekMonday, zagrebDate } from "../utils/calendar.js";
 export function canUseDemo(user, profile) {
   return !!user?.uid && isActiveProfile(profile) && profile.role === "admin";
@@ -25,10 +25,49 @@ export async function createAdminDemo(user, profile, load = demoData) {
     active: true,
     departmentId: "poslovanje",
   };
+  const repository = new DemoRecords(data, user, demoProfile);
+  repository.previewOwnerUid = user.uid;
   return {
     user,
     profile: demoProfile,
-    repository: new DemoRecords(data, user, demoProfile),
+    repository,
     demo: true,
   };
+}
+
+export function createRolePreview(realUser, realProfile, demoContext, role) {
+  if (
+    !canUseDemo(realUser, realProfile) ||
+    !Object.hasOwn(roles, role) ||
+    !demoContext.demo ||
+    !(demoContext.repository instanceof DemoRecords) ||
+    demoContext.repository.previewOwnerUid !== realUser.uid
+  )
+    throw new Error(
+      "Pregled uloga dostupan je samo administratoru u privatnom demu.",
+    );
+  const data = demoContext.repository.data;
+  const source = data.users?.find((u) => u.role === role && u.active) || {};
+  const user =
+    role === "admin"
+      ? realUser
+      : {
+          uid: source.id || "demo-" + role,
+          email: source.email || role + "@example.test",
+        };
+  const profile = {
+    ...source,
+    role,
+    active: true,
+    name:
+      role === "admin"
+        ? "Administrator demonstracije"
+        : source.name && source.name !== "Administrator predloška"
+          ? source.name
+          : roles[role] + " · demonstracija",
+    departmentId: source.departmentId || "poslovanje",
+  };
+  const repository = new DemoRecords(data, user, profile);
+  repository.previewOwnerUid = realUser.uid;
+  return { user, profile, repository, demo: true };
 }

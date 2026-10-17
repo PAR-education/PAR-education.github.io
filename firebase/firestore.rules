@@ -6,14 +6,17 @@ service cloud.firestore {
     function signedIn() { return request.auth != null; }
     function profile() { return get(/databases/$(database)/documents/users/$(request.auth.uid)).data; }
     function active() {
-      return signedIn() && profile().active == true
-        && profile().role in ['admin', 'dept_head', 'profesor', 'lab_assistant', 'student', 'alumni'];
+      let p = profile();
+      return signedIn() && p.active == true
+        && p.role in ['admin', 'dept_head', 'profesor', 'lab_assistant', 'student', 'alumni']
+        && (!p.get('emailVerificationRequired', false) || request.auth.token.get('email_verified', false));
     }
     function role(r) { return active() && profile().role == r; }
     function admin() { return role('admin'); }
     function staff() { return active() && profile().role in ['admin', 'dept_head', 'profesor', 'lab_assistant']; }
     function own(d) { return active() && d.ownerUid == request.auth.uid; }
-    function instructor(d) { return role('profesor') && d.instructorUid == request.auth.uid; }
+    function assignedUid(d) { return (('instructorUid' in d) && d.instructorUid == request.auth.uid) || (('instructorUids' in d) && request.auth.uid in d.instructorUids); }
+    function instructor(d) { return role('profesor') && assignedUid(d); }
     function inDepartment(d) {
       return role('dept_head') && profile().departmentId is string
         && profile().departmentId.size() > 0 && d.departmentId == profile().departmentId;
@@ -29,23 +32,45 @@ service cloud.firestore {
     function pendingSelf(uid, d) {
       return signedIn() && uid == request.auth.uid
         && d.role == 'student' && d.active == false && d.departmentId == ''
-        && d.email == request.auth.token.email && created(d);
+        && d.email == request.auth.token.email && d.emailVerificationRequired == true
+        && d.emailVerified == request.auth.token.get('email_verified', false) && created(d);
     }
     function updated(d) {
       return d.updatedAt == request.time && d.createdAt == resource.data.createdAt
         && d.createdBy == resource.data.createdBy;
     }
     function assignedCourse(d) {
-      return get(/databases/$(database)/documents/courses/$(d.courseId)).data.instructorUid == request.auth.uid
-        && d.instructorUid == request.auth.uid;
+      let c = get(/databases/$(database)/documents/courses/$(d.courseId)).data;
+      return assignedUid(c) && d.instructorUid == c.instructorUid
+        && (!('instructorUids' in d) || d.instructorUids == c.get('instructorUids', [c.instructorUid]));
     }
+    function enrollmentKey(d, uid) { return d.courseId + '__' + uid + (d.get('academicYear','') == '' ? '' : '__' + d.academicYear.split('/')[0]); }
     function enrolledStudent(d) {
-      let enrollment = get(/databases/$(database)/documents/enrollments/$(d.courseId + '__' + d.ownerUid)).data;
+      let enrollment = get(/databases/$(database)/documents/enrollments/$(enrollmentKey(d, d.ownerUid))).data;
       return enrollment.ownerUid == d.ownerUid && enrollment.courseId == d.courseId && enrollment.status == 'Odobreno';
+    }
+    function teacherNotice(d) {
+      let source = get(/databases/$(database)/documents/$(d.sourceModule)/$(d.sourceId)).data;
+      return role('profesor') && d.sourceModule in ['calendarEvents','enrollments','examBookings'] && instructor(source)
+        && ((d.sourceModule in ['enrollments','examBookings'] && source.ownerUid == d.ownerUid)
+          || (d.sourceModule == 'calendarEvents' && enrolledStudent({'courseId':source.courseId,'ownerUid':d.ownerUid,'academicYear':source.get('academicYear','')})));
+    }
+    function studentEnrollment(d, id) {
+      let c = get(/databases/$(database)/documents/courses/$(d.courseId)).data;
+      return role('student') && d.ownerUid == request.auth.uid && d.status == 'Na čekanju'
+        && id == enrollmentKey(d, request.auth.uid) && d.instructorUid == c.instructorUid
+        && d.get('instructorUids', [d.instructorUid]) == c.get('instructorUids', [c.instructorUid])
+        && d.get('academicYear','') == c.get('academicYear','') && d.courseTitle == c.title;
     }
     function decision(d) {
       return resource.data.status == 'Na čekanju' && d.status in ['Odobreno', 'Odbijeno']
         && d.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt']) && updated(d);
+    }
+    function valid_rooms(d) {
+      return d.keys().hasOnly(['name', 'aliases', 'createdAt', 'createdBy', 'updatedAt'])
+        && d.keys().hasAll(['name', 'createdAt', 'createdBy', 'updatedAt'])
+        && (d.name is string && d.name.size() <= 200 && d.name.size() > 0)
+        && (!('aliases' in d) || d.aliases == '' || (d.aliases is string && d.aliases.size() <= 2000));
     }
     function valid_students(d) {
       return d.keys().hasOnly(['ownerUid', 'name', 'jmbag', 'study', 'group', 'email', 'departmentId', 'year', 'status', 'homeUniversity', 'country', 'exchangeSemester', 'gpa', 'ects', 'createdAt', 'createdBy', 'updatedAt'])
@@ -76,13 +101,15 @@ service cloud.firestore {
         && (d.email is string && d.email.size() <= 200 && d.email.size() > 0 && d.email.matches('^[^ @]+@[^ @]+[.][^ @]+$'));
     }
     function valid_courses(d) {
-      return d.keys().hasOnly(['title', 'courseType', 'ects', 'semester', 'instructorUid', 'instructorName', 'room', 'day', 'startTime', 'endTime', 'description', 'outcomes', 'literature', 'createdAt', 'createdBy', 'updatedAt'])
+      return d.keys().hasOnly(['title', 'academicYear', 'courseType', 'ects', 'semester', 'instructorUid', 'instructorUids', 'instructorName', 'room', 'day', 'startTime', 'endTime', 'description', 'outcomes', 'literature', 'createdAt', 'createdBy', 'updatedAt'])
         && d.keys().hasAll(['title', 'semester', 'createdAt', 'createdBy', 'updatedAt'])
         && (d.title is string && d.title.size() <= 200 && d.title.size() > 0)
+        && (!('academicYear' in d) || d.academicYear == '' || (d.academicYear is string && d.academicYear.size() <= 200 && d.academicYear.matches('^[0-9]{4}/[0-9]{4}$')))
         && (!('courseType' in d) || d.courseType == '' || (d.courseType is string && d.courseType.size() <= 200))
         && (!('ects' in d) || (d.ects is number && d.ects >= 1 && d.ects <= 30))
         && (d.semester is string && d.semester.size() <= 200 && d.semester.size() > 0 && d.semester in ['Zimski', 'Ljetni'])
         && (!('instructorUid' in d) || d.instructorUid == '' || (d.instructorUid is string && d.instructorUid.size() <= 200))
+        && (!('instructorUids' in d) || (d.instructorUids is list && d.instructorUids.size() <= 10))
         && (!('instructorName' in d) || d.instructorName == '' || (d.instructorName is string && d.instructorName.size() <= 200))
         && (!('room' in d) || d.room == '' || (d.room is string && d.room.size() <= 200))
         && (!('day' in d) || d.day == '' || (d.day is string && d.day.size() <= 200 && d.day in ['Pon', 'Uto', 'Sri', 'Čet', 'Pet']))
@@ -94,10 +121,12 @@ service cloud.firestore {
         && (!('startTime' in d) || !('endTime' in d) || d.endTime > d.startTime);
     }
     function valid_exams(d) {
-      return d.keys().hasOnly(['courseId', 'instructorUid', 'instructorName', 'title', 'date', 'time', 'room', 'capacity', 'createdAt', 'createdBy', 'updatedAt'])
+      return d.keys().hasOnly(['courseId', 'academicYear', 'instructorUid', 'instructorUids', 'instructorName', 'title', 'date', 'time', 'room', 'capacity', 'createdAt', 'createdBy', 'updatedAt'])
         && d.keys().hasAll(['courseId', 'instructorUid', 'title', 'date', 'time', 'room', 'capacity', 'createdAt', 'createdBy', 'updatedAt'])
         && (d.courseId is string && d.courseId.size() <= 200 && d.courseId.size() > 0)
+        && (!('academicYear' in d) || d.academicYear == '' || (d.academicYear is string && d.academicYear.size() <= 200 && d.academicYear.matches('^[0-9]{4}/[0-9]{4}$')))
         && (d.instructorUid is string && d.instructorUid.size() <= 200 && d.instructorUid.size() > 0)
+        && (!('instructorUids' in d) || (d.instructorUids is list && d.instructorUids.size() <= 10))
         && (!('instructorName' in d) || d.instructorName == '' || (d.instructorName is string && d.instructorName.size() <= 200))
         && (d.title is string && d.title.size() <= 200 && d.title.size() > 0)
         && (d.date is string && d.date.size() <= 200 && d.date.size() > 0 && d.date.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$'))
@@ -106,49 +135,57 @@ service cloud.firestore {
         && (d.capacity is int && d.capacity >= 1 && d.capacity <= 1000);
     }
     function valid_grades(d) {
-      return d.keys().hasOnly(['ownerUid', 'studentName', 'courseId', 'courseTitle', 'instructorUid', 'grade', 'date', 'createdAt', 'createdBy', 'updatedAt'])
+      return d.keys().hasOnly(['ownerUid', 'studentName', 'courseId', 'academicYear', 'courseTitle', 'instructorUid', 'instructorUids', 'grade', 'date', 'createdAt', 'createdBy', 'updatedAt'])
         && d.keys().hasAll(['ownerUid', 'studentName', 'courseId', 'courseTitle', 'instructorUid', 'grade', 'date', 'createdAt', 'createdBy', 'updatedAt'])
         && (d.ownerUid is string && d.ownerUid.size() <= 200 && d.ownerUid.size() > 0)
         && (d.studentName is string && d.studentName.size() <= 200 && d.studentName.size() > 0)
         && (d.courseId is string && d.courseId.size() <= 200 && d.courseId.size() > 0)
+        && (!('academicYear' in d) || d.academicYear == '' || (d.academicYear is string && d.academicYear.size() <= 200 && d.academicYear.matches('^[0-9]{4}/[0-9]{4}$')))
         && (d.courseTitle is string && d.courseTitle.size() <= 200 && d.courseTitle.size() > 0)
         && (d.instructorUid is string && d.instructorUid.size() <= 200 && d.instructorUid.size() > 0)
+        && (!('instructorUids' in d) || (d.instructorUids is list && d.instructorUids.size() <= 10))
         && (d.grade is int && d.grade >= 1 && d.grade <= 5)
         && (d.date is string && d.date.size() <= 200 && d.date.size() > 0 && d.date.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$'));
     }
     function valid_enrollments(d) {
-      return d.keys().hasOnly(['ownerUid', 'studentId', 'ownerName', 'courseId', 'courseTitle', 'instructorUid', 'status', 'createdAt', 'createdBy', 'updatedAt'])
+      return d.keys().hasOnly(['ownerUid', 'studentId', 'academicYear', 'semester', 'ownerName', 'courseId', 'courseTitle', 'instructorUid', 'instructorUids', 'status', 'createdAt', 'createdBy', 'updatedAt'])
         && d.keys().hasAll(['ownerName', 'courseId', 'courseTitle', 'status', 'createdAt', 'createdBy', 'updatedAt'])
         && (!('ownerUid' in d) || d.ownerUid == '' || (d.ownerUid is string && d.ownerUid.size() <= 200))
         && (!('studentId' in d) || d.studentId == '' || (d.studentId is string && d.studentId.size() <= 200))
+        && (!('academicYear' in d) || d.academicYear == '' || (d.academicYear is string && d.academicYear.size() <= 200 && d.academicYear.matches('^[0-9]{4}/[0-9]{4}$')))
+        && (!('semester' in d) || d.semester == '' || (d.semester is string && d.semester.size() <= 200 && d.semester in ['Zimski', 'Ljetni']))
         && (d.ownerName is string && d.ownerName.size() <= 200 && d.ownerName.size() > 0)
         && (d.courseId is string && d.courseId.size() <= 200 && d.courseId.size() > 0)
         && (d.courseTitle is string && d.courseTitle.size() <= 200 && d.courseTitle.size() > 0)
         && (!('instructorUid' in d) || d.instructorUid == '' || (d.instructorUid is string && d.instructorUid.size() <= 200))
+        && (!('instructorUids' in d) || (d.instructorUids is list && d.instructorUids.size() <= 10))
         && (d.status is string && d.status.size() <= 200 && d.status.size() > 0 && d.status in ['Na čekanju', 'Odobreno', 'Odbijeno'])
         && (('ownerUid' in d && d.ownerUid.size() > 0) || ('studentId' in d && d.studentId.size() > 0));
     }
     function valid_examBookings(d) {
-      return d.keys().hasOnly(['ownerUid', 'ownerName', 'examId', 'courseId', 'instructorUid', 'title', 'date', 'status', 'createdAt', 'createdBy', 'updatedAt'])
+      return d.keys().hasOnly(['ownerUid', 'ownerName', 'examId', 'courseId', 'academicYear', 'instructorUid', 'instructorUids', 'title', 'date', 'status', 'createdAt', 'createdBy', 'updatedAt'])
         && d.keys().hasAll(['ownerUid', 'ownerName', 'examId', 'courseId', 'instructorUid', 'title', 'date', 'status', 'createdAt', 'createdBy', 'updatedAt'])
         && (d.ownerUid is string && d.ownerUid.size() <= 200 && d.ownerUid.size() > 0)
         && (d.ownerName is string && d.ownerName.size() <= 200 && d.ownerName.size() > 0)
         && (d.examId is string && d.examId.size() <= 200 && d.examId.size() > 0)
         && (d.courseId is string && d.courseId.size() <= 200 && d.courseId.size() > 0)
+        && (!('academicYear' in d) || d.academicYear == '' || (d.academicYear is string && d.academicYear.size() <= 200 && d.academicYear.matches('^[0-9]{4}/[0-9]{4}$')))
         && (d.instructorUid is string && d.instructorUid.size() <= 200 && d.instructorUid.size() > 0)
+        && (!('instructorUids' in d) || (d.instructorUids is list && d.instructorUids.size() <= 10))
         && (d.title is string && d.title.size() <= 200 && d.title.size() > 0)
         && (d.date is string && d.date.size() <= 200 && d.date.size() > 0 && d.date.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$'))
         && (d.status is string && d.status.size() <= 200 && d.status.size() > 0 && d.status in ['Na čekanju', 'Odobreno', 'Odbijeno']);
     }
     function valid_calendarEvents(d) {
-      return d.keys().hasOnly(['title', 'courseId', 'instructorUid', 'study', 'group', 'academicYear', 'semester', 'teachingType', 'seriesId', 'date', 'time', 'endTime', 'room', 'day', 'instructorName', 'description', 'createdAt', 'createdBy', 'updatedAt'])
+      return d.keys().hasOnly(['title', 'courseId', 'instructorUid', 'instructorUids', 'study', 'group', 'academicYear', 'semester', 'teachingType', 'seriesId', 'date', 'time', 'endTime', 'room', 'day', 'instructorName', 'description', 'createdAt', 'createdBy', 'updatedAt'])
         && d.keys().hasAll(['title', 'date', 'time', 'createdAt', 'createdBy', 'updatedAt'])
         && (d.title is string && d.title.size() <= 200 && d.title.size() > 0)
         && (!('courseId' in d) || d.courseId == '' || (d.courseId is string && d.courseId.size() <= 200))
         && (!('instructorUid' in d) || d.instructorUid == '' || (d.instructorUid is string && d.instructorUid.size() <= 200))
+        && (!('instructorUids' in d) || (d.instructorUids is list && d.instructorUids.size() <= 10))
         && (!('study' in d) || d.study == '' || (d.study is string && d.study.size() <= 200))
         && (!('group' in d) || d.group == '' || (d.group is string && d.group.size() <= 200))
-        && (!('academicYear' in d) || d.academicYear == '' || (d.academicYear is string && d.academicYear.size() <= 200))
+        && (!('academicYear' in d) || d.academicYear == '' || (d.academicYear is string && d.academicYear.size() <= 200 && d.academicYear.matches('^[0-9]{4}/[0-9]{4}$')))
         && (!('semester' in d) || d.semester == '' || (d.semester is string && d.semester.size() <= 200 && d.semester in ['Zimski', 'Ljetni']))
         && (!('teachingType' in d) || d.teachingType == '' || (d.teachingType is string && d.teachingType.size() <= 200))
         && (!('seriesId' in d) || d.seriesId == '' || (d.seriesId is string && d.seriesId.size() <= 200))
@@ -285,20 +322,24 @@ service cloud.firestore {
         && (!('comments' in d) || d.comments == '' || (d.comments is string && d.comments.size() <= 2000));
     }
     function valid_notifications(d) {
-      return d.keys().hasOnly(['ownerUid', 'title', 'message', 'createdAt', 'createdBy', 'updatedAt'])
+      return d.keys().hasOnly(['ownerUid', 'title', 'message', 'sourceModule', 'sourceId', 'createdAt', 'createdBy', 'updatedAt'])
         && d.keys().hasAll(['ownerUid', 'title', 'message', 'createdAt', 'createdBy', 'updatedAt'])
         && (d.ownerUid is string && d.ownerUid.size() <= 200 && d.ownerUid.size() > 0)
         && (d.title is string && d.title.size() <= 200 && d.title.size() > 0)
-        && (d.message is string && d.message.size() <= 2000 && d.message.size() > 0);
+        && (d.message is string && d.message.size() <= 2000 && d.message.size() > 0)
+        && (!('sourceModule' in d) || d.sourceModule == '' || (d.sourceModule is string && d.sourceModule.size() <= 200))
+        && (!('sourceId' in d) || d.sourceId == '' || (d.sourceId is string && d.sourceId.size() <= 200));
     }
     function valid_users(d) {
-      return d.keys().hasOnly(['name', 'email', 'role', 'active', 'departmentId', 'createdAt', 'createdBy', 'updatedAt'])
+      return d.keys().hasOnly(['name', 'email', 'role', 'active', 'departmentId', 'emailVerificationRequired', 'emailVerified', 'createdAt', 'createdBy', 'updatedAt'])
         && d.keys().hasAll(['name', 'email', 'role'])
         && (d.name is string && d.name.size() <= 200 && d.name.size() > 0)
         && (d.email is string && d.email.size() <= 200 && d.email.size() > 0 && d.email.matches('^[^ @]+@[^ @]+[.][^ @]+$'))
         && (d.role is string && d.role.size() <= 200 && d.role.size() > 0 && d.role in ['admin', 'dept_head', 'profesor', 'lab_assistant', 'student', 'alumni'])
         && (!('active' in d) || (d.active is bool))
-        && (!('departmentId' in d) || d.departmentId == '' || (d.departmentId is string && d.departmentId.size() <= 200));
+        && (!('departmentId' in d) || d.departmentId == '' || (d.departmentId is string && d.departmentId.size() <= 200))
+        && (!('emailVerificationRequired' in d) || (d.emailVerificationRequired is bool))
+        && (!('emailVerified' in d) || (d.emailVerified is bool));
     }
 
     match /users/{uid} {
@@ -309,7 +350,18 @@ service cloud.firestore {
       allow update: if admin() && valid_users(request.resource.data)
         && request.resource.data.active is bool && request.resource.data.updatedAt == request.time
         && (uid != request.auth.uid || (request.resource.data.role == 'admin' && request.resource.data.active == true));
+      allow update: if signedIn() && request.auth.uid == uid && request.auth.token.get('email_verified', false)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['emailVerified','updatedAt'])
+        && request.resource.data.emailVerified == true && request.resource.data.updatedAt == request.time;
       allow delete: if false;
+    }
+    match /rooms/{id} {
+      allow read: if active();
+      allow create: if (admin()) && valid_rooms(request.resource.data) && created(request.resource.data);
+      allow create: if admin() && valid_rooms(request.resource.data) && restored(request.resource.data);
+      allow update: if (admin()) && valid_rooms(request.resource.data) && updated(request.resource.data);
+      allow update: if admin() && valid_rooms(request.resource.data) && updated(request.resource.data);
+      allow delete: if admin();
     }
     match /students/{id} {
       allow read: if admin() || inDepartment(resource.data);
@@ -449,11 +501,45 @@ service cloud.firestore {
     }
     match /notifications/{id} {
       allow read: if admin() || own(resource.data);
-      allow create: if (admin()) && valid_notifications(request.resource.data) && created(request.resource.data);
+      allow create: if (admin() || teacherNotice(request.resource.data)) && valid_notifications(request.resource.data) && created(request.resource.data);
       allow create: if admin() && valid_notifications(request.resource.data) && restored(request.resource.data);
       allow update: if (admin()) && valid_notifications(request.resource.data) && updated(request.resource.data);
       allow update: if admin() && valid_notifications(request.resource.data) && updated(request.resource.data);
       allow delete: if admin();
+    }
+
+    match /calendarLocks/{date} {
+      allow read: if active();
+      allow create, update: if active() && profile().role in ['admin','profesor']
+        && request.resource.data.keys().hasOnly(['version','updatedAt','actorUid'])
+        && request.resource.data.version is int && request.resource.data.version > 0
+        && request.resource.data.actorUid == request.auth.uid && request.resource.data.updatedAt == request.time;
+      allow delete: if false;
+    }
+    match /auditLog/{id} {
+      allow read: if admin();
+      allow create: if active() && request.resource.data.keys().hasOnly(['module','recordId','action','before','after','actorUid','createdAt'])
+        && request.resource.data.actorUid == request.auth.uid && request.resource.data.createdAt == request.time
+        && request.resource.data.module in ['rooms', 'students', 'employees', 'courses', 'exams', 'grades', 'enrollments', 'examBookings', 'calendarEvents', 'projects', 'research', 'labs', 'labBookings', 'documents', 'requests', 'finances', 'employeeSchedules', 'workEntries', 'vacations', 'alumniEvents', 'evaluations', 'notifications', 'users']
+        && request.resource.data.recordId is string && request.resource.data.recordId.size() <= 200
+        && request.resource.data.action in ['create','update','archive','restore']
+        && (admin() || (((request.resource.data.after != null
+          && request.resource.data.after == getAfter(/databases/$(database)/documents/$(request.resource.data.module)/$(request.resource.data.recordId)).data
+          && request.resource.data.after.updatedAt == request.time)
+          || (request.resource.data.action == 'archive' && !existsAfter(/databases/$(database)/documents/$(request.resource.data.module)/$(request.resource.data.recordId))))
+        && ((request.resource.data.before == null && !exists(/databases/$(database)/documents/$(request.resource.data.module)/$(request.resource.data.recordId)))
+          || request.resource.data.before == get(/databases/$(database)/documents/$(request.resource.data.module)/$(request.resource.data.recordId)).data)));
+      allow update, delete: if false;
+    }
+    match /archive/{id} {
+      allow read: if admin();
+      allow create: if active() && request.resource.data.actorUid == request.auth.uid && request.resource.data.createdAt == request.time
+        && request.resource.data.module != 'users'
+        && request.resource.data.data == get(/databases/$(database)/documents/$(request.resource.data.module)/$(request.resource.data.recordId)).data
+        && !existsAfter(/databases/$(database)/documents/$(request.resource.data.module)/$(request.resource.data.recordId));
+      allow update: if admin() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['restoredAt','restoredBy'])
+        && request.resource.data.restoredAt == request.time && request.resource.data.restoredBy == request.auth.uid;
+      allow delete: if false;
     }
 
     match /enrollments/{id} {
@@ -461,11 +547,7 @@ service cloud.firestore {
       allow create: if admin() && id.matches('^template-.+$') && valid_enrollments(request.resource.data) && created(request.resource.data);
       allow create: if admin() && valid_enrollments(request.resource.data) && restored(request.resource.data);
       allow update: if admin() && valid_enrollments(request.resource.data) && updated(request.resource.data);
-      allow create: if role('student') && own(request.resource.data) && valid_enrollments(request.resource.data)
-        && created(request.resource.data) && request.resource.data.status == 'Na čekanju'
-        && id == request.resource.data.courseId + '__' + request.auth.uid
-        && request.resource.data.instructorUid == get(/databases/$(database)/documents/courses/$(request.resource.data.courseId)).data.instructorUid
-        && request.resource.data.courseTitle == get(/databases/$(database)/documents/courses/$(request.resource.data.courseId)).data.title;
+      allow create: if studentEnrollment(request.resource.data,id) && valid_enrollments(request.resource.data) && created(request.resource.data);
       allow update: if (admin() || instructor(resource.data)) && valid_enrollments(request.resource.data) && decision(request.resource.data);
       allow delete: if admin();
     }
@@ -478,6 +560,7 @@ service cloud.firestore {
         && created(request.resource.data) && request.resource.data.status == 'Na čekanju'
         && id == request.resource.data.examId + '__' + request.auth.uid
         && request.resource.data.instructorUid == get(/databases/$(database)/documents/exams/$(request.resource.data.examId)).data.instructorUid
+        && (!('instructorUids' in request.resource.data) || request.resource.data.instructorUids == get(/databases/$(database)/documents/exams/$(request.resource.data.examId)).data.get('instructorUids', [request.resource.data.instructorUid]))
         && request.resource.data.courseId == get(/databases/$(database)/documents/exams/$(request.resource.data.examId)).data.courseId
         && request.resource.data.title == get(/databases/$(database)/documents/exams/$(request.resource.data.examId)).data.title
         && request.resource.data.date == get(/databases/$(database)/documents/exams/$(request.resource.data.examId)).data.date;

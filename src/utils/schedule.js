@@ -1,3 +1,5 @@
+import { instructorIds } from "./instructors.js";
+import { roomKey } from "./rooms.js";
 import { validateFields } from "./validation.js";
 export const defaultRooms = [
   "Dvorana PAR",
@@ -43,7 +45,7 @@ export function scheduleConflicts(events, target, excludeId) {
       (row) =>
         row.id !== excludeId &&
         row.date === target.date &&
-        (row.room || "").trim() === target.room.trim() &&
+        roomKey(row.room) === roomKey(target.room) &&
         minutes(row.time) < end &&
         start < minutes(row.time) + durationOf(row),
     )
@@ -60,9 +62,8 @@ export function teachingConflicts(events, target, excludeId) {
     (row) =>
       row.id !== excludeId &&
       row.date === target.date &&
-      ((target.room?.trim() &&
-        (row.room || "").trim() === target.room.trim()) ||
-        (target.instructorUid && row.instructorUid === target.instructorUid) ||
+      ((target.room?.trim() && roomKey(row.room) === roomKey(target.room)) ||
+        instructorIds(target).some((uid) => instructorIds(row).includes(uid)) ||
         (target.group &&
           target.study &&
           row.group === target.group &&

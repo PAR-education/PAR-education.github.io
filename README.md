@@ -95,3 +95,7 @@ Each module currently reads at most 250 accessible records from the server. The 
 No real records, analytics or authentication passwords are stored in the repository. Firebase is authoritative for access, but GitHub Pages itself remains a public static host: the HTML shell and JavaScript can be fetched publicly. Sensitive records live only in Firestore and require published security rules. Copying a homepage URL does not grant database access.
 
 SDK and font CDNs require internet access. Financial and academic retention policies, institutional privacy notices and service contracts must be defined by the institution before using real records.
+
+## Administratorsko testiranje i dorade
+
+Upute za pregled po ulogama, objavu pravila i granice novih funkcija: [ADMIN-TESTIRANJE.md](docs/ADMIN-TESTIRANJE.md).

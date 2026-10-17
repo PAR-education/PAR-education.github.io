@@ -34,6 +34,7 @@ export function navigationLabel(role, name) {
   if (role === "admin") return modules[name]?.title || "Nadzorna ploča";
   if (name === "calendarEvents" && !["student", "profesor"].includes(role))
     return "Raspored";
+  if (name === "grades" && role === "profesor") return "Ocjene studenata";
   if (name === "courses" && role === "profesor") return "Moji kolegiji";
   if (name === "enrollments")
     return role === "profesor" ? "Studenti i upisi" : "Moji upisi";

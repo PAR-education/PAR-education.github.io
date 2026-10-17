@@ -201,7 +201,7 @@ export function validateRecord(name, id, data) {
     )
       throw new Error("Neispravna logička vrijednost.");
     if (
-      !["checkbox"].includes(field.type) &&
+      !["checkbox", "uids"].includes(field.type) &&
       data[field.key] !== undefined &&
       !["string", "number"].includes(typeof data[field.key])
     )

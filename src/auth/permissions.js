@@ -1,3 +1,4 @@
+import { isInstructor } from "../utils/instructors.js";
 export const roles = Object.freeze({
   admin: "Administrator",
   dept_head: "Pročelnik odjela",
@@ -8,6 +9,7 @@ export const roles = Object.freeze({
 });
 export const staffRoles = ["admin", "dept_head", "profesor", "lab_assistant"];
 const readers = {
+  rooms: Object.keys(roles),
   students: ["admin", "dept_head"],
   employees: ["admin", "dept_head"],
   courses: Object.keys(roles),
@@ -58,9 +60,7 @@ export function isActiveProfile(profile) {
   return profile?.active === true && Object.hasOwn(roles, profile.role);
 }
 export function canEditCalendar(role, uid, record) {
-  return (
-    role === "admin" || (role === "profesor" && record.instructorUid === uid)
-  );
+  return role === "admin" || (role === "profesor" && isInstructor(record, uid));
 }
 export function canImport(role, name) {
   if (role === "admin") return Object.hasOwn(readers, name);

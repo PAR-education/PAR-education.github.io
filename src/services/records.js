@@ -1,3 +1,8 @@
+import { notifyChangeSafely } from "./notifications.js";
+import { enrollmentId } from "../utils/academic-year.js";
+import { saveCalendarRecord } from "./calendar-save.js";
+import { appendAudit, archiveRecord, restoreArchived } from "./audit.js";
+import { isInstructor, instructorFields } from "../utils/instructors.js";
 import { saveCourseAndSchedule } from "./course-schedule.js";
 import { getFirebase } from "../config/firebase.js";
 import {
@@ -14,7 +19,15 @@ export async function readAllRecords(sdk, db, name, field, value) {
   let cursor;
   for (;;) {
     const constraints = [sdk.orderBy(sdk.documentId()), sdk.limit(500)];
-    if (field) constraints.unshift(sdk.where(field, "==", value));
+    if (field)
+      constraints.unshift(
+        field === "instructorUid"
+          ? sdk.or(
+              sdk.where("instructorUid", "==", value),
+              sdk.where("instructorUids", "array-contains", value),
+            )
+          : sdk.where(field, "==", value),
+      );
     if (cursor) constraints.push(sdk.startAfter(cursor));
     const snapshot = await sdk.getDocsFromServer(
       sdk.query(sdk.collection(db, name), ...constraints),
@@ -30,13 +43,27 @@ export async function writeImportedRecord(sdk, db, name, id, values, uid) {
   return sdk.runTransaction(db, async (tx) => {
     const current = await tx.get(ref);
     const data = { ...values, updatedAt: sdk.serverTimestamp() };
-    if (current.exists()) tx.update(ref, data);
-    else
-      tx.set(ref, {
+    if (current.exists()) {
+      tx.update(ref, data);
+      appendAudit(
+        tx,
+        sdk,
+        db,
+        name,
+        id,
+        current.data(),
+        { ...current.data(), ...data },
+        uid,
+      );
+    } else {
+      const after = {
         ...data,
         createdAt: sdk.serverTimestamp(),
         createdBy: uid,
-      });
+      };
+      tx.set(ref, after);
+      appendAudit(tx, sdk, db, name, id, null, after, uid);
+    }
   });
 }
 export class Records {
@@ -51,23 +78,28 @@ export class Records {
     )
       throw new Error("Nemate ovlasti za promjenu rasporeda.");
     const events = await this.listAll("calendarEvents");
+    const values = prepareCalendarMove(record, target, events);
     const { db, firestore: sdk } = await getFirebase();
-    return sdk.runTransaction(db, async (transaction) => {
-      const ref = sdk.doc(db, "calendarEvents", record.id),
-        snapshot = await transaction.get(ref);
-      if (!snapshot.exists()) throw new Error("Događaj više ne postoji.");
-      const latest = { ...snapshot.data(), id: record.id };
-      if (!canEditCalendar(this.profile.role, this.user.uid, latest))
-        throw new Error("Nemate ovlasti za tuđu nastavu.");
-      if (revisionOf(latest) !== revisionOf(record))
-        throw new Error(
-          "Raspored je u međuvremenu izmijenjen. Osvježite prikaz pa ponovite premještanje.",
-        );
-      const values = prepareCalendarMove(latest, target, events);
-      transaction.update(ref, { ...values, updatedAt: sdk.serverTimestamp() });
-      return values;
-    });
+    const saved = await saveCalendarRecord(
+      sdk,
+      db,
+      this.user,
+      this.profile,
+      { ...record, ...values },
+      record.id,
+      { expected: revisionOf(record) },
+    );
+    return {
+      ...saved,
+      ...(await notifyChangeSafely(
+        { repository: this, user: this.user, profile: this.profile },
+        "calendarEvents",
+        record.id,
+        { ...record, ...values },
+      )),
+    };
   }
+
   async listAll(name) {
     if (!canRead(this.profile.role, name))
       throw new Error("Nemate pristup ovom modulu.");
@@ -79,19 +111,7 @@ export class Records {
     return readAllRecords(sdk, db, name, field, value);
   }
   async list(name) {
-    if (!canRead(this.profile.role, name))
-      throw new Error("Nemate pristup ovom modulu.");
-    const { db, firestore: sdk } = await getFirebase();
-    const field = scopeFor(this.profile.role, name);
-    const value =
-      field === "departmentId" ? this.profile.departmentId : this.user.uid;
-    if (field && !value) return [];
-    const ref = sdk.collection(db, name);
-    const query = field
-      ? sdk.query(ref, sdk.where(field, "==", value), sdk.limit(250))
-      : sdk.query(ref, sdk.limit(250));
-    const snapshot = await sdk.getDocsFromServer(query);
-    return snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
+    return this.listAll(name);
   }
   async save(name, values, id, options = {}) {
     const role = this.profile.role;
@@ -106,6 +126,26 @@ export class Records {
       throw new Error("Nemate ovlasti za spremanje.");
     const { db, firestore: sdk } = await getFirebase();
     const data = { ...values, updatedAt: sdk.serverTimestamp() };
+    if (name === "calendarEvents") {
+      const saved = await saveCalendarRecord(
+        sdk,
+        db,
+        this.user,
+        this.profile,
+        values,
+        id || sdk.doc(sdk.collection(db, name)).id,
+        { expected: options.expected },
+      );
+      return {
+        ...saved,
+        ...(await notifyChangeSafely(
+          { repository: this, user: this.user, profile: this.profile },
+          name,
+          saved.id,
+          saved.record || values,
+        )),
+      };
+    }
     if (name === "courses" && role === "admin") {
       const courseId = id || sdk.doc(sdk.collection(db, "courses")).id;
       return saveCourseAndSchedule(
@@ -117,23 +157,25 @@ export class Records {
         !id || options.import === true,
       );
     }
-    if (name === "calendarEvents" && role === "admin" && data.courseId) {
+    if (
+      ["exams", "grades", "enrollments", "examBookings"].includes(name) &&
+      data.courseId
+    ) {
       const course = await sdk.getDocFromServer(
         sdk.doc(db, "courses", data.courseId),
       );
-      if (!course.exists()) throw new Error("Kolegij nije pronađen.");
-      data.instructorUid = course.data().instructorUid || "";
-      data.instructorName =
-        course.data().instructorName || data.instructorName || "";
-    }
-    if (name === "calendarEvents" && role === "profesor") {
-      data.instructorUid = this.user.uid;
-      const course = await sdk.getDocFromServer(
-        sdk.doc(db, "courses", data.courseId || "_missing"),
+      if (
+        !course.exists() ||
+        (role === "profesor" && !isInstructor(course.data(), this.user.uid))
+      )
+        throw new Error("Odaberite dodijeljeni kolegij.");
+      Object.assign(
+        data,
+        instructorFields(course.data()),
+        ...(course.data().academicYear
+          ? [{ academicYear: course.data().academicYear }]
+          : []),
       );
-      if (!course.exists() || course.data().instructorUid !== this.user.uid)
-        throw new Error("Odaberite vlastiti dodijeljeni kolegij.");
-      data.instructorName = this.profile.name;
     }
     if (!canManage(role, name) || (name === "research" && role !== "admin"))
       data.ownerUid = this.user.uid;
@@ -145,23 +187,22 @@ export class Records {
       return writeImportedRecord(sdk, db, name, id, data, this.user.uid);
     if (name === "users") {
       if (!id) throw new Error("Potreban je Firebase Authentication UID.");
-      // Profiles may be preprovisioned only by an existing administrator.
-      const ref = sdk.doc(db, "users", id);
-      const old = await sdk.getDocFromServer(ref);
-      if (!old.exists())
-        Object.assign(data, {
-          createdAt: sdk.serverTimestamp(),
-          createdBy: this.user.uid,
-        });
-      await sdk.setDoc(ref, data, { merge: true });
-    } else if (id) await sdk.updateDoc(sdk.doc(db, name, id), data);
-    else await sdk.addDoc(sdk.collection(db, name), data);
+      await writeImportedRecord(sdk, db, name, id, data, this.user.uid);
+    } else
+      await writeImportedRecord(
+        sdk,
+        db,
+        name,
+        id || sdk.doc(sdk.collection(db, name)).id,
+        data,
+        this.user.uid,
+      );
   }
   async remove(name, id) {
     if (!canManage(this.profile.role, name))
       throw new Error("Nemate ovlasti za brisanje.");
     const { db, firestore: sdk } = await getFirebase();
-    await sdk.deleteDoc(sdk.doc(db, name, id));
+    await archiveRecord(sdk, db, name, id, this.user.uid);
   }
   async requestBooking(name, item) {
     if (this.profile.role !== "student")
@@ -173,7 +214,13 @@ export class Records {
         : name === "examBookings"
           ? "exams"
           : "labs";
-    const ref = sdk.doc(db, name, `${item.id}__${this.user.uid}`);
+    const ref = sdk.doc(
+      db,
+      name,
+      name === "enrollments"
+        ? enrollmentId(item.id, this.user.uid, item.academicYear)
+        : `${item.id}__${this.user.uid}`,
+    );
     await sdk.runTransaction(db, async (transaction) => {
       const existing = await transaction.get(ref);
       const source = await transaction.get(sdk.doc(db, target, item.id));
@@ -200,13 +247,16 @@ export class Records {
         Object.assign(data, {
           courseId: item.id,
           courseTitle: current.title,
-          instructorUid: current.instructorUid,
+          ...(current.academicYear
+            ? { academicYear: current.academicYear }
+            : {}),
+          ...instructorFields(current),
         });
       if (name === "examBookings")
         Object.assign(data, {
           examId: item.id,
           courseId: current.courseId,
-          instructorUid: current.instructorUid,
+          ...instructorFields(current),
           title: current.title,
           date: current.date,
         });
@@ -226,10 +276,61 @@ export class Records {
     )
       throw new Error("Nemate ovlasti za odluku.");
     const { db, firestore: sdk } = await getFirebase();
-    await sdk.updateDoc(sdk.doc(db, name, id), {
-      status,
-      updatedAt: sdk.serverTimestamp(),
+    if (
+      !["Odobreno", "Odbijeno"].includes(status) ||
+      !["enrollments", "examBookings", "labBookings", "vacations"].includes(
+        name,
+      )
+    )
+      throw new Error("Neispravna odluka.");
+    let row;
+    await sdk.runTransaction(db, async (tx) => {
+      const ref = sdk.doc(db, name, id),
+        old = await tx.get(ref);
+      if (!old.exists() || old.data().status !== "Na čekanju")
+        throw new Error("Prijava više nije na čekanju. Osvježite prikaz.");
+      row = old.data();
+      if (this.profile.role === "profesor" && !isInstructor(row, this.user.uid))
+        throw new Error("Nemate ovlasti za ovu prijavu.");
+      const after = { ...row, status, updatedAt: sdk.serverTimestamp() };
+      tx.update(ref, { status, updatedAt: sdk.serverTimestamp() });
+      appendAudit(tx, sdk, db, name, id, row, after, this.user.uid);
     });
+    return notifyChangeSafely(
+      { repository: this, user: this.user, profile: this.profile },
+      name,
+      id,
+      row,
+      status,
+    );
+  }
+  async maintenance(name) {
+    if (this.profile.role !== "admin") throw new Error("Samo administrator.");
+    const { db, firestore: sdk } = await getFirebase();
+    return readAllRecords(sdk, db, name);
+  }
+  async restoreArchive(id) {
+    if (this.profile.role !== "admin") throw new Error("Samo administrator.");
+    const { db, firestore: sdk } = await getFirebase();
+    const archived = await sdk.getDocFromServer(sdk.doc(db, "archive", id));
+    if (archived.exists() && archived.data().module === "calendarEvents") {
+      const row = archived.data();
+      await saveCalendarRecord(
+        sdk,
+        db,
+        this.user,
+        this.profile,
+        row.data,
+        row.recordId,
+        { requireNew: true, original: row.data, action: "restore" },
+      );
+      await sdk.updateDoc(archived.ref, {
+        restoredAt: sdk.serverTimestamp(),
+        restoredBy: this.user.uid,
+      });
+      return;
+    }
+    return restoreArchived(sdk, db, id, this.user.uid);
   }
   async createTuition(studentId, base, discount, count, dueDate, year) {
     if (this.profile.role !== "admin")

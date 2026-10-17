@@ -22,7 +22,7 @@ export function mountSlotFinder(root, form, repository, record = {}) {
       year: "numeric",
       timeZone: "Europe/Zagreb",
     });
-  root.innerHTML = `<section class="slot-finder"><h2>Pronađi slobodan termin</h2><p>Filtri su neobavezni i mogu se kombinirati. Bez datuma pretražujemo sljedeća dva tjedna, od 08:00 do 20:00.</p><div class="availability-fields"><label>Trajanje (min)<input id="find-duration" type="number" min="15" max="720" step="1" value="90"></label><label>Datum<input id="find-date" type="date"></label><label>Dvorana<select id="find-room"><option value="">Sve dvorane</option></select></label><label>Početak<input id="find-time" type="time"></label></div><button id="find-reset" type="button" class="button">Poništi filtre</button><div id="find-results" aria-live="polite">Učitavanje rasporeda…</div><button id="find-more" type="button" class="button" hidden>Prikaži još</button><div id="find-selected" role="status" aria-live="polite"></div></section>`;
+  root.innerHTML = `<details class="slot-finder slot-finder-disclosure"><summary>Pronađi slobodan termin</summary><div class="slot-finder-content"><details class="context-help"><summary>Kako tražiti termin?</summary><p>Filtri se mogu kombinirati. Bez datuma: sljedeća dva tjedna, 08:00–20:00.</p></details><div class="availability-fields"><label>Trajanje (min)<input id="find-duration" type="number" min="15" max="720" step="1" value="90"></label><label>Datum<input id="find-date" type="date"></label><label>Dvorana<select id="find-room"><option value="">Sve dvorane</option></select></label><label>Početak<input id="find-time" type="time"></label></div><button id="find-reset" type="button" class="button">Poništi filtre</button><div id="find-results" aria-live="polite">Učitavanje rasporeda…</div><button id="find-more" type="button" class="button" hidden>Prikaži još</button></div></details><div id="find-selected" role="status" aria-live="polite"></div>`;
   const $ = (id) => root.querySelector("#" + id);
   function chosenStatus() {
     if (!loaded) return;
@@ -31,14 +31,20 @@ export function mountSlotFinder(root, form, repository, record = {}) {
       room: form.elements.room.value,
       time: form.elements.time.value,
       endTime: form.elements.endTime.value,
+      instructorUid: form.elements.instructorUid?.value || "",
+      instructorUids: [
+        ...(form.elements.instructorUids?.selectedOptions || []),
+      ].map((o) => o.value),
+      group: form.elements.group?.value || "",
+      study: form.elements.study?.value || "",
     };
     if (!target.date || !target.room || !target.time || !target.endTime) {
-      $("find-selected").textContent =
-        "Odaberite prijedlog ili ručno upišite satnicu ispod.";
+      $("find-selected").textContent = "";
+      $("find-selected").className = "";
       return;
     }
     try {
-      const conflicts = scheduleConflicts(events, target, record.id);
+      const conflicts = teachingConflicts(events, target, record.id);
       $("find-selected").className =
         "notice" + (conflicts.length ? " error" : " availability-free");
       $("find-selected").textContent = conflicts.length
@@ -80,8 +86,21 @@ export function mountSlotFinder(root, form, repository, record = {}) {
       root.querySelectorAll("[data-slot]").forEach((button) =>
         button.addEventListener("click", () => {
           const slot = slots[Number(button.dataset.slot)];
-          for (const key of ["date", "room", "time", "endTime"])
+          for (const key of ["date", "room", "time", "endTime"]) {
+            if (
+              key === "room" &&
+              form.elements[key].tagName === "SELECT" &&
+              ![...form.elements[key].options].some(
+                (o) => o.value === slot[key],
+              )
+            ) {
+              const option = document.createElement("option");
+              option.value = slot[key];
+              option.textContent = slot[key];
+              form.elements[key].append(option);
+            }
             form.elements[key].value = slot[key];
+          }
           if (form.elements.day)
             form.elements.day.value = [
               "Ned",
@@ -121,8 +140,38 @@ export function mountSlotFinder(root, form, repository, record = {}) {
     limit += 12;
     render();
   });
-  for (const key of ["date", "room", "time", "endTime"])
-    form.elements[key].addEventListener("input", chosenStatus);
+  form.addEventListener("input", (event) => {
+    if (
+      [
+        "date",
+        "room",
+        "time",
+        "endTime",
+        "courseId",
+        "group",
+        "study",
+        "instructorUid",
+        "instructorUids",
+      ].includes(event.target.name)
+    )
+      chosenStatus();
+  });
+  form.addEventListener("change", (event) => {
+    if (
+      [
+        "date",
+        "room",
+        "time",
+        "endTime",
+        "courseId",
+        "group",
+        "study",
+        "instructorUid",
+        "instructorUids",
+      ].includes(event.target.name)
+    )
+      chosenStatus();
+  });
   const ready = (async () => {
     try {
       events = await (repository.listAll?.("calendarEvents") ||

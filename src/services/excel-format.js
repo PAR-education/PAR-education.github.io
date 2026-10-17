@@ -1,3 +1,4 @@
+import { isInstructor } from "../utils/instructors.js";
 import { modules } from "../modules/catalog.js";
 import { validateFields } from "../utils/validation.js";
 import { canImport } from "../auth/permissions.js";
@@ -29,6 +30,7 @@ export function importFields(name, role) {
             "ownerUid",
             "ownerName",
             "instructorUid",
+            "instructorUids",
             "instructorName",
             "seriesId",
           ].includes(f.key)
@@ -72,7 +74,7 @@ export function normalizeRow(name, row, role, uid, profile, defaults = {}) {
       values[field.key] = [true, 1, "true", "Da"].includes(v);
     } else if (field.type === "number")
       values[field.key] = typeof v === "string" ? v.replace(",", ".") : v;
-    else values[field.key] = String(v).trim();
+    else if (field.type !== "uids") values[field.key] = String(v).trim();
   }
   if (role !== "admin") {
     if (["workEntries", "research"].includes(name)) {
@@ -138,7 +140,7 @@ export function expandTeaching(values, raw) {
 }
 const natural = {
   students: ["jmbag"],
-  enrollments: ["studentId", "ownerUid", "courseId"],
+  enrollments: ["studentId", "ownerUid", "courseId", "academicYear"],
   employees: ["email"],
   users: ["id"],
   labs: ["tag"],
@@ -232,12 +234,19 @@ export async function prepareImport({
         }
         if (values.courseId && !course)
           throw new Error("Kolegij nije pronađen.");
-        if (role === "profesor" && (!course || course.instructorUid !== uid))
+        if (role === "profesor" && (!course || !isInstructor(course, uid)))
           throw new Error("Kolegij nije dodijeljen prijavljenom nastavniku.");
         if (course) {
           values.courseId = course.id;
           values.title = course.title;
           values.instructorUid = course.instructorUid || "";
+          values.instructorUids = [
+            ...new Set(
+              [course.instructorUid, ...(course.instructorUids || [])].filter(
+                Boolean,
+              ),
+            ),
+          ];
           values.instructorName =
             course.instructorName || values.instructorName || "";
         }
@@ -289,6 +298,7 @@ export async function prepareImport({
                   "ownerUid",
                   "ownerName",
                   "instructorUid",
+                  "instructorUids",
                   "instructorName",
                 ].includes(field.key)
               ) &&
@@ -297,6 +307,7 @@ export async function prepareImport({
                 [
                   "courseId",
                   "instructorUid",
+                  "instructorUids",
                   "instructorName",
                   "seriesId",
                   "endTime",
@@ -312,7 +323,7 @@ export async function prepareImport({
         if (
           role !== "admin" &&
           old &&
-          ((name === "calendarEvents" && old.instructorUid !== uid) ||
+          ((name === "calendarEvents" && !isInstructor(old, uid)) ||
             (["research", "workEntries"].includes(name) &&
               old.ownerUid !== uid))
         )

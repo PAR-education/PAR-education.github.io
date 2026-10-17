@@ -1,10 +1,25 @@
+import { notifyChangeSafely } from "./notifications.js";
+import { enrollmentId } from "../utils/academic-year.js";
+import { isInstructor, instructorFields } from "../utils/instructors.js";
 import { courseScheduleUpdates } from "./course-schedule.js";
-import { scopeFor, canRead, canEditCalendar } from "../auth/permissions.js";
+import {
+  scopeFor,
+  canRead,
+  canEditCalendar,
+  canManage,
+  staffRoles,
+} from "../auth/permissions.js";
 import { tuitionInstallments } from "../utils/tuition.js";
-import { prepareCalendarMove, revisionOf } from "../utils/schedule.js";
+import {
+  prepareCalendarMove,
+  revisionOf,
+  teachingConflicts,
+} from "../utils/schedule.js";
 export class DemoRecords {
   constructor(data, user, profile) {
     this.data = data;
+    this.data.auditLog ||= [];
+    this.data.archive ||= [];
     this.user = user;
     this.profile = profile;
   }
@@ -27,6 +42,12 @@ export class DemoRecords {
       this.data.calendarEvents,
     );
     Object.assign(current, values, { updatedAt: new Date().toISOString() });
+    await notifyChangeSafely(
+      { repository: this, user: this.user, profile: this.profile, demo: true },
+      "calendarEvents",
+      current.id,
+      current,
+    );
     return values;
   }
   async list(name) {
@@ -36,14 +57,69 @@ export class DemoRecords {
     const value =
       field === "departmentId" ? this.profile.departmentId : this.user.uid;
     return structuredClone(
-      this.data[name].filter((row) => !field || row[field] === value),
+      (this.data[name] || []).filter(
+        (row) =>
+          !field ||
+          (field === "instructorUid"
+            ? isInstructor(row, value)
+            : row[field] === value),
+      ),
     );
   }
   async listAll(name) {
     return this.list(name);
   }
-  async save(name, values, id) {
+  async save(name, values, id, options = {}) {
+    const role = this.profile.role;
+    const ownCreation =
+      ["requests", "evaluations"].includes(name) ||
+      (staffRoles.includes(role) &&
+        ["workEntries", "vacations", "research"].includes(name));
+    if (
+      !this.profile.active ||
+      (!canManage(role, name) &&
+        (!ownCreation || (id && !["workEntries", "research"].includes(name))))
+    )
+      throw new Error("Nemate ovlasti za spremanje.");
+    if (!canManage(role, name) || (name === "research" && role !== "admin"))
+      values = { ...values, ownerUid: this.user.uid };
+
+    this.data[name] ||= [];
     const old = this.data[name].find((row) => row.id === id);
+    if (options.expected && (!old || revisionOf(old) !== options.expected))
+      throw new Error(
+        "Raspored je u međuvremenu izmijenjen. Osvježite prikaz.",
+      );
+    if (
+      old &&
+      role !== "admin" &&
+      ["workEntries", "research"].includes(name) &&
+      old.ownerUid !== this.user.uid
+    )
+      throw new Error("Nemate ovlasti za tuđi zapis.");
+    if (
+      ["calendarEvents", "exams", "grades"].includes(name) &&
+      values.courseId
+    ) {
+      const course = this.data.courses.find((c) => c.id === values.courseId);
+      if (
+        !course ||
+        (role === "profesor" && !isInstructor(course, this.user.uid))
+      )
+        throw new Error("Odaberite dodijeljeni kolegij.");
+      values = {
+        ...values,
+        ...instructorFields(course),
+        ...(["calendarEvents", "exams"].includes(name)
+          ? { instructorName: course.instructorName || "" }
+          : {}),
+      };
+    }
+    if (name === "calendarEvents") {
+      const conflicts = teachingConflicts(this.data.calendarEvents, values, id);
+      if (conflicts.length)
+        throw new Error("Zauzeto: " + conflicts.map((r) => r.title).join(", "));
+    }
     if (name === "courses" && this.profile.role === "admin" && old) {
       const course = { ...old, ...values };
       const changes = courseScheduleUpdates(
@@ -58,39 +134,83 @@ export class DemoRecords {
           change,
           { updatedAt: new Date().toISOString() },
         );
+      for (const name of ["enrollments", "exams", "examBookings", "grades"])
+        for (const row of this.data[name] || [])
+          if (row.courseId === id) Object.assign(row, instructorFields(course));
       return { syncedEvents: changes.length };
     }
     if (name === "calendarEvents" && this.profile.role === "profesor") {
-      if (old && old.instructorUid !== this.user.uid)
+      if (old && !isInstructor(old, this.user.uid))
         throw new Error("Nemate ovlasti za tuđu nastavu.");
       if (
         !this.data.courses.some(
-          (c) => c.id === values.courseId && c.instructorUid === this.user.uid,
+          (c) => c.id === values.courseId && isInstructor(c, this.user.uid),
         )
       )
         throw new Error("Odaberite vlastiti dodijeljeni kolegij.");
       values = {
         ...values,
-        instructorUid: this.user.uid,
-        instructorName: this.profile.name,
+        ...instructorFields(
+          this.data.courses.find((c) => c.id === values.courseId),
+        ),
       };
     }
+    const recordId = id || crypto.randomUUID();
+    this.data.auditLog.push({
+      id: crypto.randomUUID(),
+      module: name,
+      recordId,
+      action: old ? "update" : "create",
+      before: old ? structuredClone(old) : null,
+      after: structuredClone(values),
+      actorUid: this.user.uid,
+      createdAt: new Date().toISOString(),
+    });
     if (old)
       Object.assign(old, values, { updatedAt: new Date().toISOString() });
     else
       this.data[name].push({
         ...values,
-        id: id || crypto.randomUUID(),
+        id: recordId,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         createdBy: this.user.uid,
       });
+    return notifyChangeSafely(
+      { repository: this, user: this.user, profile: this.profile, demo: true },
+      name,
+      recordId,
+      { ...old, ...values },
+    );
   }
   async remove(name, id) {
-    this.data[name] = this.data[name].filter((row) => row.id !== id);
+    if (!canManage(this.profile.role, name))
+      throw new Error("Nemate ovlasti za brisanje.");
+    const row = this.data[name]?.find((r) => r.id === id);
+    if (
+      !row ||
+      name === "users" ||
+      (name === "calendarEvents" &&
+        !canEditCalendar(this.profile.role, this.user.uid, row))
+    )
+      throw new Error("Nemate ovlasti za arhiviranje.");
+    this.data.archive.push({
+      id: crypto.randomUUID(),
+      module: name,
+      recordId: id,
+      data: structuredClone(row),
+      actorUid: this.user.uid,
+      createdAt: new Date().toISOString(),
+    });
+    this.data[name] = this.data[name].filter((r) => r.id !== id);
   }
   async requestBooking(name, item) {
-    const id = `${item.id}__${this.user.uid}`;
+    if (this.profile.role !== "student")
+      throw new Error("Prijave su dostupne studentima.");
+    const id =
+      name === "enrollments"
+        ? enrollmentId(item.id, this.user.uid, item.academicYear)
+        : `${item.id}__${this.user.uid}`;
     if (this.data[name].some((row) => row.id === id))
       throw new Error("Zahtjev za ovu stavku već postoji.");
     const values = {
@@ -104,14 +224,15 @@ export class DemoRecords {
       Object.assign(values, {
         courseId: item.id,
         courseTitle: item.title,
-        instructorUid: item.instructorUid,
+        ...(item.academicYear ? { academicYear: item.academicYear } : {}),
+        ...instructorFields(item),
       });
     if (name === "examBookings")
       Object.assign(values, {
         examId: item.id,
         courseId: item.courseId,
         title: item.title,
-        instructorUid: item.instructorUid,
+        ...instructorFields(item),
         date: item.date,
       });
     if (name === "labBookings") {
@@ -122,12 +243,55 @@ export class DemoRecords {
     this.data[name].push(values);
   }
   async decide(name, id, status) {
+    const row = this.data[name]?.find((r) => r.id === id);
+    if (
+      !row ||
+      row.status !== "Na čekanju" ||
+      !["Odobreno", "Odbijeno"].includes(status) ||
+      !(
+        this.profile.role === "admin" ||
+        (this.profile.role === "profesor" &&
+          ["enrollments", "examBookings"].includes(name) &&
+          isInstructor(row, this.user.uid)) ||
+        (this.profile.role === "lab_assistant" && name === "labBookings")
+      )
+    )
+      throw new Error("Nemate ovlasti za tu odluku.");
+
     Object.assign(
       this.data[name].find((row) => row.id === id),
       { status },
     );
+    return notifyChangeSafely(
+      { repository: this, user: this.user, profile: this.profile, demo: true },
+      name,
+      id,
+      row,
+      status,
+    );
+  }
+  async maintenance(name) {
+    if (this.profile.role !== "admin") throw new Error("Samo administrator.");
+    return structuredClone(this.data[name] || []);
+  }
+  async restoreArchive(id) {
+    if (this.profile.role !== "admin") throw new Error("Samo administrator.");
+    const row = this.data.archive.find((r) => r.id === id);
+    if (!row || this.data[row.module].some((r) => r.id === row.recordId))
+      throw new Error("Povrat nije moguć bez prepisivanja.");
+    if (
+      row.module === "calendarEvents" &&
+      teachingConflicts(this.data.calendarEvents, row.data).length
+    )
+      throw new Error("Povrat bi preklopio postojeći termin.");
+    this.data[row.module].push({
+      ...structuredClone(row.data),
+      id: row.recordId,
+    });
+    row.restoredAt = new Date().toISOString();
   }
   async createTuition(studentId, base, discount, count, date, year) {
+    if (this.profile.role !== "admin") throw new Error("Samo administrator.");
     const student = this.data.students.find((row) => row.id === studentId);
     if (
       this.data.finances.some((row) =>

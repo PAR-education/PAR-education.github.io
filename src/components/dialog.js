@@ -27,6 +27,8 @@ export function setupDialog() {
 export function renderField(field, value = "", readonly = false) {
   const attrs = `name="${e(field.key)}" id="field-${e(field.key)}" ${field.required ? "required" : ""} ${readonly ? "disabled" : ""}`;
   const label = `<label for="field-${e(field.key)}">${e(field.label)}${field.required ? ' <span aria-hidden="true">*</span>' : ""}</label>`;
+  if (field.type === "uids")
+    return `<div class="field wide">${label}<select multiple ${attrs}>${(Array.isArray(value) ? value : []).map((uid) => `<option selected value="${e(uid)}">${e(uid)}</option>`).join("")}</select><small>Ctrl/Cmd + klik za odabir više nastavnika.</small></div>`;
   if (field.type === "checkbox")
     return `<div class="field check"><label><input type="checkbox" ${attrs} ${value === true ? "checked" : ""}> ${e(field.label)}</label></div>`;
   if (field.options)
@@ -36,5 +38,30 @@ export function renderField(field, value = "", readonly = false) {
   return `<div class="field">${label}<input ${attrs} type="${e(field.type || "text")}" value="${e(value)}" ${field.min != null ? `min="${field.min}" max="${field.max}" step="${field.integer ? 1 : "any"}"` : ""} maxlength="${field.maxLength || 200}"></div>`;
 }
 export function detailsHTML(fields, record) {
-  return `<dl class="details">${fields.map((field) => `<div><dt>${e(field.label)}</dt><dd>${e(display(record[field.key]))}</dd></div>`).join("")}</dl>`;
+  const visible = fields.filter(
+    (field) =>
+      record[field.key] !== undefined &&
+      record[field.key] !== null &&
+      record[field.key] !== "" &&
+      (!Array.isArray(record[field.key]) || record[field.key].length),
+  );
+  const technical = new Set([
+    "ownerUid",
+    "instructorUid",
+    "instructorUids",
+    "studentId",
+    "courseId",
+    "examId",
+    "labId",
+    "departmentId",
+    "seriesId",
+  ]);
+  const render = (items) =>
+    `<dl class="details">${items.map((field) => `<div><dt>${e(field.label)}</dt><dd>${e(display(record[field.key]))}</dd></div>`).join("")}</dl>`;
+  return (
+    render(visible.filter((f) => !technical.has(f.key))) +
+    (visible.some((f) => technical.has(f.key))
+      ? `<details class="context-help"><summary>Povezani zapisi</summary>${render(visible.filter((f) => technical.has(f.key)))}</details>`
+      : "")
+  );
 }

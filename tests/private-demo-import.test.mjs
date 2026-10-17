@@ -1,7 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { canUseDemo, createAdminDemo } from "../src/services/admin-demo.js";
+import {
+  canUseDemo,
+  createAdminDemo,
+  createRolePreview,
+} from "../src/services/admin-demo.js";
 import {
   parseImportJSON,
   readExcelFile,
@@ -259,4 +263,182 @@ test("Cleanup deletes only unchanged selected records and rejects concurrent edi
       ),
     /koristi/,
   );
+});
+
+test("Admin role previews share a private dataset, enforce permissions and cannot be stolen", async () => {
+  const load = async () => ({
+    users: [],
+    courses: [{ id: "c1", title: "Course", instructorUid: "demo-profesor" }],
+    calendarEvents: [],
+    enrollments: [],
+    notifications: [],
+  });
+  const demo = await createAdminDemo(admin, profile, load);
+  const student = createRolePreview(admin, profile, demo, "student");
+  assert.equal(student.profile.role, "student");
+  assert.equal(student.repository.data, demo.repository.data);
+  await assert.rejects(
+    () => student.repository.save("courses", { title: "Forbidden" }),
+    /ovlasti/,
+  );
+  await assert.rejects(() => student.repository.listAll("users"), /pristup/);
+  assert.throws(
+    () => createRolePreview({ uid: "another-admin" }, profile, demo, "student"),
+    /administrator/,
+  );
+  assert.throws(
+    () =>
+      createRolePreview(
+        admin,
+        { role: "student", active: true },
+        demo,
+        "profesor",
+      ),
+    /administrator/,
+  );
+  const course = (await student.repository.listAll("courses"))[0];
+  const existing = student.repository.data.enrollments.find(
+    (r) => r.id === course.id + "__" + student.user.uid,
+  );
+  if (!existing) await student.repository.requestBooking("enrollments", course);
+  const request = student.repository.data.enrollments.find(
+    (r) => r.id === course.id + "__" + student.user.uid,
+  );
+  assert.equal(request.ownerUid, student.user.uid);
+  const adminView = createRolePreview(admin, profile, student, "admin");
+  assert.ok(
+    (await adminView.repository.listAll("enrollments")).some(
+      (r) => r.id === request.id,
+    ),
+  );
+  const fresh = await createAdminDemo(admin, profile, load);
+  assert.notEqual(fresh.repository.data, demo.repository.data);
+});
+
+test("Year-specific enrollment IDs and dashboards keep student data in its own academic year", async () => {
+  const { enrollmentId } = await import("../src/utils/academic-year.js");
+  const { dashboardModel } = await import("../src/services/dashboard.js");
+  assert.equal(enrollmentId("course", "uid"), "course__uid");
+  assert.equal(enrollmentId("course", "uid", "2026/2027"), "course__uid__2026");
+  assert.throws(() => enrollmentId("course", "uid", "2026/2028"));
+  const records = {
+    enrollments: [
+      { courseId: "c1", academicYear: "2026/2027", status: "Odobreno" },
+    ],
+    calendarEvents: [
+      {
+        id: "yes",
+        courseId: "c1",
+        academicYear: "2026/2027",
+        date: "2099-01-01",
+        time: "08:00",
+      },
+      {
+        id: "no",
+        courseId: "c1",
+        academicYear: "2027/2028",
+        date: "2099-01-01",
+        time: "08:00",
+      },
+    ],
+    finances: [
+      { amount: 125, status: "Dugovanje" },
+      { amount: 50, status: "Plaćeno" },
+    ],
+  };
+  const model = await dashboardModel({
+    user: { uid: "u" },
+    profile: { role: "student" },
+    repository: { listAll: async (n) => records[n] || [] },
+  });
+  assert.deepEqual(
+    model.upcoming.map((r) => r.id),
+    ["yes"],
+  );
+  assert.match(model.stats.find((r) => r.name === "finances").value, /125/);
+});
+
+test("Series preview validates every occurrence before edits and detects foreign ownership", async () => {
+  const { planSeries } = await import("../src/services/calendar-series.js");
+  const first = {
+    id: "one",
+    seriesId: "series",
+    title: "Lecture",
+    instructorUid: "teacher",
+    date: "2026-11-02",
+    time: "08:00",
+    endTime: "09:00",
+    room: "Dvorana 1",
+  };
+  const second = { ...first, id: "two", date: "2026-11-09" };
+  const values = { time: "10:00", endTime: "12:00", room: "Dvorana 2" };
+  const plan = planSeries(
+    [first, second],
+    first,
+    values,
+    "profesor",
+    "teacher",
+  );
+  assert.equal(plan.length, 2);
+  assert.equal(plan[1].date, second.date);
+  assert.equal(first.time, "08:00");
+  assert.throws(
+    () =>
+      planSeries(
+        [first, { ...second, instructorUid: "other" }],
+        first,
+        values,
+        "profesor",
+        "teacher",
+      ),
+    /ovlasti/,
+  );
+  assert.throws(
+    () =>
+      planSeries(
+        [
+          first,
+          second,
+          {
+            ...second,
+            id: "busy",
+            seriesId: "other",
+            room: "Učionica 2",
+            time: "11:00",
+            endTime: "13:00",
+          },
+        ],
+        first,
+        values,
+        "admin",
+        "admin",
+      ),
+    /zauzeto/,
+  );
+});
+
+test("Repository paging loads records beyond the old 250-item ceiling", async () => {
+  const { readAllRecords } = await import("../src/services/records.js");
+  let calls = 0;
+  const sdk = {
+    documentId: () => "id",
+    orderBy: () => ({}),
+    limit: (n) => ({ limit: n }),
+    startAfter: (doc) => ({ cursor: doc.id }),
+    collection: (_db, name) => name,
+    query: (name, ...constraints) => ({ name, constraints }),
+    getDocsFromServer: async (query) => {
+      calls++;
+      const start = query.constraints.find((r) => r.cursor)?.cursor ? 500 : 0;
+      const docs = Array.from({ length: start ? 23 : 500 }, (_, i) => ({
+        id: String(start + i),
+        data: () => ({ title: "Row " + (start + i) }),
+      }));
+      return { docs, size: docs.length };
+    },
+  };
+  const rows = await readAllRecords(sdk, {}, "courses");
+  assert.equal(rows.length, 523);
+  assert.equal(calls, 2);
+  assert.equal(rows[522].title, "Row 522");
 });

@@ -171,6 +171,8 @@ test("New account can create only its own inactive profile and cannot activate i
     .firestore();
   const profile = {
     name: "New user",
+    emailVerificationRequired: true,
+    emailVerified: false,
     email: "new@example.test",
     role: "student",
     active: false,
@@ -903,4 +905,143 @@ test("Saving course assignment synchronizes linked calendar events atomically an
     (await getDoc(doc(db, "calendarEvents", "linked-1"))).data().instructorUid,
     "",
   );
+});
+
+test("Concurrent calendar bookings reserve one room once; aliases collide and audit is append-only", async () => {
+  const sdk = await import("firebase/firestore");
+  const { saveCalendarRecord } =
+    await import("../src/services/calendar-save.js");
+  const { archiveRecord, restoreArchived } =
+    await import("../src/services/audit.js");
+  const db = database("admin"),
+    user = { uid: "admin" },
+    profile = { role: "admin", active: true };
+  const values = {
+    title: "Concurrent",
+    date: "2026-12-12",
+    time: "10:00",
+    endTime: "12:00",
+    room: "Dvorana 1",
+  };
+  const outcomes = await Promise.allSettled([
+    saveCalendarRecord(sdk, db, user, profile, values, "parallel-a"),
+    saveCalendarRecord(
+      sdk,
+      db,
+      user,
+      profile,
+      { ...values, room: "Učionica 1" },
+      "parallel-b",
+    ),
+  ]);
+  assert.equal(outcomes.filter((r) => r.status === "fulfilled").length, 1);
+  assert.match(
+    outcomes.find((r) => r.status === "rejected").reason.message,
+    /Zauzeto/,
+  );
+  const saved = (await getDocs(collection(db, "calendarEvents"))).docs.find(
+    (d) => d.id.startsWith("parallel-"),
+  );
+  const logs = await getDocs(collection(db, "auditLog"));
+  assert.equal(logs.size, 1);
+  await assertFails(updateDoc(logs.docs[0].ref, { action: "archive" }));
+  await archiveRecord(sdk, db, "calendarEvents", saved.id, "admin");
+  assert.equal((await getDoc(saved.ref)).exists(), false);
+  const archive = (await getDocs(collection(db, "archive"))).docs[0];
+  await restoreArchived(sdk, db, archive.id, "admin");
+  assert.equal((await getDoc(saved.ref)).exists(), true);
+});
+
+test("Co-teachers can query their assignments and students cannot forge lecturer arrays", async () => {
+  const sdk = await import("firebase/firestore"),
+    db = database("admin");
+  await updateDoc(doc(db, "courses", "c1"), {
+    instructorUids: ["teacher", "teacher-b"],
+    updatedAt: serverTimestamp(),
+  });
+  await deleteDoc(doc(db, "enrollments", "c1__student-a"));
+  const student = database("student-a");
+  const values = {
+    ownerUid: "student-a",
+    ownerName: "A",
+    academicYear: "",
+    courseId: "c1",
+    courseTitle: "Business",
+    instructorUid: "teacher",
+    instructorUids: ["teacher", "teacher-b"],
+    status: "Na čekanju",
+    ...meta(),
+  };
+  await assertSucceeds(
+    setDoc(doc(student, "enrollments", "c1__student-a"), values),
+  );
+  const teacher = database("teacher-b");
+  const q = query(
+    collection(teacher, "enrollments"),
+    sdk.or(
+      where("instructorUid", "==", "teacher-b"),
+      where("instructorUids", "array-contains", "teacher-b"),
+    ),
+  );
+  assert.equal((await assertSucceeds(getDocs(q))).size, 1);
+  await assertFails(
+    setDoc(doc(database("student-b"), "enrollments", "c1__student-b"), {
+      ...values,
+      ownerUid: "student-b",
+      instructorUids: ["student-b"],
+      createdBy: "student-b",
+    }),
+  );
+});
+
+test("Verification gate blocks new unverified accounts while preserving legacy accounts", async () => {
+  await env.withSecurityRulesDisabled(async (context) =>
+    updateDoc(doc(context.firestore(), "users", "student-a"), {
+      emailVerificationRequired: true,
+    }),
+  );
+  await assertFails(getDocs(collection(database("student-a"), "courses")));
+  const verified = env
+    .authenticatedContext("student-a", { email_verified: true })
+    .firestore();
+  await assertSucceeds(getDocs(collection(verified, "courses")));
+  await assertSucceeds(getDocs(collection(database("student-b"), "courses")));
+});
+
+test("Automatic course notifications target approved students only", async () => {
+  const db = database("admin"),
+    teacher = database("teacher");
+  await setDoc(doc(db, "calendarEvents", "notice-source"), {
+    title: "Lecture",
+    courseId: "c1",
+    instructorUid: "teacher",
+    date: "2026-12-20",
+    time: "08:00",
+    endTime: "10:00",
+    room: "Room 1",
+    createdBy: "admin",
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  });
+  const notice = {
+    ownerUid: "student-a",
+    title: "Promjena rasporeda",
+    message: "Updated timetable",
+    sourceModule: "calendarEvents",
+    sourceId: "notice-source",
+    createdBy: "teacher",
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  };
+  await assertSucceeds(setDoc(doc(teacher, "notifications", "n1"), notice));
+  await assertFails(
+    setDoc(doc(teacher, "notifications", "n2"), {
+      ...notice,
+      ownerUid: "student-b",
+    }),
+  );
+  await assertSucceeds(
+    getDoc(doc(database("student-a"), "notifications", "n1")),
+  );
+  await assertFails(getDoc(doc(database("student-b"), "notifications", "n1")));
 });

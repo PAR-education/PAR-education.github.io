@@ -1,15 +1,20 @@
-// Synchronize only explicit courseId links. Never infer ownership from a title.
+import { appendAudit } from "./audit.js";
+import { instructorFields, instructorIds } from "../utils/instructors.js";
 export function courseScheduleUpdates(events, courseId, course) {
-  const instructorUid = course.instructorUid || "",
-    instructorName = course.instructorName || "";
+  const fields = {
+    ...instructorFields(course),
+    instructorName: course.instructorName || "",
+  };
   return events
     .filter(
-      (row) =>
-        row.courseId === courseId &&
-        ((row.instructorUid || "") !== instructorUid ||
-          (row.instructorName || "") !== instructorName),
+      (r) =>
+        r.courseId === courseId &&
+        (r.instructorUid !== fields.instructorUid ||
+          (r.instructorName || "") !== fields.instructorName ||
+          JSON.stringify(r.instructorUids || []) !==
+            JSON.stringify(fields.instructorUids)),
     )
-    .map((row) => ({ id: row.id, instructorUid, instructorName }));
+    .map((r) => ({ id: r.id, ...fields }));
 }
 export async function saveCourseAndSchedule(
   sdk,
@@ -19,63 +24,157 @@ export async function saveCourseAndSchedule(
   uid,
   allowCreate = false,
 ) {
-  const snapshot = await sdk.getDocsFromServer(
-    sdk.query(
-      sdk.collection(db, "calendarEvents"),
-      sdk.where("courseId", "==", courseId),
-      sdk.limit(450),
+  const names = [
+    "calendarEvents",
+    "enrollments",
+    "exams",
+    "examBookings",
+    "grades",
+  ];
+  const snapshots = await Promise.all(
+    names.map((name) =>
+      sdk.getDocsFromServer(
+        sdk.query(
+          sdk.collection(db, name),
+          sdk.where("courseId", "==", courseId),
+          sdk.limit(450),
+        ),
+      ),
     ),
   );
-  if (snapshot.size >= 450)
+  if (snapshots.reduce((n, s) => n + s.size, 0) >= 200)
     throw new Error(
-      "Kolegij ima previše termina za jedno sigurno spremanje. Ništa nije promijenjeno.",
+      "Kolegij ima previše povezanih evidencija za jedno sigurno spremanje. Ništa nije promijenjeno.",
     );
   return sdk.runTransaction(db, async (tx) => {
-    const courseRef = sdk.doc(db, "courses", courseId),
-      previous = await tx.get(courseRef);
-    if (!previous.exists() && !allowCreate)
+    const ref = sdk.doc(db, "courses", courseId),
+      old = await tx.get(ref);
+    if (!old.exists() && !allowCreate)
       throw new Error("Kolegij više ne postoji.");
-    const course = { ...(previous.exists() ? previous.data() : {}), ...values };
-    if (course.instructorUid) {
-      const profile = await tx.get(sdk.doc(db, "users", course.instructorUid));
+    const course = { ...(old.exists() ? old.data() : {}), ...values };
+    course.instructorUids = instructorIds(course);
+    const profiles = [];
+    for (const teacher of course.instructorUids) {
+      const user = await tx.get(sdk.doc(db, "users", teacher));
       if (
-        !profile.exists() ||
-        profile.data().role !== "profesor" ||
-        profile.data().active !== true
+        !user.exists() ||
+        user.data().role !== "profesor" ||
+        !user.data().active
       )
         throw new Error(
-          "UID mora pripadati aktivnom računu s ulogom profesor. Kolegij i raspored nisu promijenjeni.",
+          "Odaberite aktivne nastavničke račune. UID mora pripadati aktivnom računu s ulogom profesor.",
         );
-      if (!course.instructorName)
-        course.instructorName = profile.data().name || "";
+      profiles.push(user.data());
     }
-    const events = [];
-    for (const document of snapshot.docs) {
-      const latest = await tx.get(document.ref);
-      if (latest.exists() && latest.data().courseId === courseId)
-        events.push({ ...latest.data(), id: latest.id });
+    if (!course.instructorName && profiles.length)
+      course.instructorName = profiles.map((p) => p.name).join("; ");
+    const related = [];
+    for (let i = 0; i < names.length; i++)
+      for (const document of snapshots[i].docs) {
+        const fresh = await tx.get(document.ref);
+        if (fresh.exists() && fresh.data().courseId === courseId)
+          related.push({
+            name: names[i],
+            ref: document.ref,
+            data: fresh.data(),
+          });
+      }
+    const dayLocks = [];
+    for (const date of [
+      ...new Set(
+        related
+          .filter((r) => r.name === "calendarEvents")
+          .map((r) => r.data.date)
+          .filter(Boolean),
+      ),
+    ].sort()) {
+      const lockRef = sdk.doc(db, "calendarLocks", date),
+        lock = await tx.get(lockRef);
+      dayLocks.push({
+        ref: lockRef,
+        version: lock.exists() ? lock.data().version : 0,
+      });
     }
-    const changes = courseScheduleUpdates(events, courseId, course);
+    const fields = instructorFields(course),
+      changes = [];
+    for (const row of related) {
+      const desired = {
+        ...fields,
+        ...(["calendarEvents", "exams"].includes(row.name)
+          ? { instructorName: course.instructorName || "" }
+          : {}),
+      };
+      if (
+        Object.keys(desired).some(
+          (k) =>
+            JSON.stringify(
+              row.data[k] ?? (k === "instructorUids" ? [] : ""),
+            ) !== JSON.stringify(desired[k]),
+        )
+      )
+        changes.push({ ...row, fields: desired });
+    }
+    if (changes.length * 2 + dayLocks.length + 2 > 450)
+      throw new Error(
+        "Previše promjena za jednu transakciju. Ništa nije spremljeno.",
+      );
     const data = {
       ...values,
-      instructorUid: course.instructorUid || "",
+      ...fields,
       instructorName: course.instructorName || "",
       updatedAt: sdk.serverTimestamp(),
     };
-    if (previous.exists()) tx.update(courseRef, data);
-    else
-      tx.set(courseRef, {
+    if (old.exists()) {
+      tx.update(ref, data);
+      appendAudit(
+        tx,
+        sdk,
+        db,
+        "courses",
+        courseId,
+        old.data(),
+        { ...old.data(), ...data },
+        uid,
+      );
+    } else {
+      const after = {
         ...data,
         createdAt: sdk.serverTimestamp(),
         createdBy: uid,
-      });
+      };
+      tx.set(ref, after);
+      appendAudit(tx, sdk, db, "courses", courseId, null, after, uid);
+    }
     for (const change of changes) {
-      const { id, ...fields } = change;
-      tx.update(sdk.doc(db, "calendarEvents", id), {
-        ...fields,
+      const after = {
+        ...change.data,
+        ...change.fields,
+        updatedAt: sdk.serverTimestamp(),
+      };
+      tx.update(change.ref, {
+        ...change.fields,
         updatedAt: sdk.serverTimestamp(),
       });
+      appendAudit(
+        tx,
+        sdk,
+        db,
+        change.name,
+        change.ref.id,
+        change.data,
+        after,
+        uid,
+      );
     }
-    return { syncedEvents: changes.length };
+    for (const lock of dayLocks)
+      tx.set(lock.ref, {
+        version: lock.version + 1,
+        updatedAt: sdk.serverTimestamp(),
+        actorUid: uid,
+      });
+    return {
+      syncedEvents: changes.filter((r) => r.name === "calendarEvents").length,
+      syncedRecords: changes.length,
+    };
   });
 }

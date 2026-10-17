@@ -1,3 +1,4 @@
+import { enrollmentId } from "./academic-year.js";
 export function validateFields(fields, values) {
   const result = {};
   for (const field of fields) {
@@ -11,7 +12,27 @@ export function validateFields(fields, values) {
         ["url", "number", "time", "date"].includes(field.type)
       )
         continue;
-      result[field.key] = "";
+      result[field.key] = field.type === "uids" ? [] : "";
+      continue;
+    }
+    if (field.pattern === "academicYear" && values[field.key])
+      enrollmentId("course", "user", String(values[field.key]).trim());
+    if (field.type === "uids") {
+      value = Array.isArray(value)
+        ? value
+        : String(value)
+            .split(/[,;\n]+/)
+            .map((s) => s.trim())
+            .filter(Boolean);
+      if (
+        value.length > 10 ||
+        value.some(
+          (v) =>
+            typeof v !== "string" || !v || v.length > 200 || v.includes("/"),
+        )
+      )
+        throw new Error("Odaberite najviše 10 nastavnika.");
+      result[field.key] = [...new Set(value)];
       continue;
     }
     if (field.type === "number") {

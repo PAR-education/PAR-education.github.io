@@ -27,11 +27,32 @@ const select = (key, label, options) => ({
   options,
   required: true,
 });
-const owner = text("ownerUid", "Firebase UID korisnika");
+const owner = text("ownerUid", "Korisnički račun");
 const department = text("departmentId", "Oznaka odjela");
-const course = text("courseId", "ID kolegija");
-const instructor = text("instructorUid", "Firebase UID nastavnika");
+const course = text("courseId", "Kolegij");
+const instructor = text("instructorUid", "Odgovorni nastavnik");
+const academicYear = {
+  ...text("academicYear", "Akademska godina (npr. 2026/2027)", false),
+  pattern: "academicYear",
+};
+const instructors = {
+  key: "instructorUids",
+  label: "Dodijeljeni nastavnici",
+  type: "uids",
+  required: false,
+  maxLength: 2000,
+};
 export const modules = {
+  rooms: {
+    title: "Dvorane",
+    group: "Administracija",
+    description: "Jedinstveni nazivi dvorana i alternativni nazivi.",
+    columns: ["name", "aliases"],
+    fields: [
+      text("name", "Naziv dvorane"),
+      note("aliases", "Alternativni nazivi (odvojeni zarezom)"),
+    ],
+  },
   students: {
     title: "Studenti",
     group: "Administracija",
@@ -80,10 +101,12 @@ export const modules = {
     columns: ["title", "ects", "semester", "instructorName"],
     fields: [
       text("title", "Naziv kolegija"),
+      academicYear,
       text("courseType", "Vrsta kolegija", false),
       { ...number("ects", "ECTS", 1, 30), required: false },
       select("semester", "Semestar", ["Zimski", "Ljetni"]),
       { ...instructor, required: false },
+      instructors,
       text("instructorName", "Nastavnik", false),
       text("room", "Dvorana", false),
       {
@@ -104,7 +127,9 @@ export const modules = {
     columns: ["title", "date", "time", "room", "capacity"],
     fields: [
       course,
+      academicYear,
       instructor,
+      instructors,
       text("instructorName", "Nastavnik", false),
       text("title", "Kolegij / naziv"),
       date("date", "Datum"),
@@ -123,8 +148,10 @@ export const modules = {
       owner,
       text("studentName", "Student"),
       course,
+      academicYear,
       text("courseTitle", "Kolegij"),
       instructor,
+      instructors,
       number("grade", "Ocjena", 1, 5, true),
       date("date", "Datum"),
     ],
@@ -137,10 +164,13 @@ export const modules = {
     fields: [
       { ...owner, required: false },
       text("studentId", "ID studentskog dosjea", false),
+      academicYear,
+      { ...text("semester", "Semestar", false), options: ["Zimski", "Ljetni"] },
       text("ownerName", "Student"),
       course,
       text("courseTitle", "Kolegij"),
       { ...instructor, required: false },
+      instructors,
       select("status", "Status", ["Na čekanju", "Odobreno", "Odbijeno"]),
     ],
   },
@@ -155,7 +185,9 @@ export const modules = {
       text("ownerName", "Student"),
       text("examId", "ID ispitnog roka"),
       course,
+      academicYear,
       instructor,
+      instructors,
       text("title", "Ispit"),
       date("date", "Datum"),
       select("status", "Status", ["Na čekanju", "Odobreno", "Odbijeno"]),
@@ -168,18 +200,19 @@ export const modules = {
     columns: ["title", "date", "time", "room"],
     fields: [
       text("title", "Naziv"),
-      text("courseId", "ID kolegija", false),
-      text("instructorUid", "Firebase UID nastavnika", false),
+      text("courseId", "Kolegij", false),
+      text("instructorUid", "Odgovorni nastavnik", false),
+      instructors,
       text("study", "Studij", false),
       text("group", "Grupa", false),
-      text("academicYear", "Akademska godina", false),
+      academicYear,
       { ...text("semester", "Semestar", false), options: ["Zimski", "Ljetni"] },
       text("teachingType", "Vrsta nastave", false),
       text("seriesId", "Serija ponavljanja", false),
       date("date", "Datum"),
       { ...text("time", "Vrijeme"), type: "time" },
       { ...text("endTime", "Završetak", false), type: "time" },
-      text("room", "Lokacija", false),
+      text("room", "Dvorana", false),
       text("day", "Dan", false),
       text("instructorName", "Nastavnik", false),
       note("description", "Opis"),
@@ -387,7 +420,13 @@ export const modules = {
     group: "Račun",
     description: "Obavijesti koje vam šalje administrator.",
     columns: ["title", "message", "createdAt"],
-    fields: [owner, text("title", "Naslov"), note("message", "Poruka", true)],
+    fields: [
+      owner,
+      text("title", "Naslov"),
+      note("message", "Poruka", true),
+      text("sourceModule", "Izvorni modul", false),
+      text("sourceId", "Izvorni zapis", false),
+    ],
   },
   users: {
     title: "Korisnici i uloge",
@@ -413,6 +452,18 @@ export const modules = {
         required: false,
       },
       text("departmentId", "Oznaka odjela", false),
+      {
+        key: "emailVerificationRequired",
+        label: "Potrebna potvrda e-adrese",
+        type: "checkbox",
+        required: false,
+      },
+      {
+        key: "emailVerified",
+        label: "E-adresa potvrđena",
+        type: "checkbox",
+        required: false,
+      },
     ],
   },
 };

@@ -1,3 +1,4 @@
+import { enrollmentId } from "../utils/academic-year.js";
 import { getFirebase } from "../config/firebase.js";
 export function validateStudentLink(student, account, uid) {
   if (
@@ -7,6 +8,8 @@ export function validateStudentLink(student, account, uid) {
     account.active !== true
   )
     throw new Error("Odaberite aktivan studentski račun.");
+  if (account.emailVerificationRequired && !account.emailVerified)
+    throw new Error("Student mora potvrditi e-adresu prije povezivanja.");
   if (
     !student.email ||
     student.email.trim().toLowerCase() !== account.email?.trim().toLowerCase()
@@ -58,7 +61,11 @@ export async function linkStudentAccount(
       const data = source.data();
       if (data.ownerUid && data.ownerUid !== uid)
         throw new Error("Upis pripada drugom računu.");
-      const targetRef = sdk.doc(db, "enrollments", data.courseId + "__" + uid),
+      const targetRef = sdk.doc(
+          db,
+          "enrollments",
+          enrollmentId(data.courseId, uid, data.academicYear),
+        ),
         target = await tx.get(targetRef);
       if (
         target.exists() &&

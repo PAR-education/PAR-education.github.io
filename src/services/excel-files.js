@@ -265,6 +265,13 @@ export function parseImportJSON(text) {
     for (const [key, v] of Object.entries(row)) {
       if (["__proto__", "constructor", "prototype"].includes(key))
         throw new Error("Nedopušten naziv JSON polja.");
+      if (
+        key === "instructorUids" &&
+        Array.isArray(v) &&
+        v.length <= 10 &&
+        v.every((id) => typeof id === "string" && id.length <= 200)
+      )
+        continue;
       if (v !== null && !["string", "number", "boolean"].includes(typeof v))
         throw new Error(
           `JSON zapis ${i + 1}, ${key}: koristite običnu vrijednost, bez ugniježđenih objekata ili popisa.`,

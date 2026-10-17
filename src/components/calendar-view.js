@@ -1,3 +1,5 @@
+import { courseYearKey, enrolledForEvent } from "../utils/academic-year.js";
+import { isInstructor } from "../utils/instructors.js";
 import { mountSchedule } from "./schedule.js";
 import { zagrebDate, weekMonday } from "../utils/calendar.js";
 import {
@@ -18,7 +20,9 @@ export function mountCalendarView(root, events, options) {
     uid = context.user.uid;
   const previous =
     root.querySelector("#calendar-anchor")?.value || zagrebDate();
-  const oldView = root.querySelector("#calendar-view")?.value || "week";
+  const oldView =
+    root.querySelector("#calendar-view")?.value ||
+    (matchMedia("(max-width: 760px)").matches ? "day" : "week");
   const priorFilters = Object.fromEntries(
     [
       "calendar-study",
@@ -31,7 +35,8 @@ export function mountCalendarView(root, events, options) {
   const oldScope =
     root.querySelector("#calendar-scope")?.value ||
     (["student", "profesor"].includes(role) ? "mine" : "all");
-  root.innerHTML = `<div class="calendar-filters"><label>Pogled<select id="calendar-view"><option value="week">Tjedan</option><option value="day">Dan</option><option value="semester">Semestar / pregled datuma</option><option value="rooms">Dvorane i dostupnost</option></select></label><label>Datum<input id="calendar-anchor" type="date" value="${e(previous)}"></label><label>Raspored<select id="calendar-scope"><option value="all">Sva nastava</option>${["student", "profesor"].includes(role) ? '<option value="mine">Moj raspored</option>' : ""}</select></label><label>Studij<select id="calendar-study"><option value="">Svi studiji</option>${[
+  const filtersOpen = root.querySelector("#calendar-filters-panel")?.open;
+  root.innerHTML = `<div class="calendar-filters calendar-controls"><div class="calendar-primary"><label>Pogled<select id="calendar-view"><option value="week">Tjedan</option><option value="day">Dan</option><option value="semester">Semestar / pregled datuma</option><option value="rooms">Dvorane i dostupnost</option></select></label><label>Datum<input id="calendar-anchor" type="date" value="${e(previous)}"></label><label>Raspored<select id="calendar-scope"><option value="all">Sva nastava</option>${["student", "profesor"].includes(role) ? '<option value="mine">Moj raspored</option>' : ""}</select></label></div><details class="calendar-filter-panel" id="calendar-filters-panel" ${filtersOpen ? "open" : ""}><summary class="button"><i class="fa-solid fa-filter" aria-hidden="true"></i> <span id="calendar-filter-label">Filtri</span></summary><div class="filter-fields"><label>Studij<select id="calendar-study"><option value="">Svi studiji</option>${[
     ...new Set(events.map((r) => r.study).filter(Boolean)),
   ]
     .sort()
@@ -52,7 +57,7 @@ export function mountCalendarView(root, events, options) {
     .map((v) => `<option>${e(v)}</option>`)
     .join(
       "",
-    )}</select></label></div><div class="calendar-paging"><button class="button" id="calendar-prev">← Prethodno</button><button class="button" id="calendar-today">Danas</button><button class="button" id="calendar-next">Sljedeće →</button></div><p id="calendar-note" class="panel-note" role="status"></p><div id="calendar-body"></div>`;
+    )}</select></label><button class="button" id="calendar-clear-filters">Očisti filtre</button></div></details></div><div class="calendar-paging"><button class="button" id="calendar-prev">← Prethodno</button><button class="button" id="calendar-today">Danas</button><button class="button" id="calendar-next">Sljedeće →</button></div><p id="calendar-note" class="panel-note" role="status"></p><div id="calendar-body"></div>`;
   const $ = (id) => root.querySelector("#" + id);
   $("calendar-view").value = oldView;
   $("calendar-scope").value = oldScope;
@@ -91,15 +96,23 @@ export function mountCalendarView(root, events, options) {
     if (mine)
       visible = visible.filter((r) =>
         role === "profesor"
-          ? r.instructorUid === uid
-          : enrolled?.has(r.courseId),
+          ? isInstructor(r, uid)
+          : enrolledForEvent(enrolled, r),
       );
+    const count = [
+      "calendar-study",
+      "calendar-group",
+      "calendar-semester",
+      "calendar-year",
+    ].filter((id) => $(id).value).length;
+    $("calendar-filter-label").textContent =
+      `Filtri${count ? ` (${count})` : ""}`;
     $("calendar-note").textContent =
       mine && role === "student" && enrolled === null
-        ? "Učitavanje odobrenih upisa…"
-        : mine
-          ? "Osobni raspored prema dodijeljenoj nastavi ili odobrenim upisima. Odaberite svoju grupu ako kolegij ima više grupa. Termini bez ID-a kolegija/nastavnika nalaze se pod Sva nastava."
-          : "Zajednički raspored. Filtrirajte studij, grupu, semestar i akademsku godinu. Termini bez dvorane ili nastavnika zahtijevaju dopunu; dostupnost tih resursa nije potvrđena.";
+        ? "Učitavanje upisa…"
+        : "";
+    $("calendar-note").hidden = !$("calendar-note").textContent;
+    $("calendar-anchor").closest("label").hidden = view === "rooms";
     if (view === "rooms") {
       roomDay =
         $("calendar-body").querySelector("#schedule-day")?.value ?? roomDay;
@@ -116,6 +129,7 @@ export function mountCalendarView(root, events, options) {
         : Array.from({ length: view === "week" ? 7 : 1 }, (_, i) =>
             add(start, i),
           );
+    const matching = visible.slice();
     if (view !== "semester")
       visible = visible.filter((r) => dates.includes(r.date));
     const lo = Math.min(480, ...visible.map((r) => minutes(r.time))),
@@ -126,12 +140,12 @@ export function mountCalendarView(root, events, options) {
     const card = (r) =>
       `<button class="calendar-lesson" data-calendar-id="${e(r.id)}" title="${e([r.title, r.time, r.endTime, r.room, r.instructorName, r.study, r.group, r.teachingType].filter(Boolean).join(" · "))}"><strong>${e(r.title)}</strong><span>${e(r.time)}–${e(r.endTime || timeAt(minutes(r.time) + durationOf(r)))}</span><span>${e(r.room || "Dvorana nije određena")} · ${e(r.instructorName || "Nastavnik nije naveden")}</span><small>${e([r.study, r.group, r.teachingType].filter(Boolean).join(" · "))}</small></button>`;
     $("calendar-body").innerHTML =
-      `<div id="calendar-move-message" role="status" aria-live="polite"></div>${options.canEdit ? '<p class="panel-note">Povucite svoju nastavu na drugi dan ili vrijeme (korak 15 min). Trajanje i dvorana ostaju isti. Za promjenu dvorane otvorite Dvorane i dostupnost ili Uredi. Tipkovnica: Alt + strelice.</p>' : ""}${
+      `<div id="calendar-move-message" role="status" aria-live="polite"></div>${
         view !== "semester"
           ? `<h2 class="calendar-period">${e(label(dates[0]))}${dates.length > 1 ? " – " + e(label(dates.at(-1))) : ""}</h2><div class="calendar-week" style="--day-count:${dates.length}">${dates
               .map(
                 (day) =>
-                  `<section class="calendar-week-day"><h3>${e(label(day))}</h3><div class="calendar-time-track drop-slot" data-date="${e(day)}" style="height:${(hi - lo) * 1.2}px">${Array.from({ length: Math.ceil((hi - lo) / 60) }, (_, i) => `<div class="calendar-hour" style="top:${i * 72}px">${timeAt(lo + i * 60)}</div>`).join("")}${calendarLanes(
+                  `<section class="calendar-week-day ${day === zagrebDate() ? "is-today" : ""}"><h3 title="${e(label(day))}">${e(new Date(day + "T12:00:00Z").toLocaleDateString("hr-HR", { weekday: "short", day: "numeric", month: "numeric", timeZone: "Europe/Zagreb" }))}</h3><div class="calendar-time-track drop-slot" data-date="${e(day)}" style="height:${(hi - lo) * 1.2}px">${Array.from({ length: Math.ceil((hi - lo) / 60) }, (_, i) => `<div class="calendar-hour" style="top:${i * 72}px">${timeAt(lo + i * 60)}</div>`).join("")}${calendarLanes(
                     visible.filter((r) => r.date === day),
                   )
                     .map(
@@ -157,6 +171,34 @@ export function mountCalendarView(root, events, options) {
           .join("") ||
         '<p class="panel-note">Nema termina za odabrane filtre.</p>'
       }</div>`;
+    if (!visible.length) {
+      const next =
+        matching
+          .filter((r) => r.date >= date)
+          .sort((a, b) => a.date.localeCompare(b.date))[0] ||
+        matching.sort((a, b) => b.date.localeCompare(a.date))[0];
+      const note = document.createElement("div");
+      note.className = "calendar-empty-state";
+      note.innerHTML = `<p>${mine && role === "student" && enrolled?.size === 0 ? "Još nemate odobrenih upisa." : matching.length ? "Nema nastave u ovom razdoblju." : "Nema termina za odabrani raspored."}</p><div>${count || mine ? '<button class="button" id="calendar-reset-filters">Prikaži svu nastavu</button>' : ""}${next ? '<button class="button" id="calendar-jump">Sljedeći termin</button>' : ""}</div>`;
+      $("calendar-body").prepend(note);
+      note
+        .querySelector("#calendar-reset-filters")
+        ?.addEventListener("click", () => {
+          for (const id of [
+            "calendar-study",
+            "calendar-group",
+            "calendar-semester",
+            "calendar-year",
+          ])
+            $(id).value = "";
+          $("calendar-scope").value = "all";
+          render();
+        });
+      note.querySelector("#calendar-jump")?.addEventListener("click", () => {
+        $("calendar-anchor").value = next.date;
+        render();
+      });
+    }
     root.querySelectorAll("[data-calendar-id]").forEach((button) => {
       const record = events.find((r) => r.id === button.dataset.calendarId);
       button.addEventListener("click", () => {
@@ -251,6 +293,16 @@ export function mountCalendarView(root, events, options) {
   root
     .querySelectorAll(".calendar-filters input,.calendar-filters select")
     .forEach((el) => el.addEventListener("change", render));
+  $("calendar-clear-filters").addEventListener("click", () => {
+    for (const id of [
+      "calendar-study",
+      "calendar-group",
+      "calendar-semester",
+      "calendar-year",
+    ])
+      $(id).value = "";
+    render();
+  });
   for (const [id, sign] of [
     ["calendar-prev", -1],
     ["calendar-next", 1],
@@ -275,13 +327,15 @@ export function mountCalendarView(root, events, options) {
       .then((rows) => {
         if (!root.isConnected) return;
         enrolled = new Set(
-          rows.filter((r) => r.status === "Odobreno").map((r) => r.courseId),
+          rows.filter((r) => r.status === "Odobreno").map(courseYearKey),
         );
         render();
       })
       .catch(() => {
-        if (root.isConnected)
+        if (root.isConnected) {
+          $("calendar-note").hidden = false;
           $("calendar-note").textContent =
-            "Osobni upisi nisu dostupni. Odaberite Sva nastava ili osvježite prikaz.";
+            "Upisi nisu dostupni. Odaberite Sva nastava ili osvježite prikaz.";
+        }
       });
 }
