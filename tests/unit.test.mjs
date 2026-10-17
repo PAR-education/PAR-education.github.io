@@ -358,3 +358,22 @@ test("Course assignment in demo updates only linked events and stays idempotent"
     0,
   );
 });
+
+test("Role navigation keeps primary tasks compact and never exposes admin modules to other roles", async () => {
+  const { roleNavigation, navigationLabel } =
+    await import("../src/auth/navigation.js");
+  for (const role of Object.keys(roles)) {
+    const nav = roleNavigation(role),
+      names = [...nav.primary, ...nav.more];
+    assert.equal(new Set(names).size, names.length);
+    assert.ok(names.every((name) => canRead(role, name)));
+    if (role !== "admin") assert.ok(!names.includes("users"));
+  }
+  assert.ok(roleNavigation("student").primary.includes("calendarEvents"));
+  assert.ok(roleNavigation("student").more.includes("labs"));
+  assert.ok(!roleNavigation("profesor").primary.includes("projects"));
+  assert.ok(roleNavigation("profesor").more.includes("research"));
+  assert.equal(navigationLabel("student", "grades"), "Moje ocjene");
+  assert.equal(navigationLabel("profesor", "courses"), "Moji kolegiji");
+  assert.ok(roleNavigation("admin").primary.includes("users"));
+});

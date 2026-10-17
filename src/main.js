@@ -1,3 +1,4 @@
+import { roleNavigation, navigationLabel } from "./auth/navigation.js";
 import { linkStudentAccount } from "./services/student-link.js";
 import { observeSession, logout } from "./auth/auth.js";
 import {
@@ -217,28 +218,38 @@ async function toggleDemo() {
   }
 }
 function drawNavigation() {
+  const moreOpen = $("navigation").querySelector("#navigation-more")?.open;
+  const role = context.profile.role;
+  const navigation = roleNavigation(role);
+  const link = (name) =>
+    `<a class="nav-item ${active === name ? "active" : ""}" href="#${name}" ${active === name ? 'aria-current="page"' : ""}><span class="nav-symbol">${icon(name)}</span>${e(navigationLabel(role, name))}</a>`;
   const groups = [
     "Akademija",
     "Istraživanje i resursi",
     "Administracija",
     "Račun",
   ];
-  let html = `<a class="nav-item ${active === "dashboard" ? "active" : ""}" href="#dashboard" ${active === "dashboard" ? 'aria-current="page"' : ""}><span class="nav-symbol">${icon("dashboard")}</span>Nadzorna ploča</a>`;
-  for (const group of groups) {
-    const allowed = Object.entries(modules).filter(
-      ([name, module]) =>
-        module.group === group && canRead(context.profile.role, name),
-    );
-    if (!allowed.length) continue;
-    html +=
-      `<p class="nav-group">${e(group)}</p>` +
-      allowed
-        .map(
-          ([name, module]) =>
-            `<a class="nav-item ${active === name ? "active" : ""}" href="#${name}" ${active === name ? 'aria-current="page"' : ""}><span class="nav-symbol">${icon(name)}</span>${e(module.title)}</a>`,
-        )
-        .join("");
+  let html = `<a class="nav-item ${active === "dashboard" ? "active" : ""}" href="#dashboard" ${active === "dashboard" ? 'aria-current="page"' : ""}><span class="nav-symbol">${icon("dashboard")}</span>${e(navigationLabel(role, "dashboard"))}</a>`;
+  if (role !== "admin") {
+    html += navigation.primary.map(link).join("");
+    html += `<details id="navigation-more" ${moreOpen || navigation.more.includes(active) || ["help", "calendar-integration"].includes(active) ? "open" : ""}><summary class="nav-item">Više</summary>${navigation.more.map(link).join("")}`;
   }
+  if (role === "admin")
+    for (const group of groups) {
+      const allowed = Object.entries(modules).filter(
+        ([name, module]) =>
+          module.group === group && canRead(context.profile.role, name),
+      );
+      if (!allowed.length) continue;
+      html +=
+        `<p class="nav-group">${e(group)}</p>` +
+        allowed
+          .map(
+            ([name, module]) =>
+              `<a class="nav-item ${active === name ? "active" : ""}" href="#${name}" ${active === name ? 'aria-current="page"' : ""}><span class="nav-symbol">${icon(name)}</span>${e(module.title)}</a>`,
+          )
+          .join("");
+    }
   html += `<a class="nav-item ${active === "calendar-integration" ? "active" : ""}" href="#calendar-integration"><span class="nav-symbol">${icon("calendar-days")}</span>Integracija kalendara</a>`;
   if (context.profile.role === "admin")
     html += `<a class="nav-item ${active === "control-panel" ? "active" : ""}" href="#control-panel"><span class="nav-symbol">${icon("sliders")}</span>Control panel i backup</a>`;
@@ -248,6 +259,7 @@ function drawNavigation() {
       icon("database") +
       "</span>Priprema baze / ogledni podaci</a>";
   html += `<a class="nav-item ${active === "help" ? "active" : ""}" href="#help"><span class="nav-symbol">${icon("help")}</span>Pomoć i integracije</a>`;
+  if (role !== "admin") html += "</details>";
   $("navigation").innerHTML = html;
 }
 window.addEventListener("hashchange", () => {
@@ -313,6 +325,13 @@ async function loadView(name) {
       current.repository.listAll
         ? await current.repository.listAll(name)
         : await current.repository.list(name);
+    if (name === "courses" && current.profile.role === "profesor") {
+      result.splice(
+        0,
+        result.length,
+        ...result.filter((c) => c.instructorUid === current.user.uid),
+      );
+    }
     if (
       name === "exams" &&
       ["admin", "profesor"].includes(current.profile.role)
@@ -385,12 +404,15 @@ async function drawDashboard(ticket, current) {
     )
       .filter(
         ([name]) =>
-          canRead(current.profile.role, name) && name !== "notifications",
+          canRead(current.profile.role, name) &&
+          name !== "notifications" &&
+          (current.profile.role === "admin" ||
+            roleNavigation(current.profile.role).primary.includes(name)),
       )
       .slice(0, 7)
       .map(
         ([name, module]) =>
-          `<button data-nav="${name}">${e(module.title)}<span aria-hidden="true">→</span></button>`,
+          `<button data-nav="${name}">${e(navigationLabel(current.profile.role, name))}<span aria-hidden="true">→</span></button>`,
       )
       .join(
         "",

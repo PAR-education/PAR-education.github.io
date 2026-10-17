@@ -2731,3 +2731,18 @@ td {
 .enrollment-student th:first-child {
   width: 65%;
 }
+
+#navigation-more > summary {
+  cursor: pointer;
+  list-style: none;
+}
+#navigation-more > summary::after {
+  content: "+";
+  margin-left: auto;
+}
+#navigation-more[open] > summary::after {
+  content: "−";
+}
+#navigation-more > summary::-webkit-details-marker {
+  display: none;
+}
