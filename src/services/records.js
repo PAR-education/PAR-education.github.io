@@ -1,3 +1,4 @@
+import { saveCourseAndSchedule } from "./course-schedule.js";
 import { getFirebase } from "../config/firebase.js";
 import {
   canRead,
@@ -105,6 +106,26 @@ export class Records {
       throw new Error("Nemate ovlasti za spremanje.");
     const { db, firestore: sdk } = await getFirebase();
     const data = { ...values, updatedAt: sdk.serverTimestamp() };
+    if (name === "courses" && role === "admin") {
+      const courseId = id || sdk.doc(sdk.collection(db, "courses")).id;
+      return saveCourseAndSchedule(
+        sdk,
+        db,
+        courseId,
+        values,
+        this.user.uid,
+        !id || options.import === true,
+      );
+    }
+    if (name === "calendarEvents" && role === "admin" && data.courseId) {
+      const course = await sdk.getDocFromServer(
+        sdk.doc(db, "courses", data.courseId),
+      );
+      if (!course.exists()) throw new Error("Kolegij nije pronađen.");
+      data.instructorUid = course.data().instructorUid || "";
+      data.instructorName =
+        course.data().instructorName || data.instructorName || "";
+    }
     if (name === "calendarEvents" && role === "profesor") {
       data.instructorUid = this.user.uid;
       const course = await sdk.getDocFromServer(

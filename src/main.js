@@ -936,13 +936,15 @@ function showForm(name, record = {}) {
       const data = validateFields(modules[name].fields, values);
       if (checkSlot) await checkSlot(data);
       if (context !== current || $("record-form") !== form) return;
-      await current.repository.save(name, data, id);
+      const saved = await current.repository.save(name, data, id);
       if (context !== current) return;
       closeDialog();
       notify(
         current.demo
           ? "Spremljeno u oglednoj sesiji. Baza nije promijenjena."
-          : "Zapis je spremljen u bazu.",
+          : name === "courses" && saved?.syncedEvents != null
+            ? `Kolegij je spremljen. Nastavnik je usklađen u ${saved.syncedEvents} termina rasporeda.`
+            : "Zapis je spremljen u bazu.",
       );
       await loadView(active);
     } catch (error) {

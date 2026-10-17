@@ -263,18 +263,98 @@ test("Demo queries filter records and never grant production access", async () =
 
 test("Course overview hides syllabus and enrollment groups keep original detail targets", async () => {
   const { visualRecords } = await import("../src/modules/visuals.js");
-  const badge = value => String(value);
-  const course = visualRecords("courses", [{title:"Course A",ects:6,instructorName:"Teacher",description:"Full syllabus only in details"}], badge);
-  assert.ok(course.includes("Course A") && course.includes("6 ECTS") && course.includes("Teacher"));
+  const badge = (value) => String(value);
+  const course = visualRecords(
+    "courses",
+    [
+      {
+        title: "Course A",
+        ects: 6,
+        instructorName: "Teacher",
+        description: "Full syllabus only in details",
+      },
+    ],
+    badge,
+  );
+  assert.ok(
+    course.includes("Course A") &&
+      course.includes("6 ECTS") &&
+      course.includes("Teacher"),
+  );
   assert.ok(!course.includes("Full syllabus only in details"));
-  const enrollments = visualRecords("enrollments", [
-    {studentId:"paula",ownerName:"Paula",courseTitle:"Z course",status:"Odobreno"},
-    {studentId:"ana",ownerName:"Ana",courseTitle:"Other",status:"Odobreno"},
-    {studentId:"paula",ownerName:"Paula",courseTitle:"A course",status:"Odobreno"},
-    {studentId:"different-person",ownerName:"Paula",courseTitle:"Distinct person",status:"Odobreno"},
-  ],badge);
-  assert.equal((enrollments.match(/class="panel enrollment-student"/g)||[]).length,3);
-  assert.ok(enrollments.indexOf("Ana")<enrollments.indexOf("Paula"));
-  assert.match(enrollments,/A course[\s\S]*?data-row="2"/);
-  assert.match(enrollments,/Z course[\s\S]*?data-row="0"/);
+  const enrollments = visualRecords(
+    "enrollments",
+    [
+      {
+        studentId: "paula",
+        ownerName: "Paula",
+        courseTitle: "Z course",
+        status: "Odobreno",
+      },
+      {
+        studentId: "ana",
+        ownerName: "Ana",
+        courseTitle: "Other",
+        status: "Odobreno",
+      },
+      {
+        studentId: "paula",
+        ownerName: "Paula",
+        courseTitle: "A course",
+        status: "Odobreno",
+      },
+      {
+        studentId: "different-person",
+        ownerName: "Paula",
+        courseTitle: "Distinct person",
+        status: "Odobreno",
+      },
+    ],
+    badge,
+  );
+  assert.equal(
+    (enrollments.match(/class="panel enrollment-student"/g) || []).length,
+    3,
+  );
+  assert.ok(enrollments.indexOf("Ana") < enrollments.indexOf("Paula"));
+  assert.match(enrollments, /A course[\s\S]*?data-row="2"/);
+  assert.match(enrollments, /Z course[\s\S]*?data-row="0"/);
+});
+
+test("Course assignment in demo updates only linked events and stays idempotent", async () => {
+  const data = {
+    courses: [{ id: "course", title: "Course", instructorUid: "" }],
+    calendarEvents: [
+      { id: "one", courseId: "course", date: "2026-10-20", room: "Room 1" },
+      { id: "other", courseId: "different", title: "Course" },
+    ],
+  };
+  const repo = new DemoRecords(
+    data,
+    { uid: "admin" },
+    { role: "admin", active: true },
+  );
+  assert.equal(
+    (
+      await repo.save(
+        "courses",
+        { instructorUid: "professor", instructorName: "Professor" },
+        "course",
+      )
+    ).syncedEvents,
+    1,
+  );
+  assert.equal(data.calendarEvents[0].instructorUid, "professor");
+  assert.equal(data.calendarEvents[0].room, "Room 1");
+  assert.equal(data.calendarEvents[1].instructorUid, undefined);
+  assert.equal(
+    (
+      await repo.save(
+        "courses",
+        { instructorUid: "professor", instructorName: "Professor" },
+        "course",
+      )
+    ).syncedEvents,
+    0,
+  );
 });

@@ -821,3 +821,86 @@ test("Real import creates deterministic IDs, preserves metadata on retry and lin
     false,
   );
 });
+
+test("Saving course assignment synchronizes linked calendar events atomically and preserves unrelated dates and rooms", async () => {
+  const sdk = await import("firebase/firestore"),
+    db = database("admin");
+  const { saveCourseAndSchedule } =
+    await import("../src/services/course-schedule.js");
+  const meta = {
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+    createdBy: "admin",
+  };
+  for (const [id, courseId] of [
+    ["linked-1", "c1"],
+    ["linked-2", "c1"],
+    ["unrelated", "other-course"],
+  ])
+    await setDoc(doc(db, "calendarEvents", id), {
+      title: "Business",
+      courseId,
+      date: "2026-10-20",
+      time: "08:00",
+      endTime: "09:30",
+      room: "Room 1",
+      description: "Keep this",
+      ...meta,
+    });
+  const result = await saveCourseAndSchedule(
+    sdk,
+    db,
+    "c1",
+    { instructorUid: "teacher", instructorName: "Assigned Teacher" },
+    "admin",
+  );
+  assert.equal(result.syncedEvents, 2);
+  const event = (await getDoc(doc(db, "calendarEvents", "linked-1"))).data();
+  assert.equal(event.instructorUid, "teacher");
+  assert.equal(event.instructorName, "Assigned Teacher");
+  assert.equal(event.date, "2026-10-20");
+  assert.equal(event.room, "Room 1");
+  assert.equal(event.description, "Keep this");
+  assert.equal(
+    (await getDoc(doc(db, "calendarEvents", "unrelated"))).data().instructorUid,
+    undefined,
+  );
+  assert.equal(
+    (
+      await saveCourseAndSchedule(
+        sdk,
+        db,
+        "c1",
+        { instructorUid: "teacher", instructorName: "Assigned Teacher" },
+        "admin",
+      )
+    ).syncedEvents,
+    0,
+  );
+  await assert.rejects(
+    () =>
+      saveCourseAndSchedule(
+        sdk,
+        db,
+        "c1",
+        { instructorUid: "student-a" },
+        "admin",
+      ),
+    /akt/,
+  );
+  assert.equal(
+    (await getDoc(doc(db, "courses", "c1"))).data().instructorUid,
+    "teacher",
+  );
+  await saveCourseAndSchedule(
+    sdk,
+    db,
+    "c1",
+    { instructorUid: "", instructorName: "Not yet assigned" },
+    "admin",
+  );
+  assert.equal(
+    (await getDoc(doc(db, "calendarEvents", "linked-1"))).data().instructorUid,
+    "",
+  );
+});

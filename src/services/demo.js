@@ -1,3 +1,4 @@
+import { courseScheduleUpdates } from "./course-schedule.js";
 import { scopeFor, canRead, canEditCalendar } from "../auth/permissions.js";
 import { tuitionInstallments } from "../utils/tuition.js";
 import { prepareCalendarMove, revisionOf } from "../utils/schedule.js";
@@ -43,6 +44,22 @@ export class DemoRecords {
   }
   async save(name, values, id) {
     const old = this.data[name].find((row) => row.id === id);
+    if (name === "courses" && this.profile.role === "admin" && old) {
+      const course = { ...old, ...values };
+      const changes = courseScheduleUpdates(
+        this.data.calendarEvents,
+        id,
+        course,
+      );
+      Object.assign(old, values, { updatedAt: new Date().toISOString() });
+      for (const change of changes)
+        Object.assign(
+          this.data.calendarEvents.find((r) => r.id === change.id),
+          change,
+          { updatedAt: new Date().toISOString() },
+        );
+      return { syncedEvents: changes.length };
+    }
     if (name === "calendarEvents" && this.profile.role === "profesor") {
       if (old && old.instructorUid !== this.user.uid)
         throw new Error("Nemate ovlasti za tuđu nastavu.");
