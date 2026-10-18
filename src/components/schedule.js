@@ -20,6 +20,7 @@ export function mountSchedule(
     allEvents = events,
     canEditRecord = () => canEdit,
     initialDay = "",
+    onVisible,
   },
 ) {
   const rooms = [
@@ -87,6 +88,7 @@ export function mountSchedule(
   ].forEach((id) => $(id).addEventListener("input", checkAvailability));
   checkAvailability();
   function render() {
+    onVisible?.(events.filter((r) => !day || r.date === day));
     const dates = day ? [day] : [...new Set(events.map((r) => r.date))].sort();
     $("schedule-grid").innerHTML =
       dates

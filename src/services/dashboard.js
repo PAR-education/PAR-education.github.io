@@ -1,7 +1,7 @@
 import { courseYearKey, enrolledForEvent } from "../utils/academic-year.js";
 import { canRead } from "../auth/permissions.js";
 import { isInstructor } from "../utils/instructors.js";
-import { zagrebDate } from "../utils/calendar.js";
+import { zagrebDate, eventHasNotEnded } from "../utils/calendar.js";
 export async function dashboardModel(context) {
   const { role } = context.profile,
     uid = context.user.uid;
@@ -77,7 +77,7 @@ export async function dashboardModel(context) {
   return {
     stats,
     upcoming: events
-      .filter((r) => r.date >= today)
+      .filter((r) => eventHasNotEnded(r))
       .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time))
       .slice(0, 5),
     notices: (records.notifications || [])

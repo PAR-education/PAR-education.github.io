@@ -728,6 +728,12 @@ function drawTable() {
     mountCalendarView($("table-area"), shownRows, {
       context: current,
       allEvents: rows,
+      onVisible: (visible) => {
+        exportRows = visible.slice();
+        shownRows = visible.slice();
+        if ($("record-count"))
+          $("record-count").textContent = visible.length + " zapisa";
+      },
       canEdit: canManage(current.profile.role, "calendarEvents"),
       canEditRecord: (record) =>
         canEditCalendar(current.profile.role, current.user.uid, record),

@@ -1,3 +1,81 @@
+import { isInstructor } from "./instructors.js";
+import { courseYearKey, enrolledForEvent } from "./academic-year.js";
+export function studentCalendarRecords(records, enrollments, uid) {
+  const approved = enrollments.filter(
+    (r) => r.ownerUid === uid && r.status === "Odobreno",
+  );
+  const keys = new Set(approved.map(courseYearKey));
+  return Object.fromEntries(
+    Object.entries(records).map(([name, rows]) => [
+      name,
+      rows.filter((row) =>
+        ["calendarEvents", "exams"].includes(name)
+          ? enrolledForEvent(keys, row)
+          : row.ownerUid === uid,
+      ),
+    ]),
+  );
+}
+export function eventHasNotEnded(event, now = new Date()) {
+  try {
+    const end = event.endTime
+      ? Date.parse(zonedUTC(event.date, event.endTime))
+      : event.time
+        ? Date.parse(zonedUTC(event.date, event.time)) + 120 * 60000
+        : Date.parse(zonedUTC(event.date, "23:59"));
+    return end > now.getTime();
+  } catch {
+    return false;
+  }
+}
+export function adjacentTeaching(events, date) {
+  const ordered = events
+    .filter((r) => r.date)
+    .slice()
+    .sort((a, b) =>
+      (a.date + (a.time || "")).localeCompare(b.date + (b.time || "")),
+    );
+  const future = ordered.find((r) => r.date >= date);
+  return { event: future || ordered.at(-1), past: !future };
+}
+export function isoWeek(date) {
+  const d = new Date(date + "T12:00:00Z");
+  d.setUTCDate(d.getUTCDate() + 3 - ((d.getUTCDay() + 6) % 7));
+  const year = d.getUTCFullYear();
+  return {
+    year,
+    week: Math.ceil(
+      ((d - new Date(Date.UTC(year, 0, 1, 12))) / 86400000 + 1) / 7,
+    ),
+  };
+}
+export function firstTeachingDate(
+  events,
+  uid,
+  today = zagrebDate(),
+  view = "week",
+) {
+  const own = events
+    .filter((r) => isInstructor(r, uid) && r.date)
+    .map((r) => r.date)
+    .sort();
+  const monday = weekMonday(today);
+  if (view !== "day" && own.some((date) => weekMonday(date) === monday))
+    return today;
+  return own.find((date) => date >= today) || today;
+}
+export function personalCalendarRecords(records, uid) {
+  return Object.fromEntries(
+    Object.entries(records).map(([name, rows]) => [
+      name,
+      rows.filter((row) =>
+        ["calendarEvents", "courses", "exams"].includes(name)
+          ? isInstructor(row, uid)
+          : row.ownerUid === uid,
+      ),
+    ]),
+  );
+}
 export const calendarSources = {
   calendarEvents: "Kalendar i raspored",
   courses: "Kolegiji (odabrani tjedan)",

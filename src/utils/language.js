@@ -18,6 +18,12 @@ const words = {
   "Kako pripremiti datoteku?": "How to prepare your file?",
   "Sljedeći termin": "Next class",
   "Prikaži svu nastavu": "Show all classes",
+  "Prikaži samo moju nastavu": "Show only my classes",
+  "Posljednji termin": "Last scheduled class",
+  "Nastava i ispiti vaših odobrenih kolegija.":
+    "Classes and exams for your approved courses.",
+  "Svi datumi vaše nastave i vaših ispita.":
+    "All dates of your classes and exams.",
   "Nadzorna ploča": "Dashboard",
   "Moj pregled": "My overview",
   "Moj raspored": "My timetable",

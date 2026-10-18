@@ -25,7 +25,147 @@ import {
   calendarICS,
   googleCalendarURL,
   foldICS,
+  isoWeek,
+  firstTeachingDate,
+  personalCalendarRecords,
+  studentCalendarRecords,
+  eventHasNotEnded,
+  adjacentTeaching,
 } from "../src/utils/calendar.js";
+
+test("Student exports follow approved enrollment years and exclude other accounts", () => {
+  const events = [
+    { id: "yes", courseId: "c", academicYear: "2026/2027" },
+    { id: "old", courseId: "c", academicYear: "2025/2026" },
+    { id: "pending", courseId: "d", academicYear: "2026/2027" },
+  ];
+  const enrollments = [
+    {
+      ownerUid: "me",
+      courseId: "c",
+      academicYear: "2026/2027",
+      status: "Odobreno",
+    },
+    {
+      ownerUid: "me",
+      courseId: "d",
+      academicYear: "2026/2027",
+      status: "Na čekanju",
+    },
+    {
+      ownerUid: "other",
+      courseId: "c",
+      academicYear: "2025/2026",
+      status: "Odobreno",
+    },
+  ];
+  const scoped = studentCalendarRecords(
+    { calendarEvents: events, exams: events },
+    enrollments,
+    "me",
+  );
+  assert.deepEqual(
+    scoped.calendarEvents.map((r) => r.id),
+    ["yes"],
+  );
+  assert.deepEqual(
+    scoped.exams.map((r) => r.id),
+    ["yes"],
+  );
+});
+test("Day view finds an actual future teaching day and past navigation is explicit", () => {
+  const events = [
+    { date: "2026-10-19", instructorUid: "me" },
+    { date: "2026-10-21", instructorUid: "me" },
+  ];
+  assert.equal(
+    firstTeachingDate(events, "me", "2026-10-20", "day"),
+    "2026-10-21",
+  );
+  assert.equal(
+    firstTeachingDate(events, "me", "2026-10-20", "week"),
+    "2026-10-20",
+  );
+  assert.equal(adjacentTeaching(events, "2026-11-01").past, true);
+  assert.equal(adjacentTeaching(events, "2026-10-20").past, false);
+  assert.equal(adjacentTeaching([], "2026-10-20").event, undefined);
+});
+test("Upcoming events exclude finished lessons but retain ongoing lessons", () => {
+  const now = new Date("2026-10-18T10:00:00Z");
+  assert.equal(
+    eventHasNotEnded(
+      { date: "2026-10-18", time: "09:00", endTime: "11:00" },
+      now,
+    ),
+    false,
+  );
+  assert.equal(
+    eventHasNotEnded(
+      { date: "2026-10-18", time: "11:00", endTime: "13:00" },
+      now,
+    ),
+    true,
+  );
+  assert.equal(
+    eventHasNotEnded({ date: "2026-10-18", time: "11:00" }, now),
+    true,
+  );
+  assert.equal(eventHasNotEnded({ date: "bad" }, now), false);
+});
+
+test("Personal calendar opens the current teaching week or next future week, including co-teachers", () => {
+  const events = [
+    { date: "2026-09-01", instructorUid: "me" },
+    { date: "2026-10-20", instructorUid: "other" },
+    { date: "2026-11-03", instructorUids: ["other", "me"] },
+  ];
+  assert.equal(firstTeachingDate(events, "me", "2026-10-17"), "2026-11-03");
+  assert.equal(firstTeachingDate(events, "me", "2026-11-05"), "2026-11-05");
+  assert.equal(firstTeachingDate(events, "me", "2027-01-01"), "2027-01-01");
+  assert.equal(firstTeachingDate([], "me", "2026-10-17"), "2026-10-17");
+});
+test("ISO week labels handle year boundaries", () => {
+  assert.deepEqual(isoWeek("2026-10-17"), { year: 2026, week: 42 });
+  assert.deepEqual(isoWeek("2021-01-01"), { year: 2020, week: 53 });
+  assert.deepEqual(isoWeek("2024-12-30"), { year: 2025, week: 1 });
+});
+test("Teacher calendar export keeps every assigned date and excludes other teachers", () => {
+  const rows = [
+    {
+      id: "a",
+      title: "A",
+      date: "2026-10-19",
+      time: "10:00",
+      instructorUid: "me",
+    },
+    {
+      id: "b",
+      title: "B",
+      date: "2026-11-02",
+      time: "10:00",
+      instructorUids: ["other", "me"],
+    },
+    {
+      id: "c",
+      title: "C",
+      date: "2026-11-03",
+      time: "10:00",
+      instructorUid: "other",
+    },
+  ];
+  const filtered = personalCalendarRecords(
+    { calendarEvents: rows, exams: rows, vacations: [{ ownerUid: "other" }] },
+    "me",
+  );
+  assert.deepEqual(
+    filtered.calendarEvents.map((r) => r.id),
+    ["a", "b"],
+  );
+  assert.equal(filtered.vacations.length, 0);
+  const items = calendarItems(filtered);
+  assert.equal(items.length, 4);
+  assert.match(calendarICS(items), /20261102/);
+});
 import { rangeBounds } from "../src/utils/backup-range.js";
 import {
   prepareCalendarMove,
