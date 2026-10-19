@@ -111,7 +111,7 @@ export const modules = {
     description: "Dosjei zaposlenika, radna mjesta i odjeli.",
     columns: ["name", "position", "departmentId", "email"],
     fields: [
-      owner,
+      { ...owner, required: false },
       text("name", "Ime i prezime"),
       text("position", "Radno mjesto"),
       text("departmentName", "Naziv odjela", false),
@@ -449,10 +449,18 @@ export const modules = {
   notifications: {
     title: "Obavijesti",
     group: "Račun",
-    description: "Obavijesti koje vam šalje administrator.",
+    description: "Osobne i skupne obavijesti unutar aplikacije.",
     columns: ["title", "message", "createdAt"],
     fields: [
-      owner,
+      { ...owner, required: false },
+      {
+        ...select("audience", "Primatelji", [
+          "student",
+          "profesor",
+          "students_professors",
+        ]),
+        required: false,
+      },
       text("title", "Naslov"),
       note("message", "Poruka", true),
       text("sourceModule", "Izvorni modul", false),
@@ -470,6 +478,7 @@ export const modules = {
       { ...text("email", "E-adresa"), type: "email" },
       select("role", "Uloga", [
         "admin",
+        "administracija_par",
         "dept_head",
         "profesor",
         "lab_assistant",

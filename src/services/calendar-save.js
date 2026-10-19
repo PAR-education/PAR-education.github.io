@@ -93,7 +93,7 @@ export async function saveCalendarRecord(
             data.academicYear = course.data().academicYear;
           data.instructorName =
             course.data().instructorName || data.instructorName || "";
-        } else if (profile.role !== "admin")
+        } else if (!["admin", "administracija_par"].includes(profile.role))
           throw new Error("Odaberite dodijeljeni kolegij.");
         const business = validateFields(modules.calendarEvents.fields, data);
         const conflicts = teachingConflicts(events, business, id);

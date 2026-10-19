@@ -1,4 +1,7 @@
-import { notifyChangeSafely } from "./notifications.js";
+import { audiencesFor, validateNotice } from "../utils/notices.js";
+import { validateFields } from "../utils/validation.js";
+import { modules } from "../modules/catalog.js";
+import { notifyChangeSafely, saveAnnouncementRecord } from "./notifications.js";
 import { saveAttendanceRecord } from "./attendance.js";
 import { enrollmentId } from "../utils/academic-year.js";
 import { saveCalendarRecord } from "./calendar-save.js";
@@ -9,6 +12,8 @@ import { getFirebase } from "../config/firebase.js";
 import {
   canRead,
   canManage,
+  canAdd,
+  canDelete,
   scopeFor,
   staffRoles,
   canEditCalendar,
@@ -44,6 +49,8 @@ export async function writeImportedRecord(sdk, db, name, id, values, uid) {
   return sdk.runTransaction(db, async (tx) => {
     const current = await tx.get(ref);
     const data = { ...values, updatedAt: sdk.serverTimestamp() };
+    if (name === "notifications" && values.audience && !id)
+      return saveAnnouncementRecord(sdk, db, this.user, this.profile, values);
     if (current.exists()) {
       tx.update(ref, data);
       appendAudit(
@@ -106,6 +113,15 @@ export class Records {
       throw new Error("Nemate pristup ovom modulu.");
     const { db, firestore: sdk } = await getFirebase();
     const field = scopeFor(this.profile.role, name);
+    if (name === "notifications" && this.profile.role !== "admin") {
+      const pages = await Promise.all([
+        readAllRecords(sdk, db, name, "ownerUid", this.user.uid),
+        ...audiencesFor(this.profile.role).map((audience) =>
+          readAllRecords(sdk, db, name, "audience", audience),
+        ),
+      ]);
+      return [...new Map(pages.flat().map((row) => [row.id, row])).values()];
+    }
     if (
       name === "attendance" &&
       ["profesor", "student"].includes(this.profile.role)
@@ -138,17 +154,31 @@ export class Records {
   }
   async save(name, values, id, options = {}) {
     const role = this.profile.role;
+    if (!canRead(role, name))
+      throw new Error("Nemate ovlasti za ovu evidenciju.");
+    if (
+      role === "administracija_par" &&
+      ["students", "employees"].includes(name) &&
+      values.ownerUid
+    )
+      throw new Error("Korisnički račun s dosjeom povezuje administrator.");
+    if (name === "notifications") {
+      values = validateFields(modules.notifications.fields, values);
+      validateNotice(values, role);
+    }
     const ownCreation =
       ["requests", "evaluations"].includes(name) ||
       (staffRoles.includes(role) &&
         ["workEntries", "vacations", "research"].includes(name));
     if (
-      !canManage(role, name) &&
+      !(canManage(role, name) || (!id && canAdd(role, name))) &&
       (!ownCreation || (id && !["workEntries", "research"].includes(name)))
     )
       throw new Error("Nemate ovlasti za spremanje.");
     const { db, firestore: sdk } = await getFirebase();
     const data = { ...values, updatedAt: sdk.serverTimestamp() };
+    if (name === "notifications" && values.audience && !id)
+      return saveAnnouncementRecord(sdk, db, this.user, this.profile, values);
     if (name === "attendance")
       return saveAttendanceRecord(sdk, db, this.user, this.profile, values, id);
     if (name === "calendarEvents") {
@@ -202,7 +232,7 @@ export class Records {
           : []),
       );
     }
-    if (!canManage(role, name) || (name === "research" && role !== "admin"))
+    if (!canAdd(role, name) || (name === "research" && role !== "admin"))
       data.ownerUid = this.user.uid;
     if (!id) {
       data.createdAt = sdk.serverTimestamp();
@@ -224,7 +254,7 @@ export class Records {
       );
   }
   async remove(name, id) {
-    if (!canManage(this.profile.role, name))
+    if (!canDelete(this.profile.role, name))
       throw new Error("Nemate ovlasti za brisanje.");
     const { db, firestore: sdk } = await getFirebase();
     await archiveRecord(sdk, db, name, id, this.user.uid);

@@ -397,3 +397,211 @@ test("Role navigation keeps primary tasks compact and never exposes admin module
   assert.equal(navigationLabel("profesor", "courses"), "Moji kolegiji");
   assert.ok(roleNavigation("admin").primary.includes("users"));
 });
+
+test("AdministracijaPAR gets a focused dashboard, create-only people and schedule editing", async () => {
+  const { canAdd, canDelete, canEditCalendar } =
+    await import("../src/auth/permissions.js");
+  const { roleNavigation } = await import("../src/auth/navigation.js");
+  const { dashboardModel } = await import("../src/services/dashboard.js");
+  const { DemoRecords } = await import("../src/services/demo.js");
+  const role = "administracija_par";
+  const nav = roleNavigation(role);
+  assert.deepEqual(nav.primary, [
+    "calendarEvents",
+    "students",
+    "employees",
+    "courses",
+    "rooms",
+    "notifications",
+  ]);
+  for (const name of [
+    "users",
+    "grades",
+    "finances",
+    "attendance",
+    "enrollments",
+    "projects",
+    "evaluations",
+    "workEntries",
+    "vacations",
+  ]) {
+    assert.equal(canRead(role, name), false);
+    assert.equal(canAdd(role, name), false);
+  }
+  for (const name of ["students", "employees"]) {
+    assert.equal(canAdd(role, name), true);
+    assert.equal(canManage(role, name), false);
+    assert.equal(canDelete(role, name), false);
+  }
+  assert.equal(
+    canEditCalendar(role, "office", { instructorUid: "someone-else" }),
+    true,
+  );
+  assert.equal(canDelete(role, "calendarEvents"), false);
+  const data = {
+    students: [],
+    employees: [],
+    courses: [],
+    calendarEvents: [],
+    notifications: [],
+  };
+  const profile = { role, active: true, name: "Office" },
+    user = { uid: "office" };
+  const repository = new DemoRecords(data, user, profile);
+  await repository.save("employees", {
+    name: "Teacher",
+    email: "teacher@example.test",
+    position: "Nastavnik",
+  });
+  await assert.rejects(
+    repository.save("employees", { name: "Linked", ownerUid: "teacher" }),
+    /administrator/,
+  );
+  const person = data.employees[0];
+  assert.notEqual(person.ownerUid, "office");
+  await assert.rejects(
+    repository.save("employees", { name: "Changed" }, person.id),
+    /ovlasti/,
+  );
+  await assert.rejects(repository.remove("employees", person.id), /ovlasti/);
+  const model = await dashboardModel({ profile, user, repository });
+  assert.deepEqual(
+    model.stats.map((s) => s.name),
+    ["calendarEvents", "students", "employees"],
+  );
+  assert.equal(model.failures.length, 0);
+});
+
+test("Broadcast inboxes isolate role audiences and keep private notices private", async () => {
+  const { DemoRecords } = await import("../src/services/demo.js");
+  const data = {
+    notifications: [
+      { id: "personal", ownerUid: "s1", title: "Private", message: "One" },
+    ],
+  };
+  const office = new DemoRecords(
+    data,
+    { uid: "office" },
+    { role: "administracija_par", active: true },
+  );
+  await office.save("notifications", {
+    audience: "student",
+    title: "Students",
+    message: "Class notice",
+  });
+  await office.save("notifications", {
+    audience: "profesor",
+    title: "Teachers",
+    message: "Meeting",
+  });
+  await office.save("notifications", {
+    audience: "students_professors",
+    title: "Both",
+    message: "Shared",
+  });
+  const student = new DemoRecords(
+    data,
+    { uid: "s1" },
+    { role: "student", active: true },
+  );
+  const teacher = new DemoRecords(
+    data,
+    { uid: "t1" },
+    { role: "profesor", active: true },
+  );
+  assert.deepEqual(
+    (await student.listAll("notifications")).map((r) => r.title),
+    ["Private", "Students", "Both"],
+  );
+  assert.deepEqual(
+    (await teacher.listAll("notifications")).map((r) => r.title),
+    ["Teachers", "Both"],
+  );
+  assert.deepEqual(
+    (await office.listAll("notifications")).map((r) => r.title),
+    ["Students", "Teachers", "Both"],
+  );
+  await assert.rejects(
+    teacher.save("notifications", {
+      audience: "student",
+      title: "No",
+      message: "No",
+    }),
+    /ovlasti/,
+  );
+  await assert.rejects(
+    office.save("notifications", {
+      ownerUid: "s1",
+      title: "No",
+      message: "No",
+    }),
+    /primatelje/,
+  );
+  await assert.rejects(
+    office.save("notifications", {
+      audience: "admin",
+      title: "No",
+      message: "No",
+    }),
+  );
+  await assert.rejects(
+    office.save("notifications", {
+      audience: "student",
+      title: " ",
+      message: "No",
+    }),
+  );
+});
+
+test("Course calendar uses actual linked dates, academic year and complete metadata", async () => {
+  const { courseCalendarItems } =
+    await import("../src/utils/course-calendar.js");
+  const course = {
+    id: "c",
+    academicYear: "2026/2027",
+    day: "Pon",
+    startTime: "08:00",
+  };
+  const rows = [
+    {
+      id: "a",
+      courseId: "c",
+      title: "Business",
+      academicYear: "2026/2027",
+      date: "2026-10-19",
+      time: "15:45",
+      endTime: "17:15",
+      room: "Učionica 1",
+      instructorName: "Teacher",
+      description: "Bring a laptop",
+    },
+    { id: "b", courseId: "other", date: "2026-10-20", time: "10:00" },
+    {
+      id: "c",
+      courseId: "c",
+      academicYear: "2025/2026",
+      date: "2025-10-19",
+      time: "10:00",
+    },
+  ];
+  const items = courseCalendarItems(course, rows);
+  assert.equal(items.length, 1);
+  assert.equal(items[0].start, "2026-10-19T13:45:00.000Z");
+  assert.equal(items[0].end, "2026-10-19T15:15:00.000Z");
+  assert.match(items[0].description, /Teacher/);
+  assert.match(items[0].description, /Učionica 1/);
+  assert.match(items[0].description, /laptop/);
+  assert.deepEqual(courseCalendarItems(course, []), []);
+});
+
+test("Mini calendar uses Monday-first complete weeks, including leap years", async () => {
+  const { monthDays } = await import("../src/components/mini-calendar.js");
+  const feb = monthDays("2028-02");
+  assert.equal(feb.filter(Boolean).length, 29);
+  assert.equal(feb.length % 7, 0);
+  assert.equal(feb[0], null);
+  assert.equal(feb[1], "2028-02-01");
+  const nov = monthDays("2026-11");
+  assert.equal(nov[6], "2026-11-01");
+  assert.equal(nov.filter(Boolean).length, 30);
+});

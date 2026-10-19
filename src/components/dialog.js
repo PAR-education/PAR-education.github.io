@@ -1,3 +1,4 @@
+import { noticeAudiences } from "../utils/notices.js";
 import { escapeHTML as e, display } from "../utils/helpers.js";
 import { textWithLinks } from "../utils/links.js";
 let previousFocus;
@@ -33,7 +34,7 @@ export function renderField(field, value = "", readonly = false) {
   if (field.type === "checkbox")
     return `<div class="field check"><label><input type="checkbox" ${attrs} ${value === true ? "checked" : ""}> ${e(field.label)}</label></div>`;
   if (field.options)
-    return `<div class="field">${label}<select ${attrs}><option value="">Odaberite…</option>${field.options.map((option) => `<option ${option === value ? "selected" : ""} value="${e(option)}">${e(option)}</option>`).join("")}</select></div>`;
+    return `<div class="field">${label}<select ${attrs}><option value="">Odaberite…</option>${field.options.map((option) => `<option ${option === value ? "selected" : ""} value="${e(option)}">${e(field.key === "audience" ? noticeAudiences[option] : option === "administracija_par" && field.key === "role" ? "AdministracijaPAR" : option)}</option>`).join("")}</select></div>`;
   if (field.type === "textarea")
     return `<div class="field wide">${label}<textarea ${attrs} maxlength="${field.maxLength}" rows="4">${e(value)}</textarea></div>`;
   return `<div class="field">${label}<input ${attrs} type="${e(field.type || "text")}" value="${e(value)}" ${field.min != null ? `min="${field.min}" max="${field.max}" step="${field.integer ? 1 : "any"}"` : ""} maxlength="${field.maxLength || 200}"></div>`;
@@ -58,7 +59,7 @@ export function detailsHTML(fields, record) {
     "seriesId",
   ]);
   const render = (items) =>
-    `<dl class="details">${items.map((field) => `<div><dt>${e(field.label)}</dt><dd>${field.key === "description" ? textWithLinks(record[field.key]) : e(display(record[field.key]))}</dd></div>`).join("")}</dl>`;
+    `<dl class="details">${items.map((field) => `<div><dt>${e(field.label)}</dt><dd>${["description", "message"].includes(field.key) ? textWithLinks(record[field.key]) : e(display(field.key === "audience" ? noticeAudiences[record[field.key]] : record[field.key]))}</dd></div>`).join("")}</dl>`;
   return (
     render(visible.filter((f) => !technical.has(f.key))) +
     (visible.some((f) => technical.has(f.key))

@@ -235,6 +235,7 @@ export async function demoData() {
     ],
     users: [
       "admin",
+      "administracija_par",
       "dept_head",
       "profesor",
       "lab_assistant",

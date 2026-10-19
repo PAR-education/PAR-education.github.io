@@ -55,12 +55,13 @@ The pasted source is retained locally at `.reference/original.html`, which is gi
 
 ## Available workflows
 
-- Six roles: administrator, department head, instructor, lab manager, student, alumni.
+- Seven roles: administrator, AdministracijaPAR (student office), department head, instructor, lab manager, student, alumni. See [office permissions](docs/administracija-par.md).
 - Role-scoped student/employee records, course syllabi, events, exams, grades and enrollment requests.
 - Projects, research, equipment inventory, equipment requests and document links.
 - Student document requests and administrator responses; employee time records and leave approvals.
 - Finance obligations, tuition discount calculations and 1/2/10 installment plans. Transactional creation prevents duplicates for the same student/year.
 - Alumni events, notifications, office-specific evaluation templates and submitted evaluations.
+- [Mini calendar, role-targeted in-app announcements and calendar export from course details](docs/calendar-notifications.md).
 - Search, status filters, monthly time-sheet totals, record details, CRUD where permitted, CSV and print-to-PDF.
 
 Grades entered by instructors require an approved enrollment in their assigned course. Course and student relationships use document IDs and Firebase Auth UIDs, not names. Exam/equipment enrollment actions submit **pending requests**; they do not claim confirmed seats or exclusive equipment reservations.

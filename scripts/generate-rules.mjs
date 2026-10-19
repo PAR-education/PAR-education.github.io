@@ -53,6 +53,10 @@ const schemas = Object.entries(modules)
       );
     if (keys.includes("time") && keys.includes("endTime"))
       expressions.push("(!('endTime' in d) || d.endTime > d.time)");
+    if (name === "notifications")
+      expressions.push(
+        "((d.get('ownerUid','') != '' && d.get('audience','') == '') || (d.get('ownerUid','') == '' && d.get('audience','') in ['student','profesor','students_professors']))",
+      );
     if (name === "enrollments")
       expressions.push(
         "(('ownerUid' in d && d.ownerUid.size() > 0) || ('studentId' in d && d.studentId.size() > 0))",
@@ -70,7 +74,7 @@ service cloud.firestore {
     function active() {
       let p = profile();
       return signedIn() && p.active == true
-        && p.role in ['admin', 'dept_head', 'profesor', 'lab_assistant', 'student', 'alumni']
+        && p.role in ['admin', 'administracija_par', 'dept_head', 'profesor', 'lab_assistant', 'student', 'alumni']
         && (!p.get('emailVerificationRequired', false) || request.auth.token.get('email_verified', false));
     }
     function role(r) { return active() && profile().role == r; }
@@ -111,6 +115,15 @@ service cloud.firestore {
       let enrollment = get(/databases/$(database)/documents/enrollments/$(enrollmentKey(d, d.ownerUid))).data;
       return enrollment.ownerUid == d.ownerUid && enrollment.courseId == d.courseId && enrollment.status == 'Odobreno';
     }
+    function broadcastVisible(d) {
+      return active() && ((role('administracija_par') && d.get('audience','') in ['student','profesor','students_professors'])
+        || (profile().role in ['student','profesor'] && d.get('audience','') in [profile().role,'students_professors']));
+    }
+    function officeBroadcast(d) {
+      return role('administracija_par') && d.get('ownerUid','') == ''
+        && d.get('audience','') in ['student','profesor','students_professors']
+        && d.get('sourceModule','') == '' && d.get('sourceId','') == '';
+    }
     function teacherNotice(d) {
       let source = get(/databases/$(database)/documents/$(d.sourceModule)/$(d.sourceId)).data;
       return role('profesor') && d.sourceModule in ['calendarEvents','enrollments','examBookings'] && instructor(source)
@@ -147,20 +160,26 @@ ${schemas}
 const policies = {
   rooms: { read: "active()", write: "admin()" },
   students: {
-    read: "admin() || inDepartment(resource.data)",
-    write: "admin()",
+    read: "admin() || role('administracija_par') || inDepartment(resource.data)",
+    write:
+      "admin() || (role('administracija_par') && request.resource.data.get('ownerUid', '') == '')",
+    update: "admin()",
+    remove: "admin()",
   },
   employees: {
-    read: "admin() || inDepartment(resource.data)",
-    write: "admin()",
+    read: "admin() || role('administracija_par') || inDepartment(resource.data)",
+    write:
+      "admin() || (role('administracija_par') && request.resource.data.get('ownerUid', '') == '')",
+    update: "admin()",
+    remove: "admin()",
   },
   courses: { read: "active()", write: "admin()" },
   calendarEvents: {
     read: "active()",
     write:
-      "admin() || (role('profesor') && assignedCourse(request.resource.data))",
+      "admin() || role('administracija_par') || (role('profesor') && assignedCourse(request.resource.data))",
     update:
-      "admin() || (instructor(resource.data) && assignedCourse(request.resource.data))",
+      "admin() || role('administracija_par') || (instructor(resource.data) && assignedCourse(request.resource.data))",
     remove: "admin() || instructor(resource.data)",
   },
   exams: {
@@ -223,14 +242,15 @@ const policies = {
     remove: "admin()",
   },
   evaluations: {
-    read: "admin() || own(resource.data)",
-    write: "own(request.resource.data)",
+    read: "admin() || (!role('administracija_par') && own(resource.data))",
+    write: "!role('administracija_par') && own(request.resource.data)",
     update: "false",
     remove: "admin()",
   },
   notifications: {
-    read: "admin() || own(resource.data)",
-    write: "admin() || teacherNotice(request.resource.data)",
+    read: "admin() || own(resource.data) || broadcastVisible(resource.data)",
+    write:
+      "admin() || officeBroadcast(request.resource.data) || (request.resource.data.get('audience','') == '' && teacherNotice(request.resource.data))",
     update: "admin()",
     remove: "admin()",
   },
@@ -279,7 +299,7 @@ matches += `
     }
     match /calendarLocks/{date} {
       allow read: if active();
-      allow create, update: if active() && profile().role in ['admin','profesor']
+      allow create, update: if active() && profile().role in ['admin','administracija_par','profesor']
         && request.resource.data.keys().hasOnly(['version','updatedAt','actorUid'])
         && request.resource.data.version is int && request.resource.data.version > 0
         && request.resource.data.actorUid == request.auth.uid && request.resource.data.updatedAt == request.time;

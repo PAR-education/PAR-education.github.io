@@ -1,6 +1,14 @@
 import { canRead } from "./permissions.js";
 import { modules } from "../modules/catalog.js";
 const primary = {
+  administracija_par: [
+    "calendarEvents",
+    "students",
+    "employees",
+    "courses",
+    "rooms",
+    "notifications",
+  ],
   student: [
     "calendarEvents",
     "attendance",
@@ -33,6 +41,10 @@ const personal = {
   requests: "Moje zamolbe",
 };
 export function navigationLabel(role, name) {
+  if (role === "administracija_par" && name === "employees")
+    return "Profesori i zaposlenici";
+  if (role === "administracija_par" && name === "dashboard")
+    return "Studentski ured";
   if (role === "student" && name === "attendance") return "Moja prisutnost";
   if (role === "admin") return modules[name]?.title || "Nadzorna ploča";
   if (name === "calendarEvents" && !["student", "profesor"].includes(role))

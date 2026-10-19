@@ -1,7 +1,13 @@
+import { appendAudit } from "./audit.js";
+import { validateFields } from "../utils/validation.js";
+import { modules } from "../modules/catalog.js";
+import { validateNotice } from "../utils/notices.js";
 import { getFirebase } from "../config/firebase.js";
 export async function notifyChange(context, name, id, row, decision) {
   if (!["calendarEvents", "enrollments", "examBookings"].includes(name))
     return { sent: 0 };
+  // Office scheduling does not grant access to enrollments or broadcast messages.
+  if (context.profile.role === "administracija_par") return { sent: 0 };
   let recipients = [];
   if (name === "calendarEvents" && row.courseId) {
     const enrollments = await context.repository.listAll("enrollments");
@@ -65,4 +71,23 @@ export async function notifyChangeSafely(context, ...args) {
         "Promjena je spremljena, ali obavijesti nisu poslane: " + error.message,
     };
   }
+}
+
+// Broadcasts have a generated ID and require no user-directory or private inbox reads.
+export async function saveAnnouncementRecord(sdk, db, user, profile, values) {
+  const data = validateFields(modules.notifications.fields, values);
+  validateNotice(data, profile.role);
+  if (!data.audience) throw new Error("Odaberite primatelje obavijesti.");
+  const ref = sdk.doc(sdk.collection(db, "notifications"));
+  const after = {
+    ...data,
+    createdAt: sdk.serverTimestamp(),
+    updatedAt: sdk.serverTimestamp(),
+    createdBy: user.uid,
+  };
+  await sdk.runTransaction(db, async (tx) => {
+    tx.set(ref, after);
+    appendAudit(tx, sdk, db, "notifications", ref.id, null, after, user.uid);
+  });
+  return { id: ref.id, record: after };
 }

@@ -1,5 +1,28 @@
 // UI text only. Stored values, IDs and imported course names are never rewritten.
 const words = {
+  "Studentski ured": "Student office",
+  "Profesori i zaposlenici": "Professors and staff",
+  "Dodaj termin": "Add class",
+  "Dodaj studenta": "Add student",
+  "Dodaj profesora": "Add professor",
+  "Mini kalendar": "Mini calendar",
+  "Cijeli raspored": "Full timetable",
+  "Prethodni mjesec": "Previous month",
+  "Sljedeći mjesec": "Next month",
+  "Nema nastave na odabrani dan.": "No classes on the selected day.",
+  "Pošalji obavijest": "Send announcement",
+  Primatelji: "Recipients",
+  "Odaberite primatelje": "Choose recipients",
+  "Svi profesori": "All professors",
+  "Studenti i profesori": "Students and professors",
+  "Obavijest će biti vidljiva odabranoj grupi unutar aplikacije.":
+    "The selected group will see this announcement in the app.",
+  "Dodaj u kalendar": "Add to calendar",
+  "Preuzmi sve termine (.ics)": "Download all sessions (.ics)",
+  "Kako dodati sve u Google kalendar":
+    "How to add all sessions to Google Calendar",
+  "Za ovaj kolegij još nema unesenih termina nastave.":
+    "No classes have been scheduled for this course yet.",
   "Online nastava": "Online class",
   "Napomena / poveznica": "Note / link",
   "Napomena · otvori detalje": "Note · open details",

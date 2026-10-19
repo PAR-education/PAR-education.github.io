@@ -180,6 +180,7 @@ beforeEach(async () => {
     const db = context.firestore();
     for (const [uid, role, active, departmentId] of [
       ["admin", "admin", true, "business"],
+      ["office", "administracija_par", true, "business"],
       ["student-a", "student", true, "business"],
       ["student-b", "student", true, "business"],
       ["teacher", "profesor", true, "business"],
@@ -1202,4 +1203,256 @@ test("Automatic course notifications target approved students only", async () =>
     getDoc(doc(database("student-a"), "notifications", "n1")),
   );
   await assertFails(getDoc(doc(database("student-b"), "notifications", "n1")));
+});
+
+test("AdministracijaPAR can add dossiers across departments and schedule teaching without admin powers", async () => {
+  const db = database("office");
+  const sdk = await import("firebase/firestore");
+  const { validateFields } = await import("../src/utils/validation.js");
+  const { modules } = await import("../src/modules/catalog.js");
+  const { writeImportedRecord } = await import("../src/services/records.js");
+  const { saveCalendarRecord } =
+    await import("../src/services/calendar-save.js");
+  const profile = { role: "administracija_par", active: true };
+  for (const name of [
+    "students",
+    "employees",
+    "courses",
+    "rooms",
+    "calendarEvents",
+  ])
+    await assertSucceeds(getDocs(collection(db, name)));
+  for (const [name, id, values] of [
+    [
+      "students",
+      "office-student",
+      { name: "New student", status: "Erasmus", departmentId: "other" },
+    ],
+    [
+      "employees",
+      "office-professor",
+      {
+        name: "New teacher",
+        position: "Nastavnik",
+        email: "teacher@example.test",
+        departmentId: "other",
+      },
+    ],
+  ]) {
+    const data = validateFields(modules[name].fields, values);
+    await writeImportedRecord(sdk, db, name, id, data, "office");
+    await assertFails(
+      setDoc(doc(db, name, id + "-linked"), {
+        ...data,
+        ownerUid: "teacher",
+        createdBy: "office",
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      }),
+    );
+    assert.equal((await getDoc(doc(db, name, id))).data().ownerUid, "");
+    await assertFails(
+      updateDoc(doc(db, name, id), {
+        name: "Changed",
+        updatedAt: serverTimestamp(),
+      }),
+    );
+    await assertFails(deleteDoc(doc(db, name, id)));
+  }
+  const values = {
+    title: "Business",
+    courseId: "c1",
+    date: "2026-10-19",
+    time: "10:00",
+    endTime: "11:30",
+    room: "PAR",
+  };
+  await saveCalendarRecord(
+    sdk,
+    db,
+    { uid: "office" },
+    profile,
+    values,
+    "office-lesson",
+  );
+  assert.equal(
+    (await getDoc(doc(db, "calendarEvents", "office-lesson"))).data()
+      .instructorUid,
+    "teacher",
+  );
+  await saveCalendarRecord(
+    sdk,
+    db,
+    { uid: "office" },
+    profile,
+    { ...values, time: "12:00", endTime: "13:30" },
+    "office-lesson",
+  );
+  await assert.rejects(
+    saveCalendarRecord(
+      sdk,
+      db,
+      { uid: "office" },
+      profile,
+      { ...values, time: "12:30", endTime: "14:00" },
+      "conflicting-lesson",
+    ),
+    /Zauzeto/,
+  );
+  await assertFails(deleteDoc(doc(db, "calendarEvents", "office-lesson")));
+  for (const name of [
+    "users",
+    "grades",
+    "finances",
+    "attendance",
+    "enrollments",
+    "projects",
+    "evaluations",
+    "auditLog",
+    "archive",
+  ])
+    await assertFails(getDocs(collection(db, name)));
+  await assertFails(
+    updateDoc(doc(db, "users", "office"), {
+      role: "admin",
+      updatedAt: serverTimestamp(),
+    }),
+  );
+  await assertFails(
+    updateDoc(doc(db, "courses", "c1"), {
+      title: "Changed",
+      updatedAt: serverTimestamp(),
+    }),
+  );
+  await assertFails(
+    setDoc(doc(db, "notifications", "broadcast"), {
+      ownerUid: "student-a",
+      title: "Test",
+      message: "Test",
+      createdBy: "office",
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    }),
+  );
+});
+
+test("Broadcast notices are office-created, role-scoped, queryable and preserve private inboxes", async () => {
+  const sdk = await import("firebase/firestore");
+  const { saveAnnouncementRecord } =
+    await import("../src/services/notifications.js");
+  const { readAllRecords } = await import("../src/services/records.js");
+  const office = database("office"),
+    student = database("student-a"),
+    teacher = database("teacher");
+  const values = {
+    title: "Students notice",
+    message: "Class moved",
+    audience: "student",
+  };
+  const saved = await saveAnnouncementRecord(
+    sdk,
+    office,
+    { uid: "office" },
+    { role: "administracija_par" },
+    values,
+  );
+  const ref = doc(student, "notifications", saved.id);
+  await assertSucceeds(getDoc(ref));
+  await assertFails(getDoc(doc(teacher, "notifications", saved.id)));
+  await assertFails(getDoc(doc(database("lab"), "notifications", saved.id)));
+  await assertFails(
+    getDoc(doc(database("blocked"), "notifications", saved.id)),
+  );
+  assert.equal(
+    (await readAllRecords(sdk, student, "notifications", "audience", "student"))
+      .length,
+    1,
+  );
+  assert.equal(
+    (await readAllRecords(sdk, office, "notifications", "audience", "student"))
+      .length,
+    1,
+  );
+  await assertFails(getDocs(collection(student, "notifications")));
+  await assertFails(
+    updateDoc(doc(office, "notifications", saved.id), {
+      message: "Changed",
+      updatedAt: serverTimestamp(),
+    }),
+  );
+  await assertFails(deleteDoc(doc(office, "notifications", saved.id)));
+  await assertFails(
+    setDoc(doc(teacher, "notifications", "forged"), {
+      ...values,
+      ownerUid: "",
+      createdBy: "teacher",
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    }),
+  );
+  await assertFails(
+    setDoc(doc(student, "notifications", "forged-student"), {
+      ...values,
+      ownerUid: "",
+      createdBy: "student-a",
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    }),
+  );
+  await assertFails(
+    setDoc(doc(office, "notifications", "owner-and-audience"), {
+      ...values,
+      ownerUid: "student-a",
+      createdBy: "office",
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    }),
+  );
+  const both = await saveAnnouncementRecord(
+    sdk,
+    office,
+    { uid: "office" },
+    { role: "administracija_par" },
+    { ...values, title: "Both", audience: "students_professors" },
+  );
+  await assertSucceeds(getDoc(doc(student, "notifications", both.id)));
+  await assertSucceeds(getDoc(doc(teacher, "notifications", both.id)));
+  const teachers = await saveAnnouncementRecord(
+    sdk,
+    office,
+    { uid: "office" },
+    { role: "administracija_par" },
+    { ...values, title: "Teachers", audience: "profesor" },
+  );
+  await assertSucceeds(getDoc(doc(teacher, "notifications", teachers.id)));
+  await assertFails(getDoc(doc(student, "notifications", teachers.id)));
+  await setDoc(doc(database("admin"), "notifications", "private-inbox"), {
+    ownerUid: "student-a",
+    title: "Private",
+    message: "One only",
+    createdBy: "admin",
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  });
+  await assertSucceeds(getDoc(doc(student, "notifications", "private-inbox")));
+  await assertFails(getDoc(doc(office, "notifications", "private-inbox")));
+  assert.equal(
+    (
+      await readAllRecords(
+        sdk,
+        student,
+        "notifications",
+        "ownerUid",
+        "student-a",
+      )
+    ).length,
+    1,
+  );
+  const history = await getDocs(
+    query(
+      collection(database("admin"), "auditLog"),
+      where("recordId", "==", saved.id),
+    ),
+  );
+  assert.equal(history.size, 1);
 });

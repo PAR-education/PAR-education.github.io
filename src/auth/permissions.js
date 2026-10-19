@@ -1,6 +1,7 @@
 import { isInstructor } from "../utils/instructors.js";
 export const roles = Object.freeze({
   admin: "Administrator",
+  administracija_par: "AdministracijaPAR",
   dept_head: "Pročelnik odjela",
   profesor: "Nastavnik",
   lab_assistant: "Voditelj laboratorija",
@@ -11,8 +12,8 @@ export const staffRoles = ["admin", "dept_head", "profesor", "lab_assistant"];
 const readers = {
   attendance: ["admin", "profesor", "student"],
   rooms: Object.keys(roles),
-  students: ["admin", "dept_head"],
-  employees: ["admin", "dept_head"],
+  students: ["admin", "administracija_par", "dept_head"],
+  employees: ["admin", "administracija_par", "dept_head"],
   courses: Object.keys(roles),
   calendarEvents: Object.keys(roles),
   exams: ["admin", "dept_head", "profesor", "student"],
@@ -37,7 +38,7 @@ const readers = {
 const writers = {
   attendance: ["admin", "profesor"],
   courses: ["admin"],
-  calendarEvents: ["admin", "profesor"],
+  calendarEvents: ["admin", "administracija_par", "profesor"],
   exams: ["admin", "profesor"],
   grades: ["admin", "profesor"],
   projects: ["admin", "dept_head"],
@@ -48,6 +49,16 @@ const writers = {
   employeeSchedules: ["admin"],
 };
 export function canRead(role, collection) {
+  if (role === "administracija_par")
+    return [
+      "students",
+      "employees",
+      "calendarEvents",
+      "rooms",
+      "courses",
+      "documents",
+      "notifications",
+    ].includes(collection);
   return (
     Object.hasOwn(readers, collection) && readers[collection].includes(role)
   );
@@ -58,11 +69,25 @@ export function canManage(role, collection) {
     (Object.hasOwn(writers, collection) && writers[collection].includes(role))
   );
 }
+// Office staff may add dossiers, but cannot edit existing people or grant account roles.
+export function canAdd(role, collection) {
+  return (
+    canManage(role, collection) ||
+    (role === "administracija_par" &&
+      ["students", "employees", "notifications"].includes(collection))
+  );
+}
+export function canDelete(role, collection) {
+  return role !== "administracija_par" && canManage(role, collection);
+}
 export function isActiveProfile(profile) {
   return profile?.active === true && Object.hasOwn(roles, profile.role);
 }
 export function canEditCalendar(role, uid, record) {
-  return role === "admin" || (role === "profesor" && isInstructor(record, uid));
+  return (
+    ["admin", "administracija_par"].includes(role) ||
+    (role === "profesor" && isInstructor(record, uid))
+  );
 }
 export function canImport(role, name) {
   if (role === "admin") return Object.hasOwn(readers, name);

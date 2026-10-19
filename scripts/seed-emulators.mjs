@@ -13,6 +13,7 @@ const environment = await initializeTestEnvironment({
 });
 for (const role of [
   "admin",
+  "administracija_par",
   "dept_head",
   "profesor",
   "lab_assistant",

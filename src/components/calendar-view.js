@@ -27,6 +27,7 @@ export function mountCalendarView(root, events, options) {
     uid = context.user.uid;
   const previous =
     root.querySelector("#calendar-anchor")?.value ||
+    options.initialDate ||
     (role === "profesor"
       ? firstTeachingDate(
           events,

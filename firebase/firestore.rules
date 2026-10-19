@@ -8,7 +8,7 @@ service cloud.firestore {
     function active() {
       let p = profile();
       return signedIn() && p.active == true
-        && p.role in ['admin', 'dept_head', 'profesor', 'lab_assistant', 'student', 'alumni']
+        && p.role in ['admin', 'administracija_par', 'dept_head', 'profesor', 'lab_assistant', 'student', 'alumni']
         && (!p.get('emailVerificationRequired', false) || request.auth.token.get('email_verified', false));
     }
     function role(r) { return active() && profile().role == r; }
@@ -48,6 +48,15 @@ service cloud.firestore {
     function enrolledStudent(d) {
       let enrollment = get(/databases/$(database)/documents/enrollments/$(enrollmentKey(d, d.ownerUid))).data;
       return enrollment.ownerUid == d.ownerUid && enrollment.courseId == d.courseId && enrollment.status == 'Odobreno';
+    }
+    function broadcastVisible(d) {
+      return active() && ((role('administracija_par') && d.get('audience','') in ['student','profesor','students_professors'])
+        || (profile().role in ['student','profesor'] && d.get('audience','') in [profile().role,'students_professors']));
+    }
+    function officeBroadcast(d) {
+      return role('administracija_par') && d.get('ownerUid','') == ''
+        && d.get('audience','') in ['student','profesor','students_professors']
+        && d.get('sourceModule','') == '' && d.get('sourceId','') == '';
     }
     function teacherNotice(d) {
       let source = get(/databases/$(database)/documents/$(d.sourceModule)/$(d.sourceId)).data;
@@ -108,8 +117,8 @@ service cloud.firestore {
     }
     function valid_employees(d) {
       return d.keys().hasOnly(['ownerUid', 'name', 'position', 'departmentName', 'departmentId', 'email', 'createdAt', 'createdBy', 'updatedAt'])
-        && d.keys().hasAll(['ownerUid', 'name', 'position', 'departmentId', 'email', 'createdAt', 'createdBy', 'updatedAt'])
-        && (d.ownerUid is string && d.ownerUid.size() <= 200 && d.ownerUid.size() > 0)
+        && d.keys().hasAll(['name', 'position', 'departmentId', 'email', 'createdAt', 'createdBy', 'updatedAt'])
+        && (!('ownerUid' in d) || d.ownerUid == '' || (d.ownerUid is string && d.ownerUid.size() <= 200))
         && (d.name is string && d.name.size() <= 200 && d.name.size() > 0)
         && (d.position is string && d.position.size() <= 200 && d.position.size() > 0)
         && (!('departmentName' in d) || d.departmentName == '' || (d.departmentName is string && d.departmentName.size() <= 200))
@@ -339,20 +348,22 @@ service cloud.firestore {
         && (!('comments' in d) || d.comments == '' || (d.comments is string && d.comments.size() <= 2000));
     }
     function valid_notifications(d) {
-      return d.keys().hasOnly(['ownerUid', 'title', 'message', 'sourceModule', 'sourceId', 'createdAt', 'createdBy', 'updatedAt'])
-        && d.keys().hasAll(['ownerUid', 'title', 'message', 'createdAt', 'createdBy', 'updatedAt'])
-        && (d.ownerUid is string && d.ownerUid.size() <= 200 && d.ownerUid.size() > 0)
+      return d.keys().hasOnly(['ownerUid', 'audience', 'title', 'message', 'sourceModule', 'sourceId', 'createdAt', 'createdBy', 'updatedAt'])
+        && d.keys().hasAll(['title', 'message', 'createdAt', 'createdBy', 'updatedAt'])
+        && (!('ownerUid' in d) || d.ownerUid == '' || (d.ownerUid is string && d.ownerUid.size() <= 200))
+        && (!('audience' in d) || d.audience == '' || (d.audience is string && d.audience.size() <= 200 && d.audience in ['student', 'profesor', 'students_professors']))
         && (d.title is string && d.title.size() <= 200 && d.title.size() > 0)
         && (d.message is string && d.message.size() <= 2000 && d.message.size() > 0)
         && (!('sourceModule' in d) || d.sourceModule == '' || (d.sourceModule is string && d.sourceModule.size() <= 200))
-        && (!('sourceId' in d) || d.sourceId == '' || (d.sourceId is string && d.sourceId.size() <= 200));
+        && (!('sourceId' in d) || d.sourceId == '' || (d.sourceId is string && d.sourceId.size() <= 200))
+        && ((d.get('ownerUid','') != '' && d.get('audience','') == '') || (d.get('ownerUid','') == '' && d.get('audience','') in ['student','profesor','students_professors']));
     }
     function valid_users(d) {
       return d.keys().hasOnly(['name', 'email', 'role', 'active', 'departmentId', 'emailVerificationRequired', 'emailVerified', 'createdAt', 'createdBy', 'updatedAt'])
         && d.keys().hasAll(['name', 'email', 'role'])
         && (d.name is string && d.name.size() <= 200 && d.name.size() > 0)
         && (d.email is string && d.email.size() <= 200 && d.email.size() > 0 && d.email.matches('^[^ @]+@[^ @]+[.][^ @]+$'))
-        && (d.role is string && d.role.size() <= 200 && d.role.size() > 0 && d.role in ['admin', 'dept_head', 'profesor', 'lab_assistant', 'student', 'alumni'])
+        && (d.role is string && d.role.size() <= 200 && d.role.size() > 0 && d.role in ['admin', 'administracija_par', 'dept_head', 'profesor', 'lab_assistant', 'student', 'alumni'])
         && (!('active' in d) || (d.active is bool))
         && (!('departmentId' in d) || d.departmentId == '' || (d.departmentId is string && d.departmentId.size() <= 200))
         && (!('emailVerificationRequired' in d) || (d.emailVerificationRequired is bool))
@@ -381,16 +392,16 @@ service cloud.firestore {
       allow delete: if admin();
     }
     match /students/{id} {
-      allow read: if admin() || inDepartment(resource.data);
-      allow create: if (admin()) && valid_students(request.resource.data) && created(request.resource.data);
+      allow read: if admin() || role('administracija_par') || inDepartment(resource.data);
+      allow create: if (admin() || (role('administracija_par') && request.resource.data.get('ownerUid', '') == '')) && valid_students(request.resource.data) && created(request.resource.data);
       allow create: if admin() && valid_students(request.resource.data) && restored(request.resource.data);
       allow update: if (admin()) && valid_students(request.resource.data) && updated(request.resource.data);
       allow update: if admin() && valid_students(request.resource.data) && updated(request.resource.data);
       allow delete: if admin();
     }
     match /employees/{id} {
-      allow read: if admin() || inDepartment(resource.data);
-      allow create: if (admin()) && valid_employees(request.resource.data) && created(request.resource.data);
+      allow read: if admin() || role('administracija_par') || inDepartment(resource.data);
+      allow create: if (admin() || (role('administracija_par') && request.resource.data.get('ownerUid', '') == '')) && valid_employees(request.resource.data) && created(request.resource.data);
       allow create: if admin() && valid_employees(request.resource.data) && restored(request.resource.data);
       allow update: if (admin()) && valid_employees(request.resource.data) && updated(request.resource.data);
       allow update: if admin() && valid_employees(request.resource.data) && updated(request.resource.data);
@@ -406,9 +417,9 @@ service cloud.firestore {
     }
     match /calendarEvents/{id} {
       allow read: if active();
-      allow create: if (admin() || (role('profesor') && assignedCourse(request.resource.data))) && valid_calendarEvents(request.resource.data) && created(request.resource.data);
+      allow create: if (admin() || role('administracija_par') || (role('profesor') && assignedCourse(request.resource.data))) && valid_calendarEvents(request.resource.data) && created(request.resource.data);
       allow create: if admin() && valid_calendarEvents(request.resource.data) && restored(request.resource.data);
-      allow update: if (admin() || (instructor(resource.data) && assignedCourse(request.resource.data))) && valid_calendarEvents(request.resource.data) && updated(request.resource.data);
+      allow update: if (admin() || role('administracija_par') || (instructor(resource.data) && assignedCourse(request.resource.data))) && valid_calendarEvents(request.resource.data) && updated(request.resource.data);
       allow update: if admin() && valid_calendarEvents(request.resource.data) && updated(request.resource.data);
       allow delete: if admin() || instructor(resource.data);
     }
@@ -509,16 +520,16 @@ service cloud.firestore {
       allow delete: if admin();
     }
     match /evaluations/{id} {
-      allow read: if admin() || own(resource.data);
-      allow create: if (own(request.resource.data)) && valid_evaluations(request.resource.data) && created(request.resource.data);
+      allow read: if admin() || (!role('administracija_par') && own(resource.data));
+      allow create: if (!role('administracija_par') && own(request.resource.data)) && valid_evaluations(request.resource.data) && created(request.resource.data);
       allow create: if admin() && valid_evaluations(request.resource.data) && restored(request.resource.data);
       allow update: if (false) && valid_evaluations(request.resource.data) && updated(request.resource.data);
       allow update: if admin() && valid_evaluations(request.resource.data) && updated(request.resource.data);
       allow delete: if admin();
     }
     match /notifications/{id} {
-      allow read: if admin() || own(resource.data);
-      allow create: if (admin() || teacherNotice(request.resource.data)) && valid_notifications(request.resource.data) && created(request.resource.data);
+      allow read: if admin() || own(resource.data) || broadcastVisible(resource.data);
+      allow create: if (admin() || officeBroadcast(request.resource.data) || (request.resource.data.get('audience','') == '' && teacherNotice(request.resource.data))) && valid_notifications(request.resource.data) && created(request.resource.data);
       allow create: if admin() && valid_notifications(request.resource.data) && restored(request.resource.data);
       allow update: if (admin()) && valid_notifications(request.resource.data) && updated(request.resource.data);
       allow update: if admin() && valid_notifications(request.resource.data) && updated(request.resource.data);
@@ -557,7 +568,7 @@ service cloud.firestore {
     }
     match /calendarLocks/{date} {
       allow read: if active();
-      allow create, update: if active() && profile().role in ['admin','profesor']
+      allow create, update: if active() && profile().role in ['admin','administracija_par','profesor']
         && request.resource.data.keys().hasOnly(['version','updatedAt','actorUid'])
         && request.resource.data.version is int && request.resource.data.version > 0
         && request.resource.data.actorUid == request.auth.uid && request.resource.data.updatedAt == request.time;

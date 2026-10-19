@@ -1,3 +1,7 @@
+import { mountMiniCalendar } from "./components/mini-calendar.js";
+import { mountCourseCalendar } from "./components/course-calendar.js";
+import { showAnnouncement } from "./components/announcement.js";
+import { canSendAnnouncement } from "./utils/notices.js";
 import {
   actionMenu,
   setupActionMenus,
@@ -20,6 +24,8 @@ import {
   roles,
   canRead,
   canManage,
+  canAdd,
+  canDelete,
   staffRoles,
   canEditCalendar,
   canImport,
@@ -58,6 +64,7 @@ import {
 } from "./services/admin-demo.js";
 import { mountTemplateCleanup } from "./components/template-cleanup.js";
 const $ = (id) => document.getElementById(id);
+let calendarAnchor = "";
 let context = null;
 let authenticatedSession = null;
 let version = 0;
@@ -128,6 +135,7 @@ function heading(title, description, actions = "") {
   return `<div class="page-heading"><div><h1>${e(title)}</h1>${description ? `<p>${e(description)}</p>` : ""}</div><div class="page-actions">${actions}</div></div>`;
 }
 function clearPrivateContent() {
+  calendarAnchor = "";
   version++;
   context = null;
   authenticatedSession = null;
@@ -477,7 +485,7 @@ async function loadView(name) {
 async function drawDashboard(ticket, current) {
   const model = await dashboardModel(current);
   if (ticket !== version || current !== context) return;
-  const { upcoming, notices } = model,
+  const { notices } = model,
     choices = model.stats,
     failures = model.failures.map((reason) => ({ reason }));
   const stats = model.stats
@@ -495,7 +503,7 @@ async function drawDashboard(ticket, current) {
     (failures.length
       ? `<div class="notice error">Neki podaci nisu dostupni. ${e(errorMessage(failures[0].reason))}</div>`
       : "") +
-    `<section class="stats stats-${choices.length}" aria-label="Pregled podataka">${stats}</section><div class="dashboard-grid"><section class="panel"><div class="panel-title"><h2>Radni prostor</h2><span class="pill">${e(roles[current.profile.role])}</span></div><div class="link-list">${Object.entries(
+    `<section class="stats stats-${choices.length}" aria-label="Pregled podataka">${stats}</section><div class="dashboard-grid"><section class="panel"><div class="panel-title"><h2>${current.profile.role === "administracija_par" ? "Studentski ured" : "Radni prostor"}</h2><span class="pill">${e(roles[current.profile.role])}</span></div>${current.profile.role === "administracija_par" ? '<div class="detail-actions office-actions"><button class="button primary" data-office-add="calendarEvents">Dodaj termin</button><button class="button" data-office-add="students">Dodaj studenta</button><button class="button" data-office-add="employees">Dodaj profesora</button></div>' : ""}<div class="link-list">${Object.entries(
       modules,
     )
       .filter(
@@ -505,6 +513,12 @@ async function drawDashboard(ticket, current) {
           (current.profile.role === "admin" ||
             roleNavigation(current.profile.role).primary.includes(name)),
       )
+      .sort(([a], [b]) =>
+        current.profile.role === "administracija_par"
+          ? roleNavigation(current.profile.role).primary.indexOf(a) -
+            roleNavigation(current.profile.role).primary.indexOf(b)
+          : 0,
+      )
       .slice(0, 7)
       .map(
         ([name, module]) =>
@@ -512,8 +526,43 @@ async function drawDashboard(ticket, current) {
       )
       .join(
         "",
-      )}</div></section><section class="panel"><div class="panel-title"><h2>Sljedeći događaji</h2><a href="#calendarEvents">Kalendar</a></div>${upcoming.length ? `<div class="calendar-list">${upcoming.map((row) => `<div class="calendar-row"><div class="date-box">${e(row.date)}</div><div><h3>${e(row.title)}</h3><p>${e(row.time)} · ${e(row.room)}</p></div></div>`).join("")}</div>` : '<p class="panel-note">Nema nadolazećih događaja.</p>'}</section></div><section class="panel"><div class="panel-title"><h2>Obavijesti</h2><a href="#notifications">Sve obavijesti</a></div>${model.unavailable?.includes("notifications") ? '<p class="panel-note">Obavijesti nisu dostupne.</p>' : notices.length ? `<div class="calendar-list">${notices.map((row) => `<div class="calendar-row"><div><h3>${e(row.title)}</h3><p>${e(row.message)}</p></div></div>`).join("")}</div>` : '<p class="panel-note">Trenutno nema novih obavijesti.</p>'}</section>`;
+      )}</div></section><aside class="panel dashboard-agenda"><div id="dashboard-mini-calendar"></div><div class="panel-title"><h2>Obavijesti</h2><a href="#notifications">Sve obavijesti</a></div>${canSendAnnouncement(current.profile.role) ? '<div class="announcement-action"><button class="button" id="dashboard-announce">Pošalji obavijest</button></div>' : ""}${model.unavailable?.includes("notifications") ? '<p class="panel-note">Obavijesti nisu dostupne.</p>' : notices.length ? `<div class="calendar-list">${notices.map((row, i) => `<button class="notice-preview" data-notice="${i}"><strong>${e(row.title)}</strong><span>${e(row.message)}</span></button>`).join("")}</div>` : '<p class="panel-note">Trenutno nema novih obavijesti.</p>'}</aside></div>`;
+  mountMiniCalendar($("dashboard-mini-calendar"), model.events, {
+    onEvent: (record) => {
+      if (context === current) showDetails("calendarEvents", record);
+    },
+    onOpen: (date) => {
+      calendarAnchor = date;
+      location.hash = "calendarEvents";
+    },
+  });
+  $("dashboard-announce")?.addEventListener("click", () =>
+    showAnnouncement(current, async () => {
+      if (context !== current) return;
+      notify(
+        current.demo
+          ? "Obavijest spremljena u oglednoj sesiji."
+          : "Obavijest je objavljena odabranoj grupi.",
+      );
+      await loadView("dashboard");
+    }),
+  );
+  document
+    .querySelectorAll("[data-notice]")
+    .forEach((button) =>
+      button.addEventListener("click", () =>
+        showDetails("notifications", notices[Number(button.dataset.notice)]),
+      ),
+    );
   $("refresh").addEventListener("click", () => loadView("dashboard"));
+  document.querySelectorAll("[data-office-add]").forEach((button) =>
+    button.addEventListener("click", async () => {
+      const name = button.dataset.officeAdd;
+      history.replaceState(null, "", "#" + name);
+      await loadView(name);
+      if (current === context && canCreate(name)) showForm(name);
+    }),
+  );
   $("content")
     .querySelectorAll("[data-nav]")
     .forEach((button) =>
@@ -524,10 +573,11 @@ async function drawDashboard(ticket, current) {
 }
 function canCreate(name) {
   const role = context.profile.role;
+  if (role === "administracija_par" && name === "notifications") return false;
   if (["enrollments", "examBookings", "labBookings"].includes(name))
     return false;
   return (
-    canManage(role, name) ||
+    canAdd(role, name) ||
     ["requests", "evaluations"].includes(name) ||
     (staffRoles.includes(role) &&
       ["workEntries", "vacations", "research"].includes(name))
@@ -570,7 +620,7 @@ function drawModule() {
     heading(
       navigationLabel(context.profile.role, active),
       "",
-      `${canCreate(active) || canImport(context.profile.role, active) ? actionMenu("Dodaj", `${canCreate(active) ? '<button id="create" type="button">Ručni unos</button>' : ""}${canImport(context.profile.role, active) ? '<button id="excel-open" type="button">Uvoz iz datoteke</button>' : ""}`, true) : ""}${actionMenu("Izvoz", '<button id="print" type="button">Ispis / PDF</button><button id="csv" type="button">CSV tablica</button>')}<button id="refresh" class="button icon-button" title="Osvježi" aria-label="Osvježi">${icon("arrows-rotate")}</button>`,
+      `${active === "notifications" && canSendAnnouncement(context.profile.role) ? '<button class="button primary" id="send-announcement">Pošalji obavijest</button>' : ""}${active !== "notifications" && (canCreate(active) || canImport(context.profile.role, active)) ? actionMenu("Dodaj", `${canCreate(active) ? '<button id="create" type="button">Ručni unos</button>' : ""}${canImport(context.profile.role, active) ? '<button id="excel-open" type="button">Uvoz iz datoteke</button>' : ""}`, true) : ""}${actionMenu("Izvoz", '<button id="print" type="button">Ispis / PDF</button><button id="csv" type="button">CSV tablica</button>')}<button id="refresh" class="button icon-button" title="Osvježi" aria-label="Osvježi">${icon("arrows-rotate")}</button>`,
     ) +
     `<section class="panel module-panel"><div class="toolbar module-toolbar"><label class="module-search" for="search"><span class="sr-only">Pretraživanje</span>${icon("magnifying-glass")}<input class="search" id="search" type="search" placeholder="Pretraži…" autocomplete="off"></label><div class="toolbar-actions">${filters || monthly ? `<details class="module-filters" id="module-filters"><summary class="button">${icon("filter")} <span id="filter-label">Filtri</span></summary><div class="filter-fields">${filters}${monthly}<button class="button" id="clear-filters">Očisti filtre</button></div></details>` : ""}${batchAllowed ? '<button class="button" id="batch-approve">Odobri više…</button>' : ""}</div></div><div id="table-area"></div><div class="table-footer" id="record-count"></div></section>`;
   if ($("status-filter")) $("status-filter").value = statusFilter;
@@ -582,6 +632,15 @@ function drawModule() {
     if ($("status-filter")) $("status-filter").value = "";
     if ($("month-filter")) $("month-filter").value = "";
     drawTable();
+  });
+  $("send-announcement")?.addEventListener("click", () => {
+    const current = context;
+    showAnnouncement(current, async () => {
+      if (context === current) {
+        notify("Obavijest je objavljena odabranoj grupi.");
+        await loadView(active);
+      }
+    });
   });
   $("excel-open")?.addEventListener("click", () =>
     showExcelImport(context, active, () => loadView(active)),
@@ -741,6 +800,7 @@ function drawTable() {
     const current = context;
     mountCalendarView($("table-area"), shownRows, {
       context: current,
+      initialDate: calendarAnchor,
       allEvents: rows,
       onVisible: (visible) => {
         exportRows = visible.slice();
@@ -768,6 +828,7 @@ function drawTable() {
         }
       },
     });
+    calendarAnchor = "";
   } else if (visual) $("table-area").innerHTML = visual;
   else
     $("table-area").innerHTML =
@@ -811,13 +872,29 @@ function showDetails(name, record) {
   openDialog(
     record.name || record.title || modules[name].title,
     detailsHTML(modules[name].fields, record) +
-      `${role === "admin" ? `<details class="context-help"><summary>Podaci o zapisu</summary><p>ID: ${e(record.id)}</p></details>` : ""}<div class="detail-actions">${canEdit(name, record) ? '<button id="edit-record" class="button primary">Uredi</button>' : ""}<button id="print-record" class="button">Ispis / PDF</button>${record.url && /^https:\/\//i.test(record.url) ? `<a class="button" href="${e(record.url)}" target="_blank" rel="noopener noreferrer">Otvori dokument ↗</a>` : ""}${role === "student" && bookingTarget ? '<button id="book-record" class="button primary">Pošalji prijavu</button>' : ""}${canDecide && record.status === "Na čekanju" && ["vacations", "enrollments", "examBookings", "labBookings"].includes(name) ? '<button id="approve" class="button primary">Odobri</button><button id="reject" class="button">Odbij</button>' : ""}${canManage(role, name) && (name !== "calendarEvents" || canEdit(name, record)) && !["users", "evaluations"].includes(name) ? '<button id="delete-record" class="button danger">Arhiviraj</button>' : ""}</div><div id="detail-error" role="alert"></div>`,
+      `${role === "admin" ? `<details class="context-help"><summary>Podaci o zapisu</summary><p>ID: ${e(record.id)}</p></details>` : ""}<div class="detail-actions">${canEdit(name, record) ? '<button id="edit-record" class="button primary">Uredi</button>' : ""}<button id="print-record" class="button">Ispis / PDF</button>${record.url && /^https:\/\//i.test(record.url) ? `<a class="button" href="${e(record.url)}" target="_blank" rel="noopener noreferrer">Otvori dokument ↗</a>` : ""}${role === "student" && bookingTarget ? '<button id="book-record" class="button primary">Pošalji prijavu</button>' : ""}${canDecide && record.status === "Na čekanju" && ["vacations", "enrollments", "examBookings", "labBookings"].includes(name) ? '<button id="approve" class="button primary">Odobri</button><button id="reject" class="button">Odbij</button>' : ""}${canDelete(role, name) && (name !== "calendarEvents" || canEdit(name, record)) && !["users", "evaluations"].includes(name) ? '<button id="delete-record" class="button danger">Arhiviraj</button>' : ""}</div><div id="detail-error" role="alert"></div>`,
   );
+  if (["courses", "calendarEvents", "exams"].includes(name)) {
+    const root = document.createElement("section");
+    root.className = "course-calendar-actions";
+    $("dialog-body").append(root);
+    mountCourseCalendar(
+      root,
+      name,
+      record,
+      current,
+      () => context === current && root.isConnected,
+    );
+  }
   $("edit-record")?.addEventListener("click", () => {
     closeDialog();
     showForm(name, record);
   });
-  if (name === "calendarEvents" && canEdit(name, record)) {
+  if (
+    name === "calendarEvents" &&
+    canRead(role, "attendance") &&
+    canEdit(name, record)
+  ) {
     const button = document.createElement("button");
     button.className = "button primary";
     button.textContent = "Evidencija prisutnosti";
@@ -1115,10 +1192,12 @@ async function mutate(button, operation, message) {
 function showForm(name, record = {}) {
   const role = context.profile.role;
   const mine =
-    !canManage(role, name) ||
+    !canAdd(role, name) ||
     (name === "research" && role !== "admin") ||
     name === "evaluations";
   const defaults = { ...record };
+  if (role === "administracija_par" && name === "employees" && !record.id)
+    defaults.position = "Nastavnik";
   if (mine)
     Object.assign(defaults, {
       ownerUid: context.user.uid,
@@ -1148,7 +1227,11 @@ function showForm(name, record = {}) {
     name,
     modules[name].fields.filter(
       (field) =>
-        !(mine && ["ownerUid", "ownerName", "response"].includes(field.key)),
+        !(mine && ["ownerUid", "ownerName", "response"].includes(field.key)) &&
+        !(
+          role === "administracija_par" &&
+          ["ownerUid", "instructorUid", "instructorUids"].includes(field.key)
+        ),
     ),
   );
   const fieldHTML = (fields) =>
@@ -1231,6 +1314,11 @@ function showForm(name, record = {}) {
           ].map((o) => o.value);
         if (field.type === "checkbox")
           values[field.key] = form.elements[field.key].checked;
+      }
+      if (role === "administracija_par") {
+        // Account links are assigned by an admin; preserve them when moving existing teaching.
+        for (const key of ["ownerUid", "instructorUid", "instructorUids"])
+          if (record[key] !== undefined) values[key] = record[key];
       }
       const id =
         name === "users"

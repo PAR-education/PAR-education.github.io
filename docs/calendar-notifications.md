@@ -1,0 +1,11 @@
+# Dashboard agenda and in-app announcements
+
+The dashboard right panel contains a Monday-first month calendar and the latest three notifications. Days with teaching are marked; selecting a date lists its sessions. The full timetable button opens that selected date. Students use approved enrollment years, professors use assigned teaching (including co-teachers), and office/admin roles see all teaching. No new calendar access is granted by the widget.
+
+Admin and AdministracijaPAR have a Send announcement action on the dashboard and Notifications page. The composer requires an audience (students, professors or both), title and message. This is an in-app notice, not email or browser push. Recipients see it after loading/refreshing their dashboard or inbox. Each announcement is stored once in `notifications` with an `audience`, empty `ownerUid` and an audit record. Existing private notifications keep their nonempty `ownerUid` and no audience. Other roles cannot publish announcements; AdministracijaPAR cannot edit/delete them, read private inboxes or list user accounts. Admin retains existing management permissions.
+
+Non-admin inboxes combine paginated ownerUid queries with paginated queries for their permitted audiences, deduplicate by document ID and sort the dashboard by creation time. Audiences use current profile roles: a future student account can also see existing student announcements. There is no per-recipient read tracking.
+
+Course details offer Add to calendar. The preview uses actual calendarEvents linked by course ID and academic year, not a generated weekly pattern. It includes location, instructor, notes and online status. Individual lessons have Google Calendar template links; all sessions download as one ICS file for manual import. Calendar/exam details have the same action for that specific event. Courses without scheduled events show an empty state rather than inventing dates. No Google OAuth access or automatic sync is implied. A missing end time uses the existing 60-minute export fallback, disclosed in the import instructions.
+
+Publish regenerated `firebase/firestore.rules` alongside the client changes. No production migration or user-directory access is needed.

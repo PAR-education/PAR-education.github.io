@@ -1,3 +1,4 @@
+import { noticeTime } from "../utils/notices.js";
 import { courseYearKey, enrolledForEvent } from "../utils/academic-year.js";
 import { canRead } from "../auth/permissions.js";
 import { isInstructor } from "../utils/instructors.js";
@@ -8,6 +9,7 @@ export async function dashboardModel(context) {
   const choices =
     {
       admin: ["students", "employees", "enrollments", "requests"],
+      administracija_par: ["calendarEvents", "students", "employees"],
       student: ["enrollments", "grades", "requests", "finances"],
       profesor: ["courses", "calendarEvents", "enrollments", "examBookings"],
       dept_head: ["students", "employees", "projects", "calendarEvents"],
@@ -46,6 +48,8 @@ export async function dashboardModel(context) {
       label = name,
       value = rows.length,
       detail = "Ukupno";
+    if (role === "administracija_par" && name === "employees")
+      label = "Profesori i zaposlenici";
     if (role === "profesor" && name === "courses") {
       rows = rows.filter((r) => isInstructor(r, uid));
       value = rows.length;
@@ -76,12 +80,13 @@ export async function dashboardModel(context) {
   });
   return {
     stats,
+    events,
     upcoming: events
       .filter((r) => eventHasNotEnded(r))
       .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time))
       .slice(0, 5),
     notices: (records.notifications || [])
-      .sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0))
+      .sort((a, b) => noticeTime(b) - noticeTime(a))
       .slice(0, 3),
     unavailable: names.filter((n, i) => results[i].status === "rejected"),
     failures: results

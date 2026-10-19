@@ -1,3 +1,6 @@
+import { visibleNotice, validateNotice } from "../utils/notices.js";
+import { validateFields } from "../utils/validation.js";
+import { modules } from "../modules/catalog.js";
 import { notifyChangeSafely } from "./notifications.js";
 import { attendanceValues, attendanceId } from "../utils/attendance.js";
 import { enrollmentId } from "../utils/academic-year.js";
@@ -8,6 +11,8 @@ import {
   canRead,
   canEditCalendar,
   canManage,
+  canAdd,
+  canDelete,
   staffRoles,
 } from "../auth/permissions.js";
 import { tuitionInstallments } from "../utils/tuition.js";
@@ -58,12 +63,13 @@ export class DemoRecords {
     const value =
       field === "departmentId" ? this.profile.departmentId : this.user.uid;
     return structuredClone(
-      (this.data[name] || []).filter(
-        (row) =>
-          !field ||
-          (field === "instructorUid"
-            ? isInstructor(row, value)
-            : row[field] === value),
+      (this.data[name] || []).filter((row) =>
+        name === "notifications"
+          ? visibleNotice(row, this.profile.role, this.user.uid)
+          : !field ||
+            (field === "instructorUid"
+              ? isInstructor(row, value)
+              : row[field] === value),
       ),
     );
   }
@@ -90,17 +96,29 @@ export class DemoRecords {
   }
   async save(name, values, id, options = {}) {
     const role = this.profile.role;
+    if (!canRead(role, name))
+      throw new Error("Nemate ovlasti za ovu evidenciju.");
+    if (
+      role === "administracija_par" &&
+      ["students", "employees"].includes(name) &&
+      values.ownerUid
+    )
+      throw new Error("Korisnički račun s dosjeom povezuje administrator.");
+    if (name === "notifications") {
+      values = validateFields(modules.notifications.fields, values);
+      validateNotice(values, role);
+    }
     const ownCreation =
       ["requests", "evaluations"].includes(name) ||
       (staffRoles.includes(role) &&
         ["workEntries", "vacations", "research"].includes(name));
     if (
       !this.profile.active ||
-      (!canManage(role, name) &&
+      (!(canManage(role, name) || (!id && canAdd(role, name))) &&
         (!ownCreation || (id && !["workEntries", "research"].includes(name))))
     )
       throw new Error("Nemate ovlasti za spremanje.");
-    if (!canManage(role, name) || (name === "research" && role !== "admin"))
+    if (!canAdd(role, name) || (name === "research" && role !== "admin"))
       values = { ...values, ownerUid: this.user.uid };
 
     this.data[name] ||= [];
@@ -221,7 +239,7 @@ export class DemoRecords {
     );
   }
   async remove(name, id) {
-    if (!canManage(this.profile.role, name))
+    if (!canDelete(this.profile.role, name))
       throw new Error("Nemate ovlasti za brisanje.");
     const row = this.data[name]?.find((r) => r.id === id);
     if (
