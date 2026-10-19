@@ -124,6 +124,18 @@ service cloud.firestore {
         && d.get('audience','') in ['student','profesor','students_professors']
         && d.get('sourceModule','') == '' && d.get('sourceId','') == '';
     }
+    function courseNoticeAuthor(d) {
+      return role('profesor') && d.get('sourceModule','') == 'courses' && d.createdBy == request.auth.uid;
+    }
+    function manualCourseNotice(d) {
+      let c = get(/databases/$(database)/documents/courses/$(d.courseId)).data;
+      let en = get(/databases/$(database)/documents/enrollments/$(d.enrollmentId)).data;
+      return role('profesor') && assignedUid(c) && d.get('audience','') == ''
+        && d.sourceModule == 'courses' && d.sourceId == d.courseId && d.courseTitle == c.title
+        && en.status == 'Odobreno' && en.courseId == d.courseId && en.ownerUid == d.ownerUid && d.ownerUid != ''
+        && d.get('academicYear','') == en.get('academicYear','')
+        && (c.get('academicYear','') == '' || d.get('academicYear','') == c.academicYear);
+    }
     function teacherNotice(d) {
       let source = get(/databases/$(database)/documents/$(d.sourceModule)/$(d.sourceId)).data;
       return role('profesor') && d.sourceModule in ['calendarEvents','enrollments','examBookings'] && instructor(source)
@@ -248,9 +260,9 @@ const policies = {
     remove: "admin()",
   },
   notifications: {
-    read: "admin() || own(resource.data) || broadcastVisible(resource.data)",
+    read: "admin() || own(resource.data) || broadcastVisible(resource.data) || courseNoticeAuthor(resource.data)",
     write:
-      "admin() || officeBroadcast(request.resource.data) || (request.resource.data.get('audience','') == '' && teacherNotice(request.resource.data))",
+      "admin() || (request.resource.data.get('sourceModule','') == 'courses' && manualCourseNotice(request.resource.data)) || officeBroadcast(request.resource.data) || (request.resource.data.get('audience','') == '' && teacherNotice(request.resource.data))",
     update: "admin()",
     remove: "admin()",
   },
@@ -259,6 +271,7 @@ let matches = "";
 for (const [name, policy] of Object.entries(policies)) {
   matches += `    match /${name}/{id} {
       allow read: if ${policy.read};
+      ${name === "notifications" ? "allow get: if role('profesor') && !exists(/databases/$(database)/documents/notifications/$(id));" : ""}
       allow create: if (${policy.write}) && valid_${name}(request.resource.data) && created(request.resource.data);
       allow create: if admin() && valid_${name}(request.resource.data) && restored(request.resource.data);
       allow update: if (${policy.update || policy.write}) && valid_${name}(request.resource.data) && updated(request.resource.data);

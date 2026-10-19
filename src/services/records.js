@@ -1,3 +1,4 @@
+import { sendCourseNotice } from "./course-notices.js";
 import { audiencesFor, validateNotice } from "../utils/notices.js";
 import { validateFields } from "../utils/validation.js";
 import { modules } from "../modules/catalog.js";
@@ -151,6 +152,21 @@ export class Records {
   }
   async list(name) {
     return this.listAll(name);
+  }
+  async sendCourseNotice(values, operationId, onProgress) {
+    if (this.profile.role !== "profesor" || !this.profile.active)
+      throw new Error("Odaberite svoj kolegij.");
+    const enrollments = await this.listAll("enrollments");
+    const { db, firestore: sdk } = await getFirebase();
+    return sendCourseNotice(
+      sdk,
+      db,
+      this.user,
+      this.profile,
+      { ...values, enrollments },
+      operationId,
+      onProgress,
+    );
   }
   async save(name, values, id, options = {}) {
     const role = this.profile.role;

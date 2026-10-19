@@ -1,3 +1,8 @@
+import {
+  courseNoticeRecipients,
+  courseNoticeValues,
+  courseNoticeId,
+} from "../utils/course-notices.js";
 import { visibleNotice, validateNotice } from "../utils/notices.js";
 import { validateFields } from "../utils/validation.js";
 import { modules } from "../modules/catalog.js";
@@ -93,6 +98,65 @@ export class DemoRecords {
       );
     }
     return this.list(name);
+  }
+  async sendCourseNotice(values, operationId, onProgress) {
+    if (this.profile.role !== "profesor" || !this.profile.active)
+      throw new Error("Odaberite svoj kolegij.");
+    const course = this.data.courses.find((c) => c.id === values.courseId);
+    const recipients = courseNoticeRecipients(
+      course,
+      this.data.enrollments,
+      this.user.uid,
+      values.academicYear,
+    );
+    if (!recipients.length)
+      throw new Error(
+        "Nema odobrenih upisa s povezanim korisničkim računom za ovu godinu.",
+      );
+    this.data.notifications ||= [];
+    let sent = 0;
+    for (const enrollment of recipients) {
+      const id = await courseNoticeId(operationId, enrollment.ownerUid);
+      const old = this.data.notifications.find((r) => r.id === id);
+      const data = courseNoticeValues(
+        course,
+        enrollment,
+        this.user.uid,
+        values,
+      );
+      if (old) {
+        if (
+          old.createdBy !== this.user.uid ||
+          old.courseId !== values.courseId ||
+          old.academicYear !== values.academicYear ||
+          old.title !== data.title ||
+          old.message !== data.message
+        )
+          throw new Error("Otvorite novi obrazac za drugu poruku.");
+      } else {
+        const after = {
+          ...data,
+          id,
+          createdBy: this.user.uid,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+        this.data.notifications.push(after);
+        this.data.auditLog.push({
+          id: crypto.randomUUID(),
+          module: "notifications",
+          recordId: id,
+          action: "create",
+          before: null,
+          after: structuredClone(after),
+          actorUid: this.user.uid,
+          createdAt: new Date().toISOString(),
+        });
+      }
+      sent++;
+      onProgress?.({ sent, total: recipients.length });
+    }
+    return { sent, total: recipients.length };
   }
   async save(name, values, id, options = {}) {
     const role = this.profile.role;

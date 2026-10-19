@@ -20,6 +20,57 @@ import {
 } from "../src/services/template-cleanup.js";
 const admin = { uid: "real-admin" },
   profile = { role: "admin", active: true, name: "Real admin" };
+test("Course notice recipients require assignment, approved enrollment and exact year", async () => {
+  const { courseNoticeRecipients, courseNoticeValues } =
+    await import("../src/utils/course-notices.js");
+  const c = {
+    id: "c",
+    title: "Course",
+    instructorUids: ["teacher", "co"],
+    academicYear: "2026/2027",
+  };
+  const en = {
+    id: "en",
+    courseId: "c",
+    ownerUid: "s",
+    academicYear: "2026/2027",
+    status: "Odobreno",
+  };
+  const rows = [
+    en,
+    { ...en, id: "duplicate" },
+    { ...en, ownerUid: "" },
+    { ...en, ownerUid: "pending", status: "Na čekanju" },
+    { ...en, ownerUid: "old", academicYear: "2025/2026" },
+    { ...en, ownerUid: "other", courseId: "other" },
+  ];
+  assert.equal(courseNoticeRecipients(c, rows, "co", "2026/2027").length, 1);
+  assert.throws(() => courseNoticeRecipients(c, rows, "foreign", "2026/2027"));
+  assert.throws(() => courseNoticeRecipients(c, rows, "teacher", "2025/2026"));
+  const draft = {
+    courseId: "c",
+    academicYear: "2026/2027",
+    title: "Title",
+    message: "Message",
+  };
+  assert.equal(courseNoticeValues(c, en, "teacher", draft).ownerUid, "s");
+  const { DemoRecords } = await import("../src/services/demo.js");
+  const data = { courses: [c], enrollments: rows, notifications: [] };
+  const repo = new DemoRecords(
+    data,
+    { uid: "teacher" },
+    { role: "profesor", active: true },
+  );
+  assert.deepEqual(await repo.sendCourseNotice(draft, "retry"), {
+    sent: 1,
+    total: 1,
+  });
+  await repo.sendCourseNotice(draft, "retry");
+  assert.equal(data.notifications.length, 1);
+  await assert.rejects(
+    repo.sendCourseNotice({ ...draft, message: "Different" }, "retry"),
+  );
+});
 test("Private demo rejects non-admins before loading and isolates all in-memory changes", async () => {
   let loaded = 0;
   const input = {

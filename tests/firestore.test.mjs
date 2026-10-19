@@ -158,6 +158,81 @@ test("Attendance is canonical, teacher-scoped, student read-only and audit-backe
   );
 });
 const database = (uid) => env.authenticatedContext(uid).firestore();
+test("Manual course notices enforce recipients, privacy and idempotent retry", async () => {
+  const sdk = await import("firebase/firestore");
+  const { sendCourseNotice } =
+    await import("../src/services/course-notices.js");
+  const { courseNoticeId, courseNoticeValues } =
+    await import("../src/utils/course-notices.js");
+  const teacher = database("teacher"),
+    admin = database("admin");
+  const course = {
+    ...(await getDoc(doc(admin, "courses", "c1"))).data(),
+    id: "c1",
+  };
+  const enrollment = {
+    ...(await getDoc(doc(admin, "enrollments", "c1__student-a"))).data(),
+    id: "c1__student-a",
+  };
+  const draft = {
+    courseId: "c1",
+    academicYear: "",
+    title: "Nastava",
+    message: "Donesite zadatke.",
+    enrollments: [enrollment],
+  };
+  const send = () =>
+    sendCourseNotice(
+      sdk,
+      teacher,
+      { uid: "teacher" },
+      { role: "profesor", active: true },
+      draft,
+      "manual-test",
+    );
+  assert.deepEqual(await send(), { sent: 1, total: 1 });
+  assert.deepEqual(await send(), { sent: 1, total: 1 });
+  const id = await courseNoticeId("manual-test", "student-a");
+  await assertSucceeds(getDoc(doc(database("student-a"), "notifications", id)));
+  await assertFails(getDoc(doc(database("student-b"), "notifications", id)));
+  await assertFails(
+    updateDoc(doc(teacher, "notifications", id), {
+      message: "Changed",
+      updatedAt: serverTimestamp(),
+    }),
+  );
+  const payload = {
+    ...courseNoticeValues(course, enrollment, "teacher", draft),
+    ...meta(),
+    createdBy: "teacher",
+  };
+  for (const patch of [
+    { ownerUid: "student-b" },
+    { academicYear: "2027/2028" },
+    { audience: "student" },
+    { courseId: "missing" },
+  ]) {
+    await assertFails(
+      setDoc(doc(teacher, "notifications", crypto.randomUUID()), {
+        ...payload,
+        ...patch,
+      }),
+    );
+  }
+  await assertFails(
+    setDoc(doc(database("teacher-b"), "notifications", "foreign"), {
+      ...payload,
+      createdBy: "teacher-b",
+    }),
+  );
+  await updateDoc(doc(admin, "enrollments", enrollment.id), {
+    status: "Na čekanju",
+    updatedAt: serverTimestamp(),
+  });
+  await assertFails(setDoc(doc(teacher, "notifications", "pending"), payload));
+  const copies = await getDocs(collection(admin, "notifications"));
+  assert.equal(copies.docs.filter((d) => d.id === id).length, 1);
+});
 const meta = () => ({
   createdAt: serverTimestamp(),
   updatedAt: serverTimestamp(),

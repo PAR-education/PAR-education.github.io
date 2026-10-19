@@ -475,6 +475,10 @@ export const modules = {
       note("message", "Poruka", true),
       text("sourceModule", "Izvorni modul", false),
       text("sourceId", "Izvorni zapis", false),
+      { ...course, required: false },
+      text("courseTitle", "Kolegij", false),
+      academicYear,
+      text("enrollmentId", "Upis", false),
     ],
   },
   users: {

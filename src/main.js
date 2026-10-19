@@ -537,12 +537,14 @@ async function drawDashboard(ticket, current) {
     },
   });
   $("dashboard-announce")?.addEventListener("click", () =>
-    showAnnouncement(current, async () => {
+    showAnnouncement(current, async (result) => {
       if (context !== current) return;
       notify(
         current.demo
           ? "Obavijest spremljena u oglednoj sesiji."
-          : "Obavijest je objavljena odabranoj grupi.",
+          : result?.sent != null
+            ? `Obavijest je poslana ${result.sent} studenata.`
+            : "Obavijest je objavljena odabranoj grupi.",
       );
       await loadView("dashboard");
     }),
@@ -635,9 +637,13 @@ function drawModule() {
   });
   $("send-announcement")?.addEventListener("click", () => {
     const current = context;
-    showAnnouncement(current, async () => {
+    showAnnouncement(current, async (result) => {
       if (context === current) {
-        notify("Obavijest je objavljena odabranoj grupi.");
+        notify(
+          result?.sent != null
+            ? `Obavijest je poslana ${result.sent} studenata.`
+            : "Obavijest je objavljena odabranoj grupi.",
+        );
         await loadView(active);
       }
     });
@@ -885,6 +891,26 @@ function showDetails(name, record) {
       current,
       () => context === current && root.isConnected,
     );
+  }
+  if (
+    name === "courses" &&
+    role === "profesor" &&
+    isInstructor(record, current.user.uid)
+  ) {
+    const button = document.createElement("button");
+    button.className = "button";
+    button.textContent = "Obavijesti studente";
+    button.addEventListener("click", () =>
+      showAnnouncement(
+        current,
+        (result) => {
+          if (context === current)
+            notify(`Obavijest je poslana ${result.sent} studenata.`);
+        },
+        record.id,
+      ),
+    );
+    $("dialog-body").querySelector(".detail-actions").append(button);
   }
   $("edit-record")?.addEventListener("click", () => {
     closeDialog();

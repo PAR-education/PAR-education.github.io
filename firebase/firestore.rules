@@ -58,6 +58,18 @@ service cloud.firestore {
         && d.get('audience','') in ['student','profesor','students_professors']
         && d.get('sourceModule','') == '' && d.get('sourceId','') == '';
     }
+    function courseNoticeAuthor(d) {
+      return role('profesor') && d.get('sourceModule','') == 'courses' && d.createdBy == request.auth.uid;
+    }
+    function manualCourseNotice(d) {
+      let c = get(/databases/$(database)/documents/courses/$(d.courseId)).data;
+      let en = get(/databases/$(database)/documents/enrollments/$(d.enrollmentId)).data;
+      return role('profesor') && assignedUid(c) && d.get('audience','') == ''
+        && d.sourceModule == 'courses' && d.sourceId == d.courseId && d.courseTitle == c.title
+        && en.status == 'Odobreno' && en.courseId == d.courseId && en.ownerUid == d.ownerUid && d.ownerUid != ''
+        && d.get('academicYear','') == en.get('academicYear','')
+        && (c.get('academicYear','') == '' || d.get('academicYear','') == c.academicYear);
+    }
     function teacherNotice(d) {
       let source = get(/databases/$(database)/documents/$(d.sourceModule)/$(d.sourceId)).data;
       return role('profesor') && d.sourceModule in ['calendarEvents','enrollments','examBookings'] && instructor(source)
@@ -350,7 +362,7 @@ service cloud.firestore {
         && (!('comments' in d) || d.comments == '' || (d.comments is string && d.comments.size() <= 2000));
     }
     function valid_notifications(d) {
-      return d.keys().hasOnly(['ownerUid', 'audience', 'title', 'message', 'sourceModule', 'sourceId', 'createdAt', 'createdBy', 'updatedAt'])
+      return d.keys().hasOnly(['ownerUid', 'audience', 'title', 'message', 'sourceModule', 'sourceId', 'courseId', 'courseTitle', 'academicYear', 'enrollmentId', 'createdAt', 'createdBy', 'updatedAt'])
         && d.keys().hasAll(['title', 'message', 'createdAt', 'createdBy', 'updatedAt'])
         && (!('ownerUid' in d) || d.ownerUid == '' || (d.ownerUid is string && d.ownerUid.size() <= 200))
         && (!('audience' in d) || d.audience == '' || (d.audience is string && d.audience.size() <= 200 && d.audience in ['student', 'profesor', 'students_professors']))
@@ -358,6 +370,10 @@ service cloud.firestore {
         && (d.message is string && d.message.size() <= 2000 && d.message.size() > 0)
         && (!('sourceModule' in d) || d.sourceModule == '' || (d.sourceModule is string && d.sourceModule.size() <= 200))
         && (!('sourceId' in d) || d.sourceId == '' || (d.sourceId is string && d.sourceId.size() <= 200))
+        && (!('courseId' in d) || d.courseId == '' || (d.courseId is string && d.courseId.size() <= 200))
+        && (!('courseTitle' in d) || d.courseTitle == '' || (d.courseTitle is string && d.courseTitle.size() <= 200))
+        && (!('academicYear' in d) || d.academicYear == '' || (d.academicYear is string && d.academicYear.size() <= 200 && d.academicYear.matches('^[0-9]{4}/[0-9]{4}$')))
+        && (!('enrollmentId' in d) || d.enrollmentId == '' || (d.enrollmentId is string && d.enrollmentId.size() <= 200))
         && ((d.get('ownerUid','') != '' && d.get('audience','') == '') || (d.get('ownerUid','') == '' && d.get('audience','') in ['student','profesor','students_professors']));
     }
     function valid_users(d) {
@@ -387,6 +403,7 @@ service cloud.firestore {
     }
     match /rooms/{id} {
       allow read: if active();
+      
       allow create: if (admin()) && valid_rooms(request.resource.data) && created(request.resource.data);
       allow create: if admin() && valid_rooms(request.resource.data) && restored(request.resource.data);
       allow update: if (admin()) && valid_rooms(request.resource.data) && updated(request.resource.data);
@@ -395,6 +412,7 @@ service cloud.firestore {
     }
     match /students/{id} {
       allow read: if admin() || role('administracija_par') || inDepartment(resource.data);
+      
       allow create: if (admin() || (role('administracija_par') && request.resource.data.get('ownerUid', '') == '')) && valid_students(request.resource.data) && created(request.resource.data);
       allow create: if admin() && valid_students(request.resource.data) && restored(request.resource.data);
       allow update: if (admin()) && valid_students(request.resource.data) && updated(request.resource.data);
@@ -403,6 +421,7 @@ service cloud.firestore {
     }
     match /employees/{id} {
       allow read: if admin() || role('administracija_par') || inDepartment(resource.data);
+      
       allow create: if (admin() || (role('administracija_par') && request.resource.data.get('ownerUid', '') == '')) && valid_employees(request.resource.data) && created(request.resource.data);
       allow create: if admin() && valid_employees(request.resource.data) && restored(request.resource.data);
       allow update: if (admin()) && valid_employees(request.resource.data) && updated(request.resource.data);
@@ -411,6 +430,7 @@ service cloud.firestore {
     }
     match /courses/{id} {
       allow read: if active();
+      
       allow create: if (admin()) && valid_courses(request.resource.data) && created(request.resource.data);
       allow create: if admin() && valid_courses(request.resource.data) && restored(request.resource.data);
       allow update: if (admin()) && valid_courses(request.resource.data) && updated(request.resource.data);
@@ -419,6 +439,7 @@ service cloud.firestore {
     }
     match /calendarEvents/{id} {
       allow read: if active();
+      
       allow create: if (admin() || role('administracija_par') || (role('profesor') && assignedCourse(request.resource.data))) && valid_calendarEvents(request.resource.data) && created(request.resource.data);
       allow create: if admin() && valid_calendarEvents(request.resource.data) && restored(request.resource.data);
       allow update: if (admin() || role('administracija_par') || (instructor(resource.data) && assignedCourse(request.resource.data))) && valid_calendarEvents(request.resource.data) && updated(request.resource.data);
@@ -427,6 +448,7 @@ service cloud.firestore {
     }
     match /exams/{id} {
       allow read: if active() && profile().role in ['admin', 'dept_head', 'profesor', 'student'];
+      
       allow create: if (admin() || (role('profesor') && assignedCourse(request.resource.data))) && valid_exams(request.resource.data) && created(request.resource.data);
       allow create: if admin() && valid_exams(request.resource.data) && restored(request.resource.data);
       allow update: if (admin() || (instructor(resource.data) && assignedCourse(request.resource.data))) && valid_exams(request.resource.data) && updated(request.resource.data);
@@ -435,6 +457,7 @@ service cloud.firestore {
     }
     match /grades/{id} {
       allow read: if admin() || instructor(resource.data) || (role('student') && own(resource.data));
+      
       allow create: if (admin() || (role('profesor') && assignedCourse(request.resource.data) && enrolledStudent(request.resource.data))) && valid_grades(request.resource.data) && created(request.resource.data);
       allow create: if admin() && valid_grades(request.resource.data) && restored(request.resource.data);
       allow update: if (admin() || (instructor(resource.data) && assignedCourse(request.resource.data) && enrolledStudent(request.resource.data))) && valid_grades(request.resource.data) && updated(request.resource.data);
@@ -443,6 +466,7 @@ service cloud.firestore {
     }
     match /projects/{id} {
       allow read: if staff();
+      
       allow create: if (admin() || role('dept_head')) && valid_projects(request.resource.data) && created(request.resource.data);
       allow create: if admin() && valid_projects(request.resource.data) && restored(request.resource.data);
       allow update: if (admin() || role('dept_head')) && valid_projects(request.resource.data) && updated(request.resource.data);
@@ -451,6 +475,7 @@ service cloud.firestore {
     }
     match /research/{id} {
       allow read: if admin() || (staff() && own(resource.data));
+      
       allow create: if (admin() || (staff() && own(request.resource.data))) && valid_research(request.resource.data) && created(request.resource.data);
       allow create: if admin() && valid_research(request.resource.data) && restored(request.resource.data);
       allow update: if (admin() || (staff() && own(resource.data) && own(request.resource.data))) && valid_research(request.resource.data) && updated(request.resource.data);
@@ -459,6 +484,7 @@ service cloud.firestore {
     }
     match /labs/{id} {
       allow read: if admin() || role('lab_assistant') || role('student');
+      
       allow create: if (admin() || role('lab_assistant')) && valid_labs(request.resource.data) && created(request.resource.data);
       allow create: if admin() && valid_labs(request.resource.data) && restored(request.resource.data);
       allow update: if (admin() || role('lab_assistant')) && valid_labs(request.resource.data) && updated(request.resource.data);
@@ -467,6 +493,7 @@ service cloud.firestore {
     }
     match /documents/{id} {
       allow read: if active();
+      
       allow create: if (admin()) && valid_documents(request.resource.data) && created(request.resource.data);
       allow create: if admin() && valid_documents(request.resource.data) && restored(request.resource.data);
       allow update: if (admin()) && valid_documents(request.resource.data) && updated(request.resource.data);
@@ -475,6 +502,7 @@ service cloud.firestore {
     }
     match /alumniEvents/{id} {
       allow read: if admin() || role('alumni');
+      
       allow create: if (admin()) && valid_alumniEvents(request.resource.data) && created(request.resource.data);
       allow create: if admin() && valid_alumniEvents(request.resource.data) && restored(request.resource.data);
       allow update: if (admin()) && valid_alumniEvents(request.resource.data) && updated(request.resource.data);
@@ -483,6 +511,7 @@ service cloud.firestore {
     }
     match /requests/{id} {
       allow read: if admin() || (active() && profile().role in ['student', 'alumni'] && own(resource.data));
+      
       allow create: if (admin() || (active() && profile().role in ['student', 'alumni'] && own(request.resource.data) && request.resource.data.status == 'Na čekanju' && request.resource.data.response == '')) && valid_requests(request.resource.data) && created(request.resource.data);
       allow create: if admin() && valid_requests(request.resource.data) && restored(request.resource.data);
       allow update: if (admin()) && valid_requests(request.resource.data) && updated(request.resource.data);
@@ -491,6 +520,7 @@ service cloud.firestore {
     }
     match /finances/{id} {
       allow read: if admin() || (role('student') && own(resource.data));
+      
       allow create: if (admin()) && valid_finances(request.resource.data) && created(request.resource.data);
       allow create: if admin() && valid_finances(request.resource.data) && restored(request.resource.data);
       allow update: if (admin()) && valid_finances(request.resource.data) && updated(request.resource.data);
@@ -499,6 +529,7 @@ service cloud.firestore {
     }
     match /employeeSchedules/{id} {
       allow read: if admin() || (staff() && own(resource.data));
+      
       allow create: if (admin()) && valid_employeeSchedules(request.resource.data) && created(request.resource.data);
       allow create: if admin() && valid_employeeSchedules(request.resource.data) && restored(request.resource.data);
       allow update: if (admin()) && valid_employeeSchedules(request.resource.data) && updated(request.resource.data);
@@ -507,6 +538,7 @@ service cloud.firestore {
     }
     match /workEntries/{id} {
       allow read: if admin() || (staff() && own(resource.data));
+      
       allow create: if (admin() || (staff() && own(request.resource.data))) && valid_workEntries(request.resource.data) && created(request.resource.data);
       allow create: if admin() && valid_workEntries(request.resource.data) && restored(request.resource.data);
       allow update: if (admin() || (staff() && own(resource.data) && own(request.resource.data))) && valid_workEntries(request.resource.data) && updated(request.resource.data);
@@ -515,6 +547,7 @@ service cloud.firestore {
     }
     match /vacations/{id} {
       allow read: if admin() || (staff() && own(resource.data));
+      
       allow create: if (admin() || (staff() && own(request.resource.data) && request.resource.data.status == 'Na čekanju')) && valid_vacations(request.resource.data) && created(request.resource.data);
       allow create: if admin() && valid_vacations(request.resource.data) && restored(request.resource.data);
       allow update: if (admin()) && valid_vacations(request.resource.data) && updated(request.resource.data);
@@ -523,6 +556,7 @@ service cloud.firestore {
     }
     match /evaluations/{id} {
       allow read: if admin() || (!role('administracija_par') && own(resource.data));
+      
       allow create: if (!role('administracija_par') && own(request.resource.data)) && valid_evaluations(request.resource.data) && created(request.resource.data);
       allow create: if admin() && valid_evaluations(request.resource.data) && restored(request.resource.data);
       allow update: if (false) && valid_evaluations(request.resource.data) && updated(request.resource.data);
@@ -530,8 +564,9 @@ service cloud.firestore {
       allow delete: if admin();
     }
     match /notifications/{id} {
-      allow read: if admin() || own(resource.data) || broadcastVisible(resource.data);
-      allow create: if (admin() || officeBroadcast(request.resource.data) || (request.resource.data.get('audience','') == '' && teacherNotice(request.resource.data))) && valid_notifications(request.resource.data) && created(request.resource.data);
+      allow read: if admin() || own(resource.data) || broadcastVisible(resource.data) || courseNoticeAuthor(resource.data);
+      allow get: if role('profesor') && !exists(/databases/$(database)/documents/notifications/$(id));
+      allow create: if (admin() || (request.resource.data.get('sourceModule','') == 'courses' && manualCourseNotice(request.resource.data)) || officeBroadcast(request.resource.data) || (request.resource.data.get('audience','') == '' && teacherNotice(request.resource.data))) && valid_notifications(request.resource.data) && created(request.resource.data);
       allow create: if admin() && valid_notifications(request.resource.data) && restored(request.resource.data);
       allow update: if (admin()) && valid_notifications(request.resource.data) && updated(request.resource.data);
       allow update: if admin() && valid_notifications(request.resource.data) && updated(request.resource.data);

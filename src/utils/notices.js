@@ -4,10 +4,11 @@ export const noticeAudiences = Object.freeze({
   students_professors: "Studenti i profesori",
 });
 export function canSendAnnouncement(role) {
-  return ["admin", "administracija_par"].includes(role);
+  return ["admin", "administracija_par", "profesor"].includes(role);
 }
 export function audiencesFor(role) {
-  if (canSendAnnouncement(role)) return Object.keys(noticeAudiences);
+  if (["admin", "administracija_par"].includes(role))
+    return Object.keys(noticeAudiences);
   return ["student", "profesor"].includes(role)
     ? [role, "students_professors"]
     : [];
@@ -22,7 +23,7 @@ export function visibleNotice(row, role, uid) {
 export function validateNotice(values, role) {
   if (values.audience) {
     if (
-      !canSendAnnouncement(role) ||
+      !["admin", "administracija_par"].includes(role) ||
       !Object.hasOwn(noticeAudiences, values.audience) ||
       values.ownerUid ||
       values.sourceModule ||

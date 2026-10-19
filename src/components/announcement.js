@@ -1,7 +1,10 @@
+import { showTeacherAnnouncement } from "./teacher-announcement.js";
 import { openDialog, closeDialog } from "./dialog.js";
 import { escapeHTML as e, errorMessage } from "../utils/helpers.js";
 import { noticeAudiences, canSendAnnouncement } from "../utils/notices.js";
-export function showAnnouncement(context, onSaved) {
+export function showAnnouncement(context, onSaved, courseId = "") {
+  if (context.profile.role === "profesor")
+    return showTeacherAnnouncement(context, onSaved, courseId);
   if (!canSendAnnouncement(context.profile.role)) return;
   openDialog(
     "Pošalji obavijest",
