@@ -171,7 +171,11 @@ export class Records {
       (staffRoles.includes(role) &&
         ["workEntries", "vacations", "research"].includes(name));
     if (
-      !(canManage(role, name) || (!id && canAdd(role, name))) &&
+      !(
+        canManage(role, name) ||
+        (!id && canAdd(role, name)) ||
+        (role === "student" && name === "attendance")
+      ) &&
       (!ownCreation || (id && !["workEntries", "research"].includes(name)))
     )
       throw new Error("Nemate ovlasti za spremanje.");

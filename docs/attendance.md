@@ -8,7 +8,15 @@ Otvorite termin nastave i **Evidencija prisutnosti**, ili otvorite tab **Prisutn
 
 U tabu se prvo bira **Kolegij**, a zatim **Termin nastave**. Popis termina do tada je isključen i nakon odabira sadrži samo termine tog kolegija. Kad se evidencija otvori iz rasporeda, oba su odabira već postavljena. Student, način grupiranja, godina i datumski raspon nalaze se pod **Filtri**; Očisti filtre zadržava odabrani kolegij nastavnika. Osvježavanje zadržava odabire.
 
-Za svakog studenta odaberite Prisutan, Odsutan ili Opravdano odsutan i kliknite Spremi. Pogrešan unos može se vratiti na Nije evidentirano. Promjene se bilježe u povijesti. Spremanje ponovno provjerava aktualni termin i upis u transakciji, a ovlasti provjeravaju i Firestore pravila.
+Nastavnik, admin i AdministracijaPAR za svakog studenta odabiru Prisutan, Odsutan ili Opravdano odsutan i kliknu Spremi. Pogrešan unos može se vratiti na Nije evidentirano. Promjene se bilježe u povijesti. Spremanje ponovno provjerava aktualni termin i upis u transakciji, a ovlasti provjeravaju i Firestore pravila.
+
+## Samoprijava studenta
+
+Student u **Moja prisutnost → Prijava na nastavu** vidi gumb **Prisutan** samo za vlastite odobrene upise tijekom aktualnog termina. Iz detalja termina rasporeda također može otvoriti Moju prisutnost. Prijava počinje točno početkom nastave, a završetkom više nije moguća (početak uključen, završetak isključen). Koristi se Europe/Zagreb, uključujući ljetno i zimsko računanje vremena. Bez upisanog završetka nema samoprijave; nastavnik i ured i dalje mogu voditi evidenciju.
+
+Student može stvoriti samo vlastiti zapis Prisutan. Ne može označiti drugu osobu, upis na čekanju, drugi datum, promijeniti status niti izmijeniti postojeći zapis — čak ni nakon što nastavnik ispravi prisutnost. Nastavnik za svoju nastavu, admin i AdministracijaPAR za svu nastavu mogu naknadno ispraviti status. Takva ispravka ostaje zaključana studentu, uključujući vraćanje na Nije evidentirano.
+
+Vrijeme se provjerava i u Firestore pravilima prema `request.time`; promjena sata računala ili zaobilaženje gumba ne dopušta kasniju prijavu. Gumbi u otvorenom prikazu osvježavaju raspoloživost svakih 15 sekundi. Promjene drugih korisnika dohvaćaju se gumbom Osvježi. Svaki zapis zadržava izvornog autora i vrijeme nastanka; `markedByUid` i `markedByRole` označavaju posljednjeg urednika, a povijest čuva prije/poslije ispravke. Prikaz i detaljni CSV pokazuju je li posljednji unos napravio student, nastavnik ili ured. Stari zapisi ostaju čitljivi bez tih dodatnih polja.
 
 ## Statistika i izvoz
 
@@ -22,7 +30,8 @@ Postotak = prisutni / (prisutni + odsutni + opravdano odsutni). Ako nema evident
 
 - Admin pregledava i uređuje sve.
 - Nastavnik evidentira samo termine na kojima je dodijeljen, uključujući zajedničku nastavu; statistika je ograničena na njegove kolegije.
-- Student pregledava i izvozi vlastitu evidenciju, bez uređivanja. Pristup prati trenutačno povezivanje računa s upisom.
+- Student pregledava i izvozi vlastitu evidenciju te potvrđuje samo svoju prisutnost tijekom termina. Pristup prati trenutačno povezivanje računa s upisom.
+- AdministracijaPAR pregledava, ispravlja i izvozi cjelokupnu evidenciju. Pristup upisima za popis studenata je samo za čitanje. Ne može arhivirati prisutnost niti odlučivati o upisima.
 - Ostale uloge nemaju pristup ovoj evidenciji.
 
 Podaci su u kolekciji `attendance`, po jednom zapisu za kombinaciju termina i upisa. Modul je uključen u postojeći backup. Promjena nastavnika ne zahtijeva masovno ažuriranje svih zapisa prisutnosti: čitanje se provjerava prema aktualnim dodjelama kolegija.

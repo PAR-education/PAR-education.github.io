@@ -3,6 +3,7 @@ import { modules } from "../modules/catalog.js";
 const primary = {
   administracija_par: [
     "calendarEvents",
+    "attendance",
     "students",
     "employees",
     "courses",
@@ -51,6 +52,8 @@ export function navigationLabel(role, name) {
     return "Raspored";
   if (name === "grades" && role === "profesor") return "Ocjene studenata";
   if (name === "courses" && role === "profesor") return "Moji kolegiji";
+  if (name === "enrollments" && role === "administracija_par")
+    return "Upisi kolegija";
   if (name === "enrollments")
     return role === "profesor" ? "Studenti i upisi" : "Moji upisi";
   return personal[name] || modules[name]?.title || name;

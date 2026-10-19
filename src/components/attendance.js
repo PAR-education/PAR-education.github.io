@@ -1,5 +1,6 @@
 import { escapeHTML as e, errorMessage } from "../utils/helpers.js";
 import {
+  checkinOpen,
   attendanceStatuses,
   attendanceValues,
   attendanceId,
@@ -11,15 +12,23 @@ import {
 import { isInstructor } from "../utils/instructors.js";
 import { exportCSV, printReport } from "./export.js";
 import { actionMenu } from "./ui-controls.js";
+const attendanceSessions = new WeakMap();
+const attendanceTimers = new WeakMap();
 
 export async function mountAttendance(
   root,
   context,
-  isCurrent,
+  isCurrentView,
   initialEvent = "",
 ) {
+  clearInterval(attendanceTimers.get(root));
+  attendanceTimers.delete(root);
+  const session = {};
+  attendanceSessions.set(root, session);
+  const isCurrent = () =>
+    isCurrentView() && attendanceSessions.get(root) === session;
   const { repository, profile, user } = context,
-    staff = ["admin", "profesor"].includes(profile.role);
+    staff = ["admin", "administracija_par", "profesor"].includes(profile.role);
   const [allEvents, enrollments, initialRecords] = await Promise.all(
     ["calendarEvents", "enrollments", "attendance"].map((n) =>
       repository.listAll(n),
@@ -68,6 +77,7 @@ export async function mountAttendance(
       .map((year) => `<option>${e(year)}</option>`)
       .join("")}</select></label>
     <label>Od<input id="attendance-from" type="date"></label><label>Do<input id="attendance-to" type="date"></label><button type="button" class="button" id="attendance-clear-filters">Očisti filtre</button></div></details></div>
+    ${!staff ? '<section class="self-checkin"><h2>Prijava na nastavu</h2><div id="attendance-checkin"></div></section>' : ""}
     ${staff ? `<div class="backup-fields attendance-selection">${courseControl}<label>Termin nastave<select id="attendance-event" disabled></select></label></div>` : ""}
     <div id="attendance-message" role="status" aria-live="polite"></div>
     ${staff ? '<div id="attendance-roster"></div>' : ""}
@@ -82,7 +92,7 @@ export async function mountAttendance(
       $(id).value = value;
   }
   const initial = events.find((r) => r.id === initialEvent);
-  if (staff && initial) $("attendance-course").value = initial.courseId;
+  if (initial) $("attendance-course").value = initial.courseId;
   let summary = [],
     detail = [];
   function message(text, error = false) {
@@ -148,6 +158,11 @@ export async function mountAttendance(
           status:
             records.find((r) => r.eventId === ev.id && r.enrollmentId === en.id)
               ?.status || "Nije evidentirano",
+          editor: editorLabel(
+            records.find(
+              (r) => r.eventId === ev.id && r.enrollmentId === en.id,
+            ),
+          ),
         })),
     );
     const screenColumns = summaryColumns.filter(
@@ -164,7 +179,10 @@ export async function mountAttendance(
       })),
     );
     $("attendance-detail").innerHTML = table(detailColumns, detail);
-    if (!staff) return;
+    if (!staff) {
+      renderCheckin();
+      return;
+    }
     const previous = $("attendance-event").value;
     const sorted = ($("attendance-course").value ? eligible : [])
       .slice()
@@ -189,6 +207,59 @@ export async function mountAttendance(
     initialEvent = "";
     renderRoster();
   }
+  function renderCheckin() {
+    if (staff || !isCurrent()) return;
+    const current = events.filter(
+      (ev) =>
+        checkinOpen(ev) && enrollments.some((en) => enrollmentForEvent(en, ev)),
+    );
+    $("attendance-checkin").innerHTML = current.length
+      ? current
+          .map((event, index) => {
+            const enrollment = enrollments.find(
+              (en) => en.ownerUid === user.uid && enrollmentForEvent(en, event),
+            );
+            if (!enrollment) return "";
+            const saved = records.find(
+              (r) => r.eventId === event.id && r.enrollmentId === enrollment.id,
+            );
+            return `<article class="self-checkin-card"><div><strong>${e(event.title)}</strong><p>${e(event.time)}–${e(event.endTime)}h · ${e(event.online ? "Online" : event.room || "Dvorana nije određena")}</p>${saved ? `<p>${e(saved.status)}${editorLabel(saved) ? " · " + e(editorLabel(saved)) : ""}</p>` : ""}</div><button class="button primary" data-self-checkin="${index}" ${saved || busy ? "disabled" : ""}>${saved ? "Evidentirano" : "Prisutan"}</button></article>`;
+          })
+          .join("")
+      : '<p class="panel-note">Prijava je dostupna samo tijekom vašeg termina nastave (Europe/Zagreb). Termin mora imati upisan početak i završetak.</p>';
+    root.querySelectorAll("[data-self-checkin]").forEach((button) =>
+      button.addEventListener("click", async () => {
+        if (busy || !isCurrent()) return;
+        const event = current[Number(button.dataset.selfCheckin)];
+        const enrollment = enrollments.find(
+          (en) => en.ownerUid === user.uid && enrollmentForEvent(en, event),
+        );
+        busy = true;
+        button.disabled = true;
+        try {
+          await repository.save(
+            "attendance",
+            {
+              eventId: event.id,
+              enrollmentId: enrollment.id,
+              status: "Prisutan",
+            },
+            attendanceId(event.id, enrollment.id),
+          );
+          if (!isCurrent()) return;
+          records = await repository.listAll("attendance");
+          if (!isCurrent()) return;
+          render();
+          message("Vaša prisutnost je potvrđena.");
+        } catch (error) {
+          if (isCurrent()) message(errorMessage(error), true);
+        } finally {
+          busy = false;
+          if (isCurrent()) renderCheckin();
+        }
+      }),
+    );
+  }
   function renderRoster() {
     const event = events.find((ev) => ev.id === $("attendance-event").value);
     if (!event) {
@@ -204,7 +275,7 @@ export async function mountAttendance(
             const saved = records.find(
               (r) => r.eventId === event.id && r.enrollmentId === en.id,
             );
-            return `<tr><td>${e(en.ownerName || "Student")}</td><td><select data-attendance-status="${i}" aria-label="Prisutnost: ${e(en.ownerName)}"><option value="Nije evidentirano">Nije evidentirano</option>${attendanceStatuses.map((status) => `<option value="${e(status)}" ${saved?.status === status ? "selected" : ""}>${e(status)}</option>`).join("")}</select></td><td><button class="button" data-attendance-save="${i}">Spremi</button></td></tr>`;
+            return `<tr><td>${e(en.ownerName || "Student")}${editorLabel(saved) ? `<small class="attendance-editor">${e(editorLabel(saved))}</small>` : ""}</td><td><select data-attendance-status="${i}" aria-label="Prisutnost: ${e(en.ownerName)}"><option value="Nije evidentirano">Nije evidentirano</option>${attendanceStatuses.map((status) => `<option value="${e(status)}" ${saved?.status === status ? "selected" : ""}>${e(status)}</option>`).join("")}</select></td><td><button class="button" data-attendance-save="${i}">Spremi</button></td></tr>`;
           })
           .join("")}</tbody></table></div>`
       : '<p class="panel-note">Nema odobrenih upisa za ovaj termin i odabrane filtre.</p>';
@@ -269,7 +340,7 @@ export async function mountAttendance(
       await mountAttendance(
         root,
         context,
-        isCurrent,
+        isCurrentView,
         $("attendance-event")?.value,
       );
     } catch (error) {
@@ -295,6 +366,23 @@ export async function mountAttendance(
     exportCSV("prisutnost-evidencija", detailColumns, detail),
   );
   render();
+  if (!staff) {
+    const timer = setInterval(() => {
+      if (!root.isConnected || !isCurrent()) clearInterval(timer);
+      else if (!busy) renderCheckin();
+    }, 15000);
+    attendanceTimers.set(root, timer);
+  }
+}
+function editorLabel(record) {
+  return (
+    {
+      student: "Prijavio student",
+      profesor: "Evidentirao nastavnik",
+      administracija_par: "Evidentirao studentski ured",
+      admin: "Evidentirao administrator",
+    }[record?.markedByRole] || ""
+  );
 }
 const summaryColumns = Object.entries({
   student: "Student",
@@ -313,6 +401,7 @@ const detailColumns = Object.entries({
   year: "Akademska godina",
   date: "Datum",
   time: "Početak",
+  editor: "Evidentirao",
   status: "Prisutnost",
 }).map(([key, label]) => ({ key, label }));
 function table(columns, rows) {

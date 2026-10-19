@@ -20,6 +20,10 @@ export async function saveAttendanceRecord(sdk, db, user, profile, values, id) {
       user.uid,
     );
     const before = previous.exists() ? previous.data() : null;
+    if (profile.role === "student" && before)
+      throw new Error(
+        "Prisutnost je već evidentirana. Ispravak radi nastavnik ili studentski ured.",
+      );
     const after = {
       ...data,
       createdAt: before?.createdAt || sdk.serverTimestamp(),

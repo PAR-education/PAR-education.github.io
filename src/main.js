@@ -893,11 +893,12 @@ function showDetails(name, record) {
   if (
     name === "calendarEvents" &&
     canRead(role, "attendance") &&
-    canEdit(name, record)
+    (canEdit(name, record) || role === "student")
   ) {
     const button = document.createElement("button");
     button.className = "button primary";
-    button.textContent = "Evidencija prisutnosti";
+    button.textContent =
+      role === "student" ? "Moja prisutnost" : "Evidencija prisutnosti";
     button.addEventListener("click", () => {
       attendanceEvent = record.id;
       closeDialog();

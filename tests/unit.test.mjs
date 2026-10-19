@@ -408,6 +408,7 @@ test("AdministracijaPAR gets a focused dashboard, create-only people and schedul
   const nav = roleNavigation(role);
   assert.deepEqual(nav.primary, [
     "calendarEvents",
+    "attendance",
     "students",
     "employees",
     "courses",
@@ -418,8 +419,7 @@ test("AdministracijaPAR gets a focused dashboard, create-only people and schedul
     "users",
     "grades",
     "finances",
-    "attendance",
-    "enrollments",
+
     "projects",
     "evaluations",
     "workEntries",
@@ -604,4 +604,153 @@ test("Mini calendar uses Monday-first complete weeks, including leap years", asy
   const nov = monthDays("2026-11");
   assert.equal(nov[6], "2026-11-01");
   assert.equal(nov.filter(Boolean).length, 30);
+});
+
+test("Self check-in is own approved attendance, inside the exact Zagreb lesson window", async () => {
+  const { checkinOpen, attendanceValues } =
+    await import("../src/utils/attendance.js");
+  const event = {
+    id: "e",
+    courseId: "c",
+    title: "Class",
+    date: "2026-10-19",
+    time: "15:45",
+    endTime: "17:15",
+    academicYear: "2026/2027",
+    instructorUid: "teacher",
+  };
+  const en = {
+    id: "en",
+    courseId: "c",
+    ownerUid: "student",
+    ownerName: "Student",
+    status: "Odobreno",
+    academicYear: "2026/2027",
+  };
+  const profile = { role: "student" };
+  assert.equal(checkinOpen(event, new Date("2026-10-19T13:44:59.999Z")), false);
+  assert.equal(checkinOpen(event, new Date("2026-10-19T13:45:00.000Z")), true);
+  assert.equal(checkinOpen(event, new Date("2026-10-19T15:14:59.999Z")), true);
+  assert.equal(checkinOpen(event, new Date("2026-10-19T15:15:00.000Z")), false);
+  assert.equal(
+    checkinOpen({ ...event, endTime: "" }, new Date("2026-10-19T14:00:00Z")),
+    false,
+  );
+  assert.equal(
+    checkinOpen(
+      { ...event, date: "2026-10-20" },
+      new Date("2026-10-19T14:00:00Z"),
+    ),
+    false,
+  );
+  const record = attendanceValues(
+    event,
+    en,
+    "Prisutan",
+    profile,
+    "student",
+    new Date("2026-10-19T14:00:00Z"),
+  );
+  assert.equal(record.markedByUid, "student");
+  assert.equal(record.markedByRole, "student");
+  for (const status of ["Odsutan", "Opravdano odsutan", "Nije evidentirano"])
+    assert.throws(() =>
+      attendanceValues(
+        event,
+        en,
+        status,
+        profile,
+        "student",
+        new Date("2026-10-19T14:00:00Z"),
+      ),
+    );
+  assert.throws(() =>
+    attendanceValues(
+      event,
+      { ...en, ownerUid: "other" },
+      "Prisutan",
+      profile,
+      "student",
+      new Date("2026-10-19T14:00:00Z"),
+    ),
+  );
+  assert.throws(() =>
+    attendanceValues(
+      event,
+      { ...en, status: "Na čekanju" },
+      "Prisutan",
+      profile,
+      "student",
+      new Date("2026-10-19T14:00:00Z"),
+    ),
+  );
+  assert.throws(
+    () =>
+      attendanceValues(
+        event,
+        en,
+        "Prisutan",
+        profile,
+        "student",
+        new Date("2026-10-19T13:44:00Z"),
+      ),
+    /tijekom/,
+  );
+  assert.equal(
+    attendanceValues(
+      event,
+      en,
+      "Odsutan",
+      { role: "administracija_par" },
+      "office",
+      new Date("2027-01-01T00:00:00Z"),
+    ).markedByRole,
+    "administracija_par",
+  );
+});
+
+test("Self check-in follows winter offset and Zagreb date at UTC midnight", async () => {
+  const { checkinOpen } = await import("../src/utils/attendance.js");
+  assert.equal(
+    checkinOpen(
+      { date: "2026-12-01", time: "08:00", endTime: "09:00" },
+      new Date("2026-12-01T07:30:00Z"),
+    ),
+    true,
+  );
+  assert.equal(
+    checkinOpen(
+      { date: "2026-07-02", time: "00:00", endTime: "01:00" },
+      new Date("2026-07-01T22:30:00Z"),
+    ),
+    true,
+  );
+  assert.equal(
+    checkinOpen(
+      { date: "2026-07-01", time: "00:00", endTime: "01:00" },
+      new Date("2026-07-01T22:30:00Z"),
+    ),
+    false,
+  );
+  assert.equal(
+    checkinOpen(
+      { date: "2026-03-29", time: "03:00", endTime: "04:00" },
+      new Date("2026-03-29T01:00:00Z"),
+    ),
+    true,
+  );
+  assert.equal(
+    checkinOpen(
+      { date: "2026-10-25", time: "02:00", endTime: "03:00" },
+      new Date("2026-10-25T00:30:00Z"),
+    ),
+    true,
+  );
+  assert.equal(
+    checkinOpen(
+      { date: "2026-10-25", time: "02:00", endTime: "03:00" },
+      new Date("2026-10-25T01:30:00Z"),
+    ),
+    true,
+  );
 });

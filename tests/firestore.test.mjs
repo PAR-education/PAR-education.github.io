@@ -1304,8 +1304,6 @@ test("AdministracijaPAR can add dossiers across departments and schedule teachin
     "users",
     "grades",
     "finances",
-    "attendance",
-    "enrollments",
     "projects",
     "evaluations",
     "auditLog",
@@ -1455,4 +1453,292 @@ test("Broadcast notices are office-created, role-scoped, queryable and preserve 
     ),
   );
   assert.equal(history.size, 1);
+});
+
+test("Students check in once during server-time lesson; staff corrections cannot be undone", async (t) => {
+  const sdk = await import("firebase/firestore");
+  const { saveAttendanceRecord } =
+    await import("../src/services/attendance.js");
+  const { attendanceValues, attendanceId } =
+    await import("../src/utils/attendance.js");
+  const { zagrebDate } = await import("../src/utils/calendar.js");
+  const now = new Date(),
+    date = zagrebDate(now);
+  if (
+    new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Europe/Zagreb",
+      hour: "2-digit",
+      minute: "2-digit",
+      hourCycle: "h23",
+    }).format(now) === "23:59"
+  )
+    return t.skip("No same-day class can end later than 23:59");
+  const admin = database("admin"),
+    student = database("student-a"),
+    office = database("office");
+  const withoutId = ({ id, ...data }) => data;
+  const event = {
+    id: "checkin-live",
+    courseId: "c1",
+    title: "Business",
+    date,
+    time: "00:00",
+    endTime: "23:59",
+    instructorUid: "teacher",
+    instructorUids: ["teacher"],
+  };
+  await setDoc(doc(admin, "calendarEvents", event.id), {
+    ...withoutId(event),
+    ...meta(),
+    createdBy: "admin",
+  });
+  const enrollment = {
+    ...(await getDoc(doc(admin, "enrollments", "c1__student-a"))).data(),
+    id: "c1__student-a",
+  };
+  const id = attendanceId(event.id, enrollment.id),
+    values = {
+      eventId: event.id,
+      enrollmentId: enrollment.id,
+      status: "Prisutan",
+    };
+  await saveAttendanceRecord(
+    sdk,
+    student,
+    { uid: "student-a" },
+    { role: "student" },
+    values,
+    id,
+  );
+  const saved = (await getDoc(doc(student, "attendance", id))).data();
+  assert.equal(saved.markedByRole, "student");
+  assert.equal(saved.createdBy, "student-a");
+  await assertFails(getDoc(doc(database("student-b"), "attendance", id)));
+  await assert.rejects(
+    saveAttendanceRecord(
+      sdk,
+      student,
+      { uid: "student-a" },
+      { role: "student" },
+      values,
+      id,
+    ),
+    /već evidentirana/,
+  );
+  await assertFails(
+    updateDoc(doc(student, "attendance", id), {
+      status: "Odsutan",
+      updatedAt: serverTimestamp(),
+    }),
+  );
+  await assertFails(deleteDoc(doc(student, "attendance", id)));
+  await saveAttendanceRecord(
+    sdk,
+    database("teacher"),
+    { uid: "teacher" },
+    { role: "profesor" },
+    { ...values, status: "Odsutan" },
+    id,
+  );
+  await assertFails(
+    updateDoc(doc(student, "attendance", id), {
+      status: "Prisutan",
+      markedByRole: "student",
+      markedByUid: "student-a",
+      updatedAt: serverTimestamp(),
+    }),
+  );
+  await saveAttendanceRecord(
+    sdk,
+    office,
+    { uid: "office" },
+    { role: "administracija_par" },
+    { ...values, status: "Opravdano odsutan" },
+    id,
+  );
+  const corrected = (await getDoc(doc(student, "attendance", id))).data();
+  assert.equal(corrected.status, "Opravdano odsutan");
+  assert.equal(corrected.markedByRole, "administracija_par");
+  assert.equal(corrected.createdBy, "student-a");
+  await assertSucceeds(getDocs(collection(office, "attendance")));
+  await assertSucceeds(getDocs(collection(office, "enrollments")));
+  const base = attendanceValues(
+    event,
+    enrollment,
+    "Prisutan",
+    { role: "admin" },
+    "admin",
+  );
+  const raw = (id, overrides = {}) =>
+    setDoc(doc(student, "attendance", id), {
+      ...base,
+      markedByUid: "student-a",
+      markedByRole: "student",
+      ...overrides,
+      createdBy: "student-a",
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+  for (const [suffix, extra] of [
+    ["past", { date: "2000-01-01" }],
+    ["future", { date: "2099-01-01" }],
+    ["missing-end", { endTime: "" }],
+  ]) {
+    const e = { ...event, id: "checkin-" + suffix, ...extra };
+    if (suffix === "missing-end") delete e.endTime;
+    await setDoc(doc(admin, "calendarEvents", e.id), {
+      ...withoutId(e),
+      ...meta(),
+      createdBy: "admin",
+    });
+    await assertFails(
+      raw(attendanceId(e.id, enrollment.id), { eventId: e.id, date: e.date }),
+    );
+  }
+  const clock = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Europe/Zagreb",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).format(now);
+  const closed = {
+    ...event,
+    id: "checkin-closed",
+    time: clock === "00:00" ? "01:00" : "00:00",
+    endTime: clock === "00:00" ? "01:01" : "00:01",
+  };
+  await setDoc(doc(admin, "calendarEvents", closed.id), {
+    ...withoutId(closed),
+    ...meta(),
+    createdBy: "admin",
+  });
+  await assertFails(
+    raw(attendanceId(closed.id, enrollment.id), { eventId: closed.id }),
+  );
+  const another = { ...event, id: "checkin-forged" };
+  await setDoc(doc(admin, "calendarEvents", another.id), {
+    ...withoutId(another),
+    ...meta(),
+    createdBy: "admin",
+  });
+  await assertFails(
+    raw(attendanceId(another.id, enrollment.id), {
+      eventId: another.id,
+      status: "Odsutan",
+    }),
+  );
+  await assertFails(
+    raw(attendanceId(another.id, enrollment.id), {
+      eventId: another.id,
+      markedByRole: "profesor",
+    }),
+  );
+  await assertFails(
+    raw(attendanceId(another.id, enrollment.id), {
+      eventId: another.id,
+      ownerUid: "student-b",
+    }),
+  );
+  const foreignEnrollment = {
+    ...withoutId(enrollment),
+    ownerUid: "student-b",
+    ownerName: "Other student",
+    ...meta(),
+    createdBy: "admin",
+  };
+  await setDoc(
+    doc(admin, "enrollments", "foreign-approved"),
+    foreignEnrollment,
+  );
+  await assertFails(
+    raw(attendanceId(another.id, "foreign-approved"), {
+      eventId: another.id,
+      enrollmentId: "foreign-approved",
+      ownerUid: "student-b",
+      studentName: "Other student",
+    }),
+  );
+  await assertFails(raw("noncanonical-id", { eventId: another.id }));
+  await updateDoc(doc(admin, "enrollments", enrollment.id), {
+    status: "Na čekanju",
+    updatedAt: serverTimestamp(),
+  });
+  await assertFails(
+    raw(attendanceId(another.id, enrollment.id), { eventId: another.id }),
+  );
+  const logs = await getDocs(
+    query(collection(admin, "auditLog"), where("recordId", "==", id)),
+  );
+  assert.equal(logs.size, 3);
+});
+
+test("Server Zagreb clock handles winter, summer, UTC midnight and both DST transitions", async () => {
+  const original = readFileSync("firebase/firestore.rules", "utf8");
+  // Test-only rule exercises the exact production helper; never written to the deployed rules file.
+  const harness = original.replace(
+    "match /{document=**}",
+    "match /clockProof/{id} { allow get: if zagrebClock(resource.data.utc).toMillis() == resource.data.expected; }\n    match /windowProof/{id} { allow get: if attendanceWindow(resource.data.event,resource.data.utc) == resource.data.expected; }\n    match /{document=**}",
+  );
+  const clockEnv = await initializeTestEnvironment({
+    projectId: "demo-par-attendance-clock",
+    firestore: { host: "127.0.0.1", port: 8080, rules: harness },
+  });
+  try {
+    const examples = [
+      ["2026-01-01T00:00:00Z", "2026-01-01T01:00:00Z"],
+      ["2026-07-01T22:30:00Z", "2026-07-02T00:30:00Z"],
+      ["2026-03-29T00:59:59Z", "2026-03-29T01:59:59Z"],
+      ["2026-03-29T01:00:00Z", "2026-03-29T03:00:00Z"],
+      ["2026-10-25T00:59:59Z", "2026-10-25T02:59:59Z"],
+      ["2026-10-25T01:00:00Z", "2026-10-25T02:00:00Z"],
+      ["2026-12-31T23:30:00Z", "2027-01-01T00:30:00Z"],
+      ["2027-03-28T01:00:00Z", "2027-03-28T03:00:00Z"],
+    ];
+    const windowEvent = { date: "2026-10-19", time: "15:45", endTime: "17:15" };
+    const windows = [
+      ["2026-10-19T13:44:59.999Z", false],
+      ["2026-10-19T13:45:00Z", true],
+      ["2026-10-19T15:14:59.999Z", true],
+      ["2026-10-19T15:15:00Z", false],
+      ["2026-10-18T14:00:00Z", false],
+      ["2026-10-20T14:00:00Z", false],
+    ];
+    await clockEnv.withSecurityRulesDisabled(async (context) => {
+      for (const [i, [utc, local]] of examples.entries())
+        await setDoc(doc(context.firestore(), "clockProof", String(i)), {
+          utc: Timestamp.fromDate(new Date(utc)),
+          expected: Date.parse(local),
+        });
+    });
+    await clockEnv.withSecurityRulesDisabled(async (context) => {
+      for (const [i, [utc, expected]] of windows.entries())
+        await setDoc(doc(context.firestore(), "windowProof", String(i)), {
+          event: windowEvent,
+          utc: Timestamp.fromDate(new Date(utc)),
+          expected,
+        });
+    });
+    for (const i of windows.keys())
+      await assertSucceeds(
+        getDoc(
+          doc(
+            clockEnv.unauthenticatedContext().firestore(),
+            "windowProof",
+            String(i),
+          ),
+        ),
+      );
+    for (const i of examples.keys())
+      await assertSucceeds(
+        getDoc(
+          doc(
+            clockEnv.unauthenticatedContext().firestore(),
+            "clockProof",
+            String(i),
+          ),
+        ),
+      );
+  } finally {
+    await clockEnv.cleanup();
+  }
 });

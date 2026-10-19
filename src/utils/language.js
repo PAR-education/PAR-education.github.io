@@ -1,5 +1,15 @@
 // UI text only. Stored values, IDs and imported course names are never rewritten.
 const words = {
+  "Prijava na nastavu": "Class check-in",
+  Evidentirano: "Recorded",
+  Evidentirao: "Recorded by",
+  "Prijavio student": "Student check-in",
+  "Evidentirao nastavnik": "Recorded by professor",
+  "Evidentirao studentski ured": "Recorded by student office",
+  "Evidentirao administrator": "Recorded by administrator",
+  "Vaša prisutnost je potvrđena.": "Your attendance has been confirmed.",
+  "Prijava je dostupna samo tijekom vašeg termina nastave (Europe/Zagreb). Termin mora imati upisan početak i završetak.":
+    "Check-in is available only during your class (Europe/Zagreb). Both start and end times are required.",
   "Studentski ured": "Student office",
   "Profesori i zaposlenici": "Professors and staff",
   "Dodaj termin": "Add class",

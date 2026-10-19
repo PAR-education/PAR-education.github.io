@@ -1,5 +1,6 @@
 import { enrolledForEvent, courseYearKey } from "./academic-year.js";
 import { isInstructor, instructorFields } from "./instructors.js";
+import { zagrebDate } from "./calendar.js";
 export const attendanceStatuses = ["Prisutan", "Odsutan", "Opravdano odsutan"];
 export const studentKey = (row) => row.studentId || row.ownerUid || row.id;
 export function enrollmentForEvent(enrollment, event) {
@@ -8,18 +9,56 @@ export function enrollmentForEvent(enrollment, event) {
     enrolledForEvent(new Set([courseYearKey(enrollment)]), event)
   );
 }
-export function attendanceValues(event, enrollment, status, profile, uid) {
+export function checkinOpen(event, now = new Date()) {
+  if (
+    !event.date ||
+    !/^([01]\d|2[0-3]):[0-5]\d$/.test(event.time || "") ||
+    !/^([01]\d|2[0-3]):[0-5]\d$/.test(event.endTime || "") ||
+    event.endTime <= event.time
+  )
+    return false;
+  try {
+    const clock = new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Europe/Zagreb",
+      hourCycle: "h23",
+      hour: "2-digit",
+      minute: "2-digit",
+    }).format(now);
+    return (
+      zagrebDate(now) === event.date &&
+      clock >= event.time &&
+      clock < event.endTime
+    );
+  } catch {
+    return false;
+  }
+}
+export function attendanceValues(
+  event,
+  enrollment,
+  status,
+  profile,
+  uid,
+  now = new Date(),
+) {
   if (!attendanceStatuses.includes(status) && status !== "Nije evidentirano")
     throw new Error("Odaberite prisutnost.");
   if (
     !(
-      profile.role === "admin" ||
+      ["admin", "administracija_par"].includes(profile.role) ||
+      (profile.role === "student" &&
+        enrollment.ownerUid === uid &&
+        status === "Prisutan") ||
       (profile.role === "profesor" && isInstructor(event, uid))
     )
   )
     throw new Error("Nemate ovlasti za ovu nastavu.");
   if (!enrollmentForEvent(enrollment, event))
     throw new Error("Student nema odobren upis za taj kolegij i godinu.");
+  if (profile.role === "student" && !checkinOpen(event, now))
+    throw new Error(
+      "Prisutnost možete potvrditi samo tijekom svojeg termina nastave (Europe/Zagreb).",
+    );
   return {
     eventId: event.id,
     enrollmentId: enrollment.id,
@@ -32,6 +71,8 @@ export function attendanceValues(event, enrollment, status, profile, uid) {
     academicYear: event.academicYear || enrollment.academicYear || "",
     ...instructorFields(event),
     status,
+    markedByUid: uid,
+    markedByRole: profile.role,
   };
 }
 export function attendanceId(eventId, enrollmentId) {

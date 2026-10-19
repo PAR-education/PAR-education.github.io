@@ -54,6 +54,16 @@ export const modules = {
       text("studentId", "Student", false),
       text("ownerUid", "Korisnički račun", false),
       text("studentName", "Student"),
+      text("markedByUid", "Evidentirao (račun)", false),
+      {
+        ...select("markedByRole", "Evidentirao (uloga)", [
+          "admin",
+          "administracija_par",
+          "profesor",
+          "student",
+        ]),
+        required: false,
+      },
       course,
       text("courseTitle", "Kolegij"),
       date("date"),

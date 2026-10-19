@@ -267,34 +267,59 @@ for (const [name, policy] of Object.entries(policies)) {
     }\n`;
 }
 matches += `
-    function attendanceSource(d, id) {
-      let event = get(/databases/$(database)/documents/calendarEvents/$(d.eventId)).data;
-      let enrollment = get(/databases/$(database)/documents/enrollments/$(d.enrollmentId)).data;
+    // Europe/Zagreb: EU summer time starts/ends at 01:00 UTC on the last Sunday of March/October.
+    function zagrebClock(at) {
+      let march = timestamp.date(at.year(), 3, 31);
+      let october = timestamp.date(at.year(), 10, 31);
+      let summerStart = march - duration.value(march.dayOfWeek() % 7, 'd') + duration.value(1, 'h');
+      let summerEnd = october - duration.value(october.dayOfWeek() % 7, 'd') + duration.value(1, 'h');
+      return at + duration.value(at >= summerStart && at < summerEnd ? 2 : 1, 'h');
+    }
+    function attendanceSource(d, id, event, enrollment) {
       return id == d.eventId + '__' + d.enrollmentId
-        && instructor(event) && enrollment.status == 'Odobreno'
+        && enrollment.status == 'Odobreno'
         && enrollment.courseId == event.courseId && d.courseId == event.courseId
         && (enrollment.get('academicYear','') == '' || enrollment.get('academicYear','') == event.get('academicYear',''))
         && d.ownerUid == enrollment.get('ownerUid','') && d.studentId == enrollment.get('studentId','')
         && d.studentName == enrollment.ownerName && d.courseTitle == event.title && d.date == event.date
         && d.academicYear == event.get('academicYear', enrollment.get('academicYear',''))
         && d.instructorUid == event.get('instructorUid','')
-        && d.instructorUids == event.get('instructorUids', [event.get('instructorUid','')]);
+        && d.instructorUids == event.get('instructorUids', [event.get('instructorUid','')])
+        && d.markedByUid == request.auth.uid && d.markedByRole == profile().role;
+    }
+    function attendanceWindow(event, at) {
+      let clock = zagrebClock(at);
+      let date = event.date.split('-');
+      let start = event.time.split(':');
+      let end = event.endTime.split(':');
+      let minute = clock.hours() * 60 + clock.minutes();
+      return clock.year() == int(date[0]) && clock.month() == int(date[1]) && clock.day() == int(date[2])
+        && minute >= int(start[0]) * 60 + int(start[1]) && minute < int(end[0]) * 60 + int(end[1]);
+    }
+    function attendanceWriter(d, id, selfAllowed) {
+      let enrollment = get(/databases/$(database)/documents/enrollments/$(d.enrollmentId)).data;
+      let event = get(/databases/$(database)/documents/calendarEvents/$(d.eventId)).data;
+      let r = profile().role;
+      return (r == 'administracija_par' || (r == 'profesor' && assignedUid(event))
+        || (selfAllowed && r == 'student' && enrollment.get('ownerUid','') == request.auth.uid && d.status == 'Prisutan'
+          && event.get('endTime','') != '' && attendanceWindow(event,request.time)))
+        && attendanceSource(d,id,event,enrollment);
     }
     function attendanceReader(d) {
-      return admin() || (role('profesor') && instructor(get(/databases/$(database)/documents/courses/$(d.courseId)).data))
+      return admin() || role('administracija_par') || (role('profesor') && instructor(get(/databases/$(database)/documents/courses/$(d.courseId)).data))
         || (role('student') && own(get(/databases/$(database)/documents/enrollments/$(d.enrollmentId)).data));
     }
     match /attendance/{id} {
       allow list: if attendanceReader(resource.data);
       allow get: if attendanceReader(resource.data)
-        || (role('profesor') && !exists(/databases/$(database)/documents/attendance/$(id)));
-      allow create: if valid_attendance(request.resource.data) && created(request.resource.data)
-        && (admin() || attendanceSource(request.resource.data,id));
+        || (active() && profile().role in ['profesor','student'] && !exists(/databases/$(database)/documents/attendance/$(id)));
+      allow create: if (admin() || (active() && attendanceWriter(request.resource.data,id,true)))
+        && valid_attendance(request.resource.data) && created(request.resource.data);
       allow create: if admin() && valid_attendance(request.resource.data) && restored(request.resource.data);
-      allow update: if valid_attendance(request.resource.data) && updated(request.resource.data)
-        && (admin() || (attendanceSource(request.resource.data,id)
+      allow update: if (admin() || (active() && attendanceWriter(request.resource.data,id,false)
           && request.resource.data.eventId == resource.data.eventId
-          && request.resource.data.enrollmentId == resource.data.enrollmentId));
+          && request.resource.data.enrollmentId == resource.data.enrollmentId))
+        && valid_attendance(request.resource.data) && updated(request.resource.data);
       allow delete: if admin();
     }
     match /calendarLocks/{date} {
@@ -334,7 +359,7 @@ matches += `
 
 matches += `
     match /enrollments/{id} {
-      allow read: if admin() || instructor(resource.data) || (role('student') && own(resource.data));
+      allow read: if admin() || role('administracija_par') || instructor(resource.data) || (role('student') && own(resource.data));
       allow create: if admin() && id.matches('^template-.+$') && valid_enrollments(request.resource.data) && created(request.resource.data);
       allow create: if admin() && valid_enrollments(request.resource.data) && restored(request.resource.data);
       allow update: if admin() && valid_enrollments(request.resource.data) && updated(request.resource.data);

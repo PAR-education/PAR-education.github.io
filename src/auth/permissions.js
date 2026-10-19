@@ -10,7 +10,7 @@ export const roles = Object.freeze({
 });
 export const staffRoles = ["admin", "dept_head", "profesor", "lab_assistant"];
 const readers = {
-  attendance: ["admin", "profesor", "student"],
+  attendance: ["admin", "administracija_par", "profesor", "student"],
   rooms: Object.keys(roles),
   students: ["admin", "administracija_par", "dept_head"],
   employees: ["admin", "administracija_par", "dept_head"],
@@ -28,7 +28,7 @@ const readers = {
   employeeSchedules: staffRoles,
   workEntries: staffRoles,
   vacations: staffRoles,
-  enrollments: ["admin", "profesor", "student"],
+  enrollments: ["admin", "administracija_par", "profesor", "student"],
   examBookings: ["admin", "profesor", "student"],
   labBookings: ["admin", "lab_assistant", "student"],
   evaluations: Object.keys(roles),
@@ -36,7 +36,7 @@ const readers = {
   users: ["admin"],
 };
 const writers = {
-  attendance: ["admin", "profesor"],
+  attendance: ["admin", "administracija_par", "profesor"],
   courses: ["admin"],
   calendarEvents: ["admin", "administracija_par", "profesor"],
   exams: ["admin", "profesor"],
@@ -51,6 +51,8 @@ const writers = {
 export function canRead(role, collection) {
   if (role === "administracija_par")
     return [
+      "attendance",
+      "enrollments",
       "students",
       "employees",
       "calendarEvents",
@@ -100,7 +102,12 @@ export function canImport(role, name) {
   return false;
 }
 export function scopeFor(role, collection) {
-  if (role === "admin") return null;
+  if (
+    role === "admin" ||
+    (role === "administracija_par" &&
+      ["attendance", "enrollments"].includes(collection))
+  )
+    return null;
   if (role === "lab_assistant" && collection === "labBookings") return null;
   if (["students", "employees"].includes(collection) && role === "dept_head")
     return "departmentId";

@@ -114,7 +114,11 @@ export class DemoRecords {
         ["workEntries", "vacations", "research"].includes(name));
     if (
       !this.profile.active ||
-      (!(canManage(role, name) || (!id && canAdd(role, name))) &&
+      (!(
+        canManage(role, name) ||
+        (!id && canAdd(role, name)) ||
+        (role === "student" && name === "attendance")
+      ) &&
         (!ownCreation || (id && !["workEntries", "research"].includes(name))))
     )
       throw new Error("Nemate ovlasti za spremanje.");
@@ -141,6 +145,10 @@ export class DemoRecords {
       );
     }
     const old = this.data[name].find((row) => row.id === id);
+    if (name === "attendance" && role === "student" && old)
+      throw new Error(
+        "Prisutnost je već evidentirana. Ispravak radi nastavnik ili studentski ured.",
+      );
     if (options.expected && (!old || revisionOf(old) !== options.expected))
       throw new Error(
         "Raspored je u međuvremenu izmijenjen. Osvježite prikaz.",
