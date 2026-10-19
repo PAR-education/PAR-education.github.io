@@ -210,14 +210,14 @@ export function mountCalendarView(root, events, options) {
         ...visible.map((r) => minutes(r.time) + durationOf(r)),
       );
     const card = (r) =>
-      `<button class="calendar-lesson" data-calendar-id="${e(r.id)}" title="${e([r.title, r.time, r.endTime, r.room, r.instructorName, r.study, r.group, r.teachingType].filter(Boolean).join(" · "))}"><strong>${e(r.title)}</strong><span>${e(r.time)}–${e(r.endTime || timeAt(minutes(r.time) + durationOf(r)))}</span><span>${e(r.room || "Dvorana nije određena")} · ${e(r.instructorName || "Nastavnik nije naveden")}</span><small>${e([r.study, r.group, r.teachingType].filter(Boolean).join(" · "))}</small></button>`;
+      `<button class="calendar-lesson ${r.online ? "is-online" : ""}" data-calendar-id="${e(r.id)}" title="${e([r.title, r.time, r.endTime, r.room, r.instructorName, r.study, r.group, r.teachingType, r.online ? "Online" : "", r.description].filter(Boolean).join(" · "))}"><strong>${e(r.title)}</strong>${r.online ? '<small class="online-label">Online</small>' : ""}${r.description ? "<small>Napomena · otvori detalje</small>" : ""}<span>${e(r.time)}–${e(r.endTime || timeAt(minutes(r.time) + durationOf(r)))}</span><span>${e(r.online ? "Online" + (r.room ? " · " + r.room : "") : r.room || "Dvorana nije određena")} · ${e(r.instructorName || "Nastavnik nije naveden")}</span><small>${e([r.study, r.group, r.teachingType].filter(Boolean).join(" · "))}</small></button>`;
     $("calendar-body").innerHTML =
       `<div id="calendar-move-message" role="status" aria-live="polite"></div>${
         !["semester", "month"].includes(view)
           ? `<h2 class="calendar-period">${e(label(dates[0]))}${dates.length > 1 ? " – " + e(label(dates.at(-1))) : ""} <span class="pill">W${isoWeek(date).week} · ${isoWeek(date).week}. tjedan</span></h2><div class="calendar-week" style="--day-count:${dates.length}">${dates
               .map(
                 (day) =>
-                  `<section class="calendar-week-day ${day === zagrebDate() ? "is-today" : ""}"><h3 title="${e(label(day))}">${e(new Date(day + "T12:00:00Z").toLocaleDateString("hr-HR", { weekday: "short", day: "numeric", month: "numeric", timeZone: "Europe/Zagreb" }))}</h3><div class="calendar-time-track drop-slot" data-date="${e(day)}" style="height:${(hi - lo) * 1.2}px">${Array.from({ length: Math.ceil((hi - lo) / 60) }, (_, i) => `<div class="calendar-hour" style="top:${i * 72}px">${timeAt(lo + i * 60)}</div>`).join("")}${calendarLanes(
+                  `<section class="calendar-week-day ${day === zagrebDate() ? "is-today" : ""} ${visible.some((r) => r.date === day && r.online) ? "has-online" : ""}"><h3 title="${e(label(day))}">${e(new Date(day + "T12:00:00Z").toLocaleDateString("hr-HR", { weekday: "short", day: "numeric", month: "numeric", timeZone: "Europe/Zagreb" }))}</h3><div class="calendar-time-track drop-slot" data-date="${e(day)}" style="height:${(hi - lo) * 1.2}px">${Array.from({ length: Math.ceil((hi - lo) / 60) }, (_, i) => `<div class="calendar-hour" style="top:${i * 72}px">${timeAt(lo + i * 60)}</div>`).join("")}${calendarLanes(
                     visible.filter((r) => r.date === day),
                   )
                     .map(
@@ -237,7 +237,7 @@ export function mountCalendarView(root, events, options) {
           )
           .map(
             (day) =>
-              `<section class="drop-slot" data-date="${e(day)}"><h3>${e(label(day))}</h3>${
+              `<section class="drop-slot ${visible.some((r) => r.date === day && r.online) ? "has-online" : ""}" data-date="${e(day)}"><h3>${e(label(day))}</h3>${
                 visible
                   .filter((r) => r.date === day)
                   .sort((a, b) => a.time.localeCompare(b.time))

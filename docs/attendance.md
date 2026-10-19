@@ -6,6 +6,8 @@ U kalendaru otvorite **Filtri → Student**. Admin pregledava sve odobrene upise
 
 Otvorite termin nastave i **Evidencija prisutnosti**, ili otvorite tab **Prisutnost na nastavi** i odaberite termin. Prikazuju se studenti s odobrenim upisom za kolegij i akademsku godinu. Mogu se evidentirati i studenti bez računa.
 
+U tabu se prvo bira **Kolegij**, a zatim **Termin nastave**. Popis termina do tada je isključen i nakon odabira sadrži samo termine tog kolegija. Kad se evidencija otvori iz rasporeda, oba su odabira već postavljena. Student, način grupiranja, godina i datumski raspon nalaze se pod **Filtri**; Očisti filtre zadržava odabrani kolegij nastavnika. Osvježavanje zadržava odabire.
+
 Za svakog studenta odaberite Prisutan, Odsutan ili Opravdano odsutan i kliknite Spremi. Pogrešan unos može se vratiti na Nije evidentirano. Promjene se bilježe u povijesti. Spremanje ponovno provjerava aktualni termin i upis u transakciji, a ovlasti provjeravaju i Firestore pravila.
 
 ## Statistika i izvoz

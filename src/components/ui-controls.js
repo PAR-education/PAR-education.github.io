@@ -57,7 +57,16 @@ export function helpDetails(content, label = "Upute") {
 export function groupRecordFields(name, fields) {
   const preferred =
     {
-      calendarEvents: ["title", "courseId", "date", "time", "endTime", "room", "online", "description"],
+      calendarEvents: [
+        "title",
+        "courseId",
+        "date",
+        "time",
+        "endTime",
+        "room",
+        "online",
+        "description",
+      ],
       courses: ["title", "ects", "semester", "instructorUids"],
       students: [
         "name",

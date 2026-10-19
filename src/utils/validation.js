@@ -7,7 +7,10 @@ export function validateFields(fields, values) {
     if (field.required && (value === "" || value == null))
       throw new Error(`${field.label}: obavezno polje.`);
     if (value === "" || value == null) {
-      if (field.type === "checkbox") { result[field.key] = false; continue; }
+      if (field.type === "checkbox") {
+        result[field.key] = false;
+        continue;
+      }
       if (
         !field.required &&
         ["url", "number", "time", "date"].includes(field.type)
@@ -34,6 +37,12 @@ export function validateFields(fields, values) {
       )
         throw new Error("Odaberite najviše 10 nastavnika.");
       result[field.key] = [...new Set(value)];
+      continue;
+    }
+    if (field.type === "checkbox") {
+      if (typeof value !== "boolean")
+        throw new Error(`${field.label}: odaberite da ili ne.`);
+      result[field.key] = value;
       continue;
     }
     if (field.type === "number") {

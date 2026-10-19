@@ -1,7 +1,7 @@
 // Native time controls follow the operating-system locale (including AM/PM).
 // Keep the original input and its listeners, but render an explicit HH:mm control.
 export function setupTimeInputs() {
-  const convert = root => {
+  const convert = (root) => {
     const inputs = [...(root.querySelectorAll?.('input[type="time"]') || [])];
     if (root.matches?.('input[type="time"]')) inputs.push(root);
     for (const input of inputs) {
@@ -23,7 +23,8 @@ export function setupTimeInputs() {
     }
   };
   convert(document.body);
-  new MutationObserver(changes => {
-    for (const change of changes) for (const node of change.addedNodes) convert(node);
+  new MutationObserver((changes) => {
+    for (const change of changes)
+      for (const node of change.addedNodes) convert(node);
   }).observe(document.body, { childList: true, subtree: true });
 }

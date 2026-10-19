@@ -166,7 +166,12 @@ export function prepareCalendarMove(record, target, events = []) {
     [
       { key: "date", label: "Datum", type: "date", required: true },
       { key: "time", label: "Početak", type: "time", required: true },
-      { key: "room", label: "Dvorana", required: !(target.online ?? record.online), maxLength: 200 },
+      {
+        key: "room",
+        label: "Dvorana",
+        required: !(target.online ?? record.online),
+        maxLength: 200,
+      },
     ],
     {
       date: target.date || record.date,
@@ -200,15 +205,37 @@ export function prepareCalendarMove(record, target, events = []) {
     new Date(date + "T12:00:00Z").getUTCDay()
   ];
   const extra = {};
-  if (Object.hasOwn(target,"online")) extra.online = target.online;
-  if (Object.hasOwn(target,"description")) extra.description = target.description;
-  const metadata = validateFields([
-    {key:"online",label:"Online nastava",type:"checkbox",required:false},
-    {key:"description",label:"Napomena / poveznica",maxLength:2000,required:false},
-  ],extra);
-  return { date, time, endTime: timeAt(end), room: room.trim(), day,
-    ...(Object.hasOwn(extra,"online") ? {online:metadata.online} : {}),
-    ...(Object.hasOwn(extra,"description") ? {description:metadata.description} : {}) };
+  if (Object.hasOwn(target, "online")) extra.online = target.online;
+  if (Object.hasOwn(target, "description"))
+    extra.description = target.description;
+  const metadata = validateFields(
+    [
+      {
+        key: "online",
+        label: "Online nastava",
+        type: "checkbox",
+        required: false,
+      },
+      {
+        key: "description",
+        label: "Napomena / poveznica",
+        maxLength: 2000,
+        required: false,
+      },
+    ],
+    extra,
+  );
+  return {
+    date,
+    time,
+    endTime: timeAt(end),
+    room: room.trim(),
+    day,
+    ...(Object.hasOwn(extra, "online") ? { online: metadata.online } : {}),
+    ...(Object.hasOwn(extra, "description")
+      ? { description: metadata.description }
+      : {}),
+  };
 }
 export function revisionOf(row) {
   const value = row.updatedAt;

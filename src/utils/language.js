@@ -1,5 +1,11 @@
 // UI text only. Stored values, IDs and imported course names are never rewritten.
 const words = {
+  "Online nastava": "Online class",
+  "Napomena / poveznica": "Note / link",
+  "Napomena · otvori detalje": "Note · open details",
+  "Prvo odaberite kolegij": "Select a course first",
+  "Odaberite kolegij": "Select a course",
+  "Nema termina za odabrane filtre": "No sessions match the selected filters",
   "Prisutnost na nastavi": "Class attendance",
   "Moja prisutnost": "My attendance",
   "Po studentu": "By student",

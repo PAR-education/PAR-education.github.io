@@ -193,7 +193,7 @@ service cloud.firestore {
         && (d.status is string && d.status.size() <= 200 && d.status.size() > 0 && d.status in ['Na čekanju', 'Odobreno', 'Odbijeno']);
     }
     function valid_calendarEvents(d) {
-      return d.keys().hasOnly(['title', 'courseId', 'instructorUid', 'instructorUids', 'study', 'group', 'academicYear', 'semester', 'teachingType', 'seriesId', 'date', 'time', 'endTime', 'room', 'day', 'instructorName', 'description', 'createdAt', 'createdBy', 'updatedAt'])
+      return d.keys().hasOnly(['title', 'courseId', 'instructorUid', 'instructorUids', 'study', 'group', 'academicYear', 'semester', 'teachingType', 'seriesId', 'date', 'time', 'endTime', 'room', 'day', 'instructorName', 'online', 'description', 'createdAt', 'createdBy', 'updatedAt'])
         && d.keys().hasAll(['title', 'date', 'time', 'createdAt', 'createdBy', 'updatedAt'])
         && (d.title is string && d.title.size() <= 200 && d.title.size() > 0)
         && (!('courseId' in d) || d.courseId == '' || (d.courseId is string && d.courseId.size() <= 200))
@@ -211,6 +211,7 @@ service cloud.firestore {
         && (!('room' in d) || d.room == '' || (d.room is string && d.room.size() <= 200))
         && (!('day' in d) || d.day == '' || (d.day is string && d.day.size() <= 200))
         && (!('instructorName' in d) || d.instructorName == '' || (d.instructorName is string && d.instructorName.size() <= 200))
+        && (!('online' in d) || (d.online is bool))
         && (!('description' in d) || d.description == '' || (d.description is string && d.description.size() <= 2000))
         && (!('endTime' in d) || d.endTime > d.time);
     }

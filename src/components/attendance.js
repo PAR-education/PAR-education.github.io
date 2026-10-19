@@ -40,21 +40,49 @@ export async function mountAttendance(
         .map((r) => [studentKey(r), r.ownerName || "Student"]),
     ).entries(),
   ].sort((a, b) => a[1].localeCompare(b[1], "hr"));
+  const controlIds = [
+    "attendance-course",
+    "attendance-student",
+    "attendance-grouping",
+    "attendance-year",
+    "attendance-from",
+    "attendance-to",
+  ];
+  const previousState = Object.fromEntries(
+    controlIds.map((id) => [id, root.querySelector("#" + id)?.value || ""]),
+  );
+  const courseControl = `<label>Kolegij<select id="attendance-course"><option value="">${staff ? "Odaberite kolegij" : "Svi kolegiji"}</option>${[
+    ...new Map(events.map((r) => [r.courseId, r.title])).entries(),
+  ]
+    .sort((a, b) => a[1].localeCompare(b[1], "hr"))
+    .map(([id, title]) => `<option value="${e(id)}">${e(title)}</option>`)
+    .join("")}</select></label>`;
   root.innerHTML = `<div class="page-heading"><h1>${staff ? "Prisutnost na nastavi" : "Moja prisutnost"}</h1><div class="page-actions">${actionMenu("Izvoz", '<button id="attendance-csv">CSV statistika</button><button id="attendance-print">Ispis / PDF statistike</button><button id="attendance-detail-csv">CSV evidencija</button>')}<button class="button" id="attendance-refresh">Osvježi</button></div></div>
-    <section class="panel backup-section attendance-panel"><div class="backup-fields">${staff ? `<label>Student<select id="attendance-student"><option value="">Svi studenti</option>${students.map(([key, name]) => `<option value="${e(key)}">${e(name)}</option>`).join("")}</select></label>` : ""}
-    <label>Statistika<select id="attendance-grouping"><option value="student">Po studentu</option><option value="course">Po studentu i kolegiju</option></select></label><label>Kolegij<select id="attendance-course"><option value="">Svi kolegiji</option>${[...new Map(events.map((r) => [r.courseId, r.title])).entries()].map(([id, title]) => `<option value="${e(id)}">${e(title)}</option>`).join("")}</select></label>
+    <section class="panel backup-section attendance-panel"><div class="attendance-tools"><details class="calendar-filter-panel" id="attendance-filters"><summary class="button"><i class="fa-solid fa-filter" aria-hidden="true"></i> <span id="attendance-filter-label">Filtri</span></summary><div class="filter-fields">
+    ${staff ? `<label>Student<select id="attendance-student"><option value="">Svi studenti</option>${students.map(([key, name]) => `<option value="${e(key)}">${e(name)}</option>`).join("")}</select></label>` : courseControl}
+    <label>Statistika<select id="attendance-grouping"><option value="student">Po studentu</option><option value="course">Po studentu i kolegiju</option></select></label>
     <label>Akademska godina<select id="attendance-year"><option value="">Sve godine</option>${[
       ...new Set(events.map((r) => r.academicYear).filter(Boolean)),
     ]
       .sort()
-      .map((v) => `<option>${e(v)}</option>`)
-      .join(
-        "",
-      )}</select></label><label>Od<input id="attendance-from" type="date"></label><label>Do<input id="attendance-to" type="date"></label></div>
+      .map((year) => `<option>${e(year)}</option>`)
+      .join("")}</select></label>
+    <label>Od<input id="attendance-from" type="date"></label><label>Do<input id="attendance-to" type="date"></label><button type="button" class="button" id="attendance-clear-filters">Očisti filtre</button></div></details></div>
+    ${staff ? `<div class="backup-fields attendance-selection">${courseControl}<label>Termin nastave<select id="attendance-event" disabled></select></label></div>` : ""}
     <div id="attendance-message" role="status" aria-live="polite"></div>
-    ${staff ? '<label>Termin nastave<select id="attendance-event"></select></label><div id="attendance-roster"></div>' : ""}
-    <h2>Statistika po studentu i kolegiju</h2><p class="panel-note">Postotak = dolasci / evidentirani termini. Neevidentirani termini nisu izostanci. Opravdani izostanci prikazuju se zasebno.</p><div id="attendance-stats"></div><details class="context-help"><summary>Evidencija po terminima</summary><div id="attendance-detail"></div></details></section>`;
+    ${staff ? '<div id="attendance-roster"></div>' : ""}
+    <h2>Statistika</h2><details class="context-help"><summary>Kako se računa prisutnost?</summary><p>Postotak = dolasci / evidentirani termini. Neevidentirani termini nisu izostanci. Opravdani izostanci prikazuju se zasebno.</p></details><div id="attendance-stats"></div><details class="context-help"><summary>Evidencija po terminima</summary><div id="attendance-detail"></div></details></section>`;
   const $ = (id) => root.querySelector("#" + id);
+  for (const [id, value] of Object.entries(previousState)) {
+    if (!$(id)) continue;
+    if (
+      $(id).tagName !== "SELECT" ||
+      [...$(id).options].some((o) => o.value === value)
+    )
+      $(id).value = value;
+  }
+  const initial = events.find((r) => r.id === initialEvent);
+  if (staff && initial) $("attendance-course").value = initial.courseId;
   let summary = [],
     detail = [];
   function message(text, error = false) {
@@ -87,6 +115,17 @@ export async function mountAttendance(
     };
   }
   function render() {
+    const filterCount =
+      [
+        "attendance-student",
+        "attendance-year",
+        "attendance-from",
+        "attendance-to",
+        ...(!staff ? ["attendance-course"] : []),
+      ].filter((id) => $(id)?.value).length +
+      ($("attendance-grouping").value === "course" ? 1 : 0);
+    $("attendance-filter-label").textContent =
+      "Filtri" + (filterCount ? " (" + filterCount + ")" : "");
     const { selectedEvents, selectedEnrollments } = filtered();
     const eligible =
       profile.role === "student"
@@ -127,17 +166,24 @@ export async function mountAttendance(
     $("attendance-detail").innerHTML = table(detailColumns, detail);
     if (!staff) return;
     const previous = $("attendance-event").value;
-    const sorted = eligible
+    const sorted = ($("attendance-course").value ? eligible : [])
       .slice()
       .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
     $("attendance-event").innerHTML =
-      '<option value="">Odaberite termin</option>' +
+      '<option value="">' +
+      (!$("attendance-course").value
+        ? "Prvo odaberite kolegij"
+        : sorted.length
+          ? "Odaberite termin"
+          : "Nema termina za odabrane filtre") +
+      "</option>" +
       sorted
         .map(
           (ev) =>
-            `<option value="${e(ev.id)}">${e(ev.date)} · ${e(ev.time)}${ev.endTime ? "–" + e(ev.endTime) : ""} · ${e(ev.title)} · ${e(ev.room || "Bez dvorane")}</option>`,
+            `<option value="${e(ev.id)}">${e(new Date(ev.date + "T12:00:00Z").toLocaleDateString("hr-HR", { weekday: "short", day: "numeric", month: "numeric", year: "numeric", timeZone: "Europe/Zagreb" }))} · ${e(ev.time)}${ev.endTime ? "–" + e(ev.endTime) : ""}h · ${e(ev.online ? "Online" : ev.room || "Bez dvorane")}</option>`,
         )
         .join("");
+    $("attendance-event").disabled = !sorted.length;
     const next = initialEvent || previous;
     if (sorted.some((ev) => ev.id === next)) $("attendance-event").value = next;
     initialEvent = "";
@@ -146,8 +192,7 @@ export async function mountAttendance(
   function renderRoster() {
     const event = events.find((ev) => ev.id === $("attendance-event").value);
     if (!event) {
-      $("attendance-roster").innerHTML =
-        '<p class="panel-note">Odaberite termin za unos prisutnosti.</p>';
+      $("attendance-roster").innerHTML = "";
       return;
     }
     const roster = filtered().selectedEnrollments.filter((en) =>
@@ -206,6 +251,18 @@ export async function mountAttendance(
     "attendance-to",
   ])
     $(id)?.addEventListener("change", render);
+  $("attendance-clear-filters").addEventListener("click", () => {
+    for (const id of [
+      "attendance-student",
+      "attendance-year",
+      "attendance-from",
+      "attendance-to",
+      ...(!staff ? ["attendance-course"] : []),
+    ])
+      if ($(id)) $(id).value = "";
+    $("attendance-grouping").value = "student";
+    render();
+  });
   $("attendance-event")?.addEventListener("change", renderRoster);
   $("attendance-refresh").addEventListener("click", async () => {
     try {

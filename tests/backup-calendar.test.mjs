@@ -6,6 +6,37 @@ import {
   attendanceTotals,
 } from "../src/utils/attendance.js";
 import assert from "node:assert/strict";
+test("Satnica changes retain online notes, validate them and allow online without a room", () => {
+  const event = {
+    id: "online",
+    date: "2026-10-19",
+    time: "15:45",
+    endTime: "17:15",
+    room: "Room",
+    online: false,
+  };
+  const result = prepareCalendarMove(
+    event,
+    { online: true, room: "", description: "Teams: https://example.test" },
+    [],
+  );
+  assert.equal(result.online, true);
+  assert.equal(result.description, "Teams: https://example.test");
+  assert.equal(result.time, "15:45");
+  assert.equal(result.room, "");
+  assert.throws(() =>
+    prepareCalendarMove(event, { online: false, room: "" }, []),
+  );
+  assert.throws(() =>
+    prepareCalendarMove(event, { description: "x".repeat(2001) }, []),
+  );
+  const item = calendarItems({
+    calendarEvents: [{ ...event, ...result, title: "Online lesson" }],
+  })[0];
+  assert.equal(item.location, "Online");
+  assert.match(item.description, /Online nastava/);
+  assert.match(item.description, /Teams: https:\/\/example.test/);
+});
 test("Attendance totals sum counts rather than averaging percentages and preserve student identities", () => {
   const base = {
     studentId: "s",

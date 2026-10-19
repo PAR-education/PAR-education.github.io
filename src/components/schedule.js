@@ -94,7 +94,7 @@ export function mountSchedule(
       dates
         .map(
           (date) =>
-            `<section class="schedule-date-section"><h2 class="schedule-date-heading">${e(dateLabel(date))}</h2><div class="timetable"><div class="time-labels" style="grid-template-columns:repeat(${hours.length},minmax(160px,1fr))">${hours.map((h) => `<span>${timeAt(h * 60)} – ${h === 22 ? "24:00" : timeAt((h + 2) * 60)}</span>`).join("")}</div>${rooms
+            `<section class="schedule-date-section"><h2 class="schedule-date-heading ${events.some((r) => r.date === date && r.online) ? "has-online" : ""}">${e(dateLabel(date))}</h2><div class="timetable"><div class="time-labels" style="grid-template-columns:repeat(${hours.length},minmax(160px,1fr))">${hours.map((h) => `<span>${timeAt(h * 60)} – ${h === 22 ? "24:00" : timeAt((h + 2) * 60)}</span>`).join("")}</div>${rooms
               .map(
                 (room) =>
                   `<section class="room-row"><h3>${icon("door-open")} ${e(room || "Dvorana nije određena")}</h3><div class="room-slots" style="grid-template-columns:repeat(${hours.length},minmax(160px,1fr))">${hours
@@ -112,7 +112,7 @@ export function mountSchedule(
                           (r.room || "") === room &&
                           Math.floor(minutes(r.time) / 120) * 2 === h,
                       );
-                      return `<div class="room-slot drop-slot ${occupied.length ? "slot-occupied" : "slot-free"}" data-date="${e(date)}" data-room="${e(room)}" data-time="${timeAt(h * 60)}" aria-label="${e(dateLabel(date))} ${e(room || "Dvorana nije određena")} ${timeAt(h * 60)}"><span class="slot-status">${!room ? "DVORANA NIJE ODREĐENA" : occupied.length ? "ZAUZETO · provjerite točne minute" : "SLOBODNO"}</span>${cards.map((r) => `<div class="schedule-event"><button class="lesson" data-event="${e(r.id)}" title="${canEdit ? "Povuci za premještanje · Alt + strelice" : "Detalji događaja"}"><small>${icon("clock")} ${e(r.time)} – ${e(timeAt(minutes(r.time) + durationOf(r)))}</small><strong>${e(r.title)}</strong><small>${e(r.instructorName || "Nastavnik nije naveden")}</small><small>${e(dateLabel(r.date))}</small></button>${canEditRecord(r) ? `<button class="schedule-edit" data-move="${e(r.id)}" aria-label="Promijeni satnicu: ${e(r.title)}">${icon("arrows-up-down-left-right")} Satnica</button>` : ""}</div>`).join("")}${occupied
+                      return `<div class="room-slot drop-slot ${occupied.length ? "slot-occupied" : "slot-free"}" data-date="${e(date)}" data-room="${e(room)}" data-time="${timeAt(h * 60)}" aria-label="${e(dateLabel(date))} ${e(room || "Dvorana nije određena")} ${timeAt(h * 60)}"><span class="slot-status">${!room ? "DVORANA NIJE ODREĐENA" : occupied.length ? "ZAUZETO · provjerite točne minute" : "SLOBODNO"}</span>${cards.map((r) => `<div class="schedule-event"><button class="lesson ${r.online ? "is-online" : ""}" data-event="${e(r.id)}" title="${canEdit ? "Povuci za premještanje · Alt + strelice" : "Detalji događaja"}"><small>${icon("clock")} ${e(r.time)} – ${e(timeAt(minutes(r.time) + durationOf(r)))}</small><strong>${e(r.title)}</strong>${r.online ? '<small class="online-label">Online</small>' : ""}${r.description ? "<small>Napomena · otvori detalje</small>" : ""}<small>${e(r.instructorName || "Nastavnik nije naveden")}</small><small>${e(dateLabel(r.date))}</small></button>${canEditRecord(r) ? `<button class="schedule-edit" data-move="${e(r.id)}" aria-label="Promijeni satnicu: ${e(r.title)}">${icon("arrows-up-down-left-right")} Satnica</button>` : ""}</div>`).join("")}${occupied
                         .filter((r) => !cards.some((c) => c.id === r.id))
                         .map(
                           (r) =>
@@ -204,15 +204,19 @@ export function mountSchedule(
   function edit(record) {
     openDialog(
       "Premjesti događaj i definiraj satnicu",
-      `<form id="schedule-move-form" class="form-grid"><div class="field"><label for="move-date">Datum</label><input id="move-date" type="date" required value="${e(record.date)}"></div><div class="field"><label for="move-room">Dvorana</label><input id="move-room" required maxlength="200" value="${e(record.room)}" list="move-rooms"><datalist id="move-rooms">${rooms.map((r) => `<option value="${e(r)}"></option>`).join("")}</datalist></div><div class="field"><label for="move-start">Početak</label><input id="move-start" type="time" required value="${e(record.time)}"></div><div class="field"><label for="move-end">Završetak</label><input id="move-end" type="time" required value="${e(record.endTime || timeAt(minutes(record.time) + durationOf(record)))}"></div><div id="move-availability" class="span-two" role="status" aria-live="polite"></div><button id="move-submit" class="button primary" type="submit">Spremi satnicu</button></form>`,
+      `<form id="schedule-move-form" class="form-grid"><div class="field"><label for="move-date">Datum</label><input id="move-date" type="date" required value="${e(record.date)}"></div><div class="field"><label for="move-room">Dvorana</label><input id="move-room" maxlength="200" value="${e(record.room)}" list="move-rooms"><datalist id="move-rooms">${rooms.map((r) => `<option value="${e(r)}"></option>`).join("")}</datalist></div><div class="field"><label for="move-start">Početak</label><input id="move-start" type="time" required value="${e(record.time)}"></div><div class="field"><label for="move-end">Završetak</label><input id="move-end" type="time" required value="${e(record.endTime || timeAt(minutes(record.time) + durationOf(record)))}"></div><div class="field wide"><label for="move-description">Napomena / poveznica</label><textarea id="move-description" maxlength="2000" rows="2">${e(record.description || "")}</textarea></div><div class="field check"><label><input id="move-online" type="checkbox" ${record.online ? "checked" : ""}> Online nastava</label></div><div id="move-availability" class="span-two" role="status" aria-live="polite"></div><button id="move-submit" class="button primary" type="submit">Spremi satnicu</button></form>`,
     );
     const moveTarget = () => ({
       date: document.getElementById("move-date").value,
       room: document.getElementById("move-room").value,
       time: document.getElementById("move-start").value,
       endTime: document.getElementById("move-end").value,
+      description: document.getElementById("move-description").value,
+      online: document.getElementById("move-online").checked,
     });
     const checkMove = () => {
+      document.getElementById("move-room").required =
+        !document.getElementById("move-online").checked;
       const result = availability(moveTarget(), record.id);
       document.getElementById("move-availability").innerHTML = result.html;
       document.getElementById("move-submit").disabled = result.blocked;
@@ -221,17 +225,15 @@ export function mountSchedule(
     ["move-date", "move-room", "move-start", "move-end"].forEach((id) =>
       document.getElementById(id).addEventListener("input", checkMove),
     );
+    document
+      .getElementById("move-online")
+      .addEventListener("change", checkMove);
     checkMove();
     document
       .getElementById("schedule-move-form")
       .addEventListener("submit", (event) => {
         event.preventDefault();
-        const target = {
-          date: document.getElementById("move-date").value,
-          room: document.getElementById("move-room").value,
-          time: document.getElementById("move-start").value,
-          endTime: document.getElementById("move-end").value,
-        };
+        const target = moveTarget();
         if (!checkMove()) return;
         closeDialog();
         move(record, target);

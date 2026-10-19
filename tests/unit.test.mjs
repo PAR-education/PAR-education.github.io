@@ -10,6 +10,24 @@ import {
 import { validateFields } from "../src/utils/validation.js";
 import { escapeHTML } from "../src/utils/helpers.js";
 import { modules } from "../src/modules/catalog.js";
+import { textWithLinks } from "../src/utils/links.js";
+test("Notes link only HTTP URLs and escape user content", () => {
+  const html = textWithLinks(
+    "<img src=x onerror=alert(1)> Teams: https://example.test/meet?a=1&b=2. javascript:alert(1)",
+  );
+  assert.match(html, /&lt;img/);
+  assert.match(html, /href="https:\/\/example.test\/meet\?a=1&amp;b=2"/);
+  assert.equal((html.match(/<a /g) || []).length, 1);
+  assert.doesNotMatch(html, /<img|href="javascript:/);
+});
+test("Optional online flags default to false and reject nonboolean input", () => {
+  const fields = [
+    { key: "online", label: "Online", type: "checkbox", required: false },
+  ];
+  assert.equal(validateFields(fields, {}).online, false);
+  assert.equal(validateFields(fields, { online: true }).online, true);
+  assert.throws(() => validateFields(fields, { online: "false" }));
+});
 import { DemoRecords } from "../src/services/demo.js";
 import { tuitionInstallments } from "../src/utils/tuition.js";
 import { csvContent, printReport } from "../src/components/export.js";

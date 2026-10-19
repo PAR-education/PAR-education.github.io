@@ -1085,10 +1085,24 @@ test("Concurrent calendar bookings reserve one room once; aliases collide and au
     db,
     user,
     profile,
-    { ...values, time: "12:00", endTime: "14:00" },
+    {
+      ...values,
+      time: "12:00",
+      endTime: "14:00",
+      online: true,
+      description: "Teams: https://example.test",
+    },
     saved.id,
   );
   assert.equal((await getDoc(saved.ref)).data().time, "12:00");
+  assert.equal((await getDoc(saved.ref)).data().online, true);
+  assert.equal(
+    (await getDoc(saved.ref)).data().description,
+    "Teams: https://example.test",
+  );
+  await assertFails(
+    updateDoc(saved.ref, { online: "true", updatedAt: serverTimestamp() }),
+  );
   await archiveRecord(sdk, db, "calendarEvents", saved.id, "admin");
   assert.equal((await getDoc(saved.ref)).exists(), false);
   const archive = (await getDocs(collection(db, "archive"))).docs[0];

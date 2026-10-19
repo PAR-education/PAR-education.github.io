@@ -204,7 +204,7 @@ export function calendarItems(
           (row.ownerName || "Zaposlenik") +
             " · " +
             (row.activity || "Godišnji odmor"),
-        location: row.room || row.location || "",
+        location: row.room || row.location || (row.online ? "Online" : ""),
         instructorName: row.instructorName || row.instructor || "",
         description: [
           row.title || row.courseTitle
@@ -216,6 +216,7 @@ export function calendarItems(
           row.instructorName || row.instructor
             ? "Profesor: " + (row.instructorName || row.instructor)
             : "",
+          row.online ? "Online nastava" : "",
           row.description,
           row.details,
         ]

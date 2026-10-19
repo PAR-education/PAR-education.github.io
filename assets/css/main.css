@@ -2254,6 +2254,55 @@ td {
 .attendance-panel #attendance-stats td:nth-child(2) {
   min-width: 125px;
 }
+.attendance-panel {
+  overflow: visible;
+}
+.attendance-tools {
+  display: flex;
+  justify-content: flex-end;
+}
+.attendance-tools details {
+  margin: 0;
+}
+.attendance-selection {
+  margin-top: 12px;
+}
+.attendance-selection label:last-child {
+  flex: 2;
+}
+.time-input-24 {
+  position: relative;
+  display: block;
+  min-width: 0;
+}
+.time-input-24 input {
+  width: 100%;
+  padding-right: 30px !important;
+}
+.time-input-24 > span {
+  position: absolute;
+  right: 13px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted);
+  pointer-events: none;
+}
+.calendar-lesson.is-online,
+.lesson.is-online {
+  background: #146443;
+  border-left-color: #7ce3ad;
+  color: #fff;
+}
+.calendar-week-day.has-online > h3,
+.calendar-agenda .has-online > h3,
+.schedule-date-heading.has-online {
+  background: #d9f4e6;
+  color: #155437;
+  border-radius: 8px;
+}
+.online-label {
+  font-weight: 700;
+}
 .file-label input::file-selector-button {
   padding: 8px 12px;
   border: 0;

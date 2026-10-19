@@ -240,7 +240,12 @@ export const modules = {
       text("room", "Dvorana", false),
       text("day", "Dan", false),
       text("instructorName", "Nastavnik", false),
-      { key: "online", label: "Online nastava", type: "checkbox", required: false },
+      {
+        key: "online",
+        label: "Online nastava",
+        type: "checkbox",
+        required: false,
+      },
       note("description", "Napomena / poveznica"),
     ],
   },
