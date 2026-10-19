@@ -22,6 +22,141 @@ import {
 } from "firebase/firestore";
 import { prepareCalendarMove } from "../src/utils/schedule.js";
 let env;
+test("Attendance is canonical, teacher-scoped, student read-only and audit-backed", async () => {
+  const sdk = await import("firebase/firestore");
+  const { saveAttendanceRecord } =
+    await import("../src/services/attendance.js");
+  const { readAllRecords } = await import("../src/services/records.js");
+  const admin = database("admin"),
+    teacher = database("teacher"),
+    student = database("student-a");
+  await updateDoc(doc(admin, "courses", "c1"), {
+    instructorUids: ["teacher", "teacher-b"],
+    updatedAt: serverTimestamp(),
+  });
+  await setDoc(doc(admin, "calendarEvents", "lesson"), {
+    title: "Business",
+    courseId: "c1",
+    date: "2026-10-19",
+    time: "10:00",
+    instructorUid: "teacher",
+    instructorUids: ["teacher", "teacher-b"],
+    ...meta(),
+    createdBy: "admin",
+  });
+  await updateDoc(doc(admin, "enrollments", "c1__student-a"), {
+    instructorUids: ["teacher", "teacher-b"],
+    updatedAt: serverTimestamp(),
+  });
+  const values = {
+      eventId: "lesson",
+      enrollmentId: "c1__student-a",
+      status: "Prisutan",
+    },
+    id = "lesson__c1__student-a";
+  await saveAttendanceRecord(
+    sdk,
+    teacher,
+    { uid: "teacher" },
+    { role: "profesor" },
+    values,
+    id,
+  );
+  const record = (await getDoc(doc(student, "attendance", id))).data();
+  assert.equal(record.ownerUid, "student-a");
+  assert.equal(record.studentName, "A");
+  await assertFails(getDoc(doc(database("student-b"), "attendance", id)));
+  await assertFails(
+    updateDoc(doc(student, "attendance", id), {
+      status: "Prisutan",
+      updatedAt: serverTimestamp(),
+    }),
+  );
+  assert.equal(
+    (await readAllRecords(sdk, teacher, "attendance", "courseId", "c1")).length,
+    1,
+  );
+  assert.equal(
+    (
+      await readAllRecords(
+        sdk,
+        student,
+        "attendance",
+        "enrollmentId",
+        "c1__student-a",
+      )
+    ).length,
+    1,
+  );
+  await saveAttendanceRecord(
+    sdk,
+    database("teacher-b"),
+    { uid: "teacher-b" },
+    { role: "profesor" },
+    { ...values, status: "Opravdano odsutan" },
+    id,
+  );
+  assert.equal(
+    (await getDoc(doc(student, "attendance", id))).data().status,
+    "Opravdano odsutan",
+  );
+  await saveAttendanceRecord(
+    sdk,
+    teacher,
+    { uid: "teacher" },
+    { role: "profesor" },
+    { ...values, status: "Nije evidentirano" },
+    id,
+  );
+  assert.equal(
+    (await getDoc(doc(student, "attendance", id))).data().status,
+    "Nije evidentirano",
+  );
+  await assertFails(
+    updateDoc(doc(teacher, "attendance", id), {
+      ownerUid: "student-b",
+      updatedAt: serverTimestamp(),
+    }),
+  );
+  await assertFails(
+    updateDoc(doc(teacher, "attendance", id), {
+      academicYear: "2025/2026",
+      updatedAt: serverTimestamp(),
+    }),
+  );
+  await assertFails(
+    setDoc(doc(teacher, "attendance", "duplicate"), {
+      ...record,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+      createdBy: "teacher",
+    }),
+  );
+  const logs = await getDocs(
+    query(collection(admin, "auditLog"), where("module", "==", "attendance")),
+  );
+  assert.equal(logs.size, 3);
+  await updateDoc(doc(admin, "enrollments", "c1__student-a"), {
+    ownerUid: "student-b",
+    updatedAt: serverTimestamp(),
+  });
+  await assertFails(getDoc(doc(student, "attendance", id)));
+  await assertSucceeds(getDoc(doc(database("student-b"), "attendance", id)));
+  await assertFails(
+    readAllRecords(sdk, database("head"), "attendance", "courseId", "c1"),
+  );
+  await updateDoc(doc(admin, "calendarEvents", "lesson"), {
+    instructorUid: "other",
+    instructorUids: ["other"],
+    updatedAt: serverTimestamp(),
+  });
+  await assertFails(
+    updateDoc(doc(teacher, "attendance", id), {
+      status: "Odsutan",
+      updatedAt: serverTimestamp(),
+    }),
+  );
+});
 const database = (uid) => env.authenticatedContext(uid).firestore();
 const meta = () => ({
   createdAt: serverTimestamp(),

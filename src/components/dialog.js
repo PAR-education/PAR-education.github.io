@@ -1,4 +1,5 @@
 import { escapeHTML as e, display } from "../utils/helpers.js";
+import { textWithLinks } from "../utils/links.js";
 let previousFocus;
 const dialog = () => document.getElementById("record-dialog");
 export function openDialog(title, body) {
@@ -57,7 +58,7 @@ export function detailsHTML(fields, record) {
     "seriesId",
   ]);
   const render = (items) =>
-    `<dl class="details">${items.map((field) => `<div><dt>${e(field.label)}</dt><dd>${e(display(record[field.key]))}</dd></div>`).join("")}</dl>`;
+    `<dl class="details">${items.map((field) => `<div><dt>${e(field.label)}</dt><dd>${field.key === "description" ? textWithLinks(record[field.key]) : e(display(record[field.key]))}</dd></div>`).join("")}</dl>`;
   return (
     render(visible.filter((f) => !technical.has(f.key))) +
     (visible.some((f) => technical.has(f.key))

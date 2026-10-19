@@ -2217,6 +2217,7 @@ td {
 }
 .backup-fields input,
 .backup-fields select,
+.attendance-panel select,
 .file-label input {
   width: 100%;
   min-height: 44px;
@@ -2226,6 +2227,32 @@ td {
   background: var(--surface-soft);
   color: var(--ink);
   font: inherit;
+}
+.attendance-panel > label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 20px 0 12px;
+  font-size: 13px;
+}
+.attendance-panel table select {
+  min-width: 170px;
+}
+.attendance-panel .table-scroll {
+  margin: 16px 0 24px;
+}
+.attendance-panel #attendance-stats th,
+.attendance-panel #attendance-stats td {
+  padding: 12px 10px;
+}
+.attendance-panel #attendance-stats td {
+  white-space: pre-line;
+}
+.attendance-panel #attendance-stats td:first-child {
+  min-width: 90px;
+}
+.attendance-panel #attendance-stats td:nth-child(2) {
+  min-width: 125px;
 }
 .file-label input::file-selector-button {
   padding: 8px 12px;

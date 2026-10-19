@@ -1,4 +1,5 @@
 import { notifyChangeSafely } from "./notifications.js";
+import { saveAttendanceRecord } from "./attendance.js";
 import { enrollmentId } from "../utils/academic-year.js";
 import { saveCalendarRecord } from "./calendar-save.js";
 import { appendAudit, archiveRecord, restoreArchived } from "./audit.js";
@@ -105,6 +106,28 @@ export class Records {
       throw new Error("Nemate pristup ovom modulu.");
     const { db, firestore: sdk } = await getFirebase();
     const field = scopeFor(this.profile.role, name);
+    if (
+      name === "attendance" &&
+      ["profesor", "student"].includes(this.profile.role)
+    ) {
+      const teacher = this.profile.role === "profesor";
+      const sources = await this.listAll(teacher ? "courses" : "enrollments");
+      const selected = teacher
+        ? sources.filter((r) => isInstructor(r, this.user.uid))
+        : sources;
+      const pages = await Promise.all(
+        selected.map((r) =>
+          readAllRecords(
+            sdk,
+            db,
+            name,
+            teacher ? "courseId" : "enrollmentId",
+            r.id,
+          ),
+        ),
+      );
+      return [...new Map(pages.flat().map((r) => [r.id, r])).values()];
+    }
     const value =
       field === "departmentId" ? this.profile.departmentId : this.user.uid;
     if (field && !value) return [];
@@ -126,6 +149,8 @@ export class Records {
       throw new Error("Nemate ovlasti za spremanje.");
     const { db, firestore: sdk } = await getFirebase();
     const data = { ...values, updatedAt: sdk.serverTimestamp() };
+    if (name === "attendance")
+      return saveAttendanceRecord(sdk, db, this.user, this.profile, values, id);
     if (name === "calendarEvents") {
       const saved = await saveCalendarRecord(
         sdk,

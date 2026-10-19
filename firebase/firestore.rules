@@ -66,6 +66,22 @@ service cloud.firestore {
       return resource.data.status == 'Na čekanju' && d.status in ['Odobreno', 'Odbijeno']
         && d.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt']) && updated(d);
     }
+    function valid_attendance(d) {
+      return d.keys().hasOnly(['eventId', 'enrollmentId', 'studentId', 'ownerUid', 'studentName', 'courseId', 'courseTitle', 'date', 'academicYear', 'instructorUid', 'instructorUids', 'status', 'createdAt', 'createdBy', 'updatedAt'])
+        && d.keys().hasAll(['eventId', 'enrollmentId', 'studentName', 'courseId', 'courseTitle', 'date', 'status', 'createdAt', 'createdBy', 'updatedAt'])
+        && (d.eventId is string && d.eventId.size() <= 200 && d.eventId.size() > 0)
+        && (d.enrollmentId is string && d.enrollmentId.size() <= 200 && d.enrollmentId.size() > 0)
+        && (!('studentId' in d) || d.studentId == '' || (d.studentId is string && d.studentId.size() <= 200))
+        && (!('ownerUid' in d) || d.ownerUid == '' || (d.ownerUid is string && d.ownerUid.size() <= 200))
+        && (d.studentName is string && d.studentName.size() <= 200 && d.studentName.size() > 0)
+        && (d.courseId is string && d.courseId.size() <= 200 && d.courseId.size() > 0)
+        && (d.courseTitle is string && d.courseTitle.size() <= 200 && d.courseTitle.size() > 0)
+        && (d.date is string && d.date.size() <= 200 && d.date.size() > 0 && d.date.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$'))
+        && (!('academicYear' in d) || d.academicYear == '' || (d.academicYear is string && d.academicYear.size() <= 200 && d.academicYear.matches('^[0-9]{4}/[0-9]{4}$')))
+        && (!('instructorUid' in d) || d.instructorUid == '' || (d.instructorUid is string && d.instructorUid.size() <= 200))
+        && (!('instructorUids' in d) || (d.instructorUids is list && d.instructorUids.size() <= 10))
+        && (d.status is string && d.status.size() <= 200 && d.status.size() > 0 && d.status in ['Prisutan', 'Odsutan', 'Opravdano odsutan', 'Nije evidentirano']);
+    }
     function valid_rooms(d) {
       return d.keys().hasOnly(['name', 'aliases', 'createdAt', 'createdBy', 'updatedAt'])
         && d.keys().hasAll(['name', 'createdAt', 'createdBy', 'updatedAt'])
@@ -508,6 +524,36 @@ service cloud.firestore {
       allow delete: if admin();
     }
 
+    function attendanceSource(d, id) {
+      let event = get(/databases/$(database)/documents/calendarEvents/$(d.eventId)).data;
+      let enrollment = get(/databases/$(database)/documents/enrollments/$(d.enrollmentId)).data;
+      return id == d.eventId + '__' + d.enrollmentId
+        && instructor(event) && enrollment.status == 'Odobreno'
+        && enrollment.courseId == event.courseId && d.courseId == event.courseId
+        && (enrollment.get('academicYear','') == '' || enrollment.get('academicYear','') == event.get('academicYear',''))
+        && d.ownerUid == enrollment.get('ownerUid','') && d.studentId == enrollment.get('studentId','')
+        && d.studentName == enrollment.ownerName && d.courseTitle == event.title && d.date == event.date
+        && d.academicYear == event.get('academicYear', enrollment.get('academicYear',''))
+        && d.instructorUid == event.get('instructorUid','')
+        && d.instructorUids == event.get('instructorUids', [event.get('instructorUid','')]);
+    }
+    function attendanceReader(d) {
+      return admin() || (role('profesor') && instructor(get(/databases/$(database)/documents/courses/$(d.courseId)).data))
+        || (role('student') && own(get(/databases/$(database)/documents/enrollments/$(d.enrollmentId)).data));
+    }
+    match /attendance/{id} {
+      allow list: if attendanceReader(resource.data);
+      allow get: if attendanceReader(resource.data)
+        || (role('profesor') && !exists(/databases/$(database)/documents/attendance/$(id)));
+      allow create: if valid_attendance(request.resource.data) && created(request.resource.data)
+        && (admin() || attendanceSource(request.resource.data,id));
+      allow create: if admin() && valid_attendance(request.resource.data) && restored(request.resource.data);
+      allow update: if valid_attendance(request.resource.data) && updated(request.resource.data)
+        && (admin() || (attendanceSource(request.resource.data,id)
+          && request.resource.data.eventId == resource.data.eventId
+          && request.resource.data.enrollmentId == resource.data.enrollmentId));
+      allow delete: if admin();
+    }
     match /calendarLocks/{date} {
       allow read: if active();
       allow create, update: if active() && profile().role in ['admin','profesor']
@@ -520,8 +566,8 @@ service cloud.firestore {
       allow read: if admin();
       allow create: if active() && request.resource.data.keys().hasOnly(['module','recordId','action','before','after','actorUid','createdAt'])
         && request.resource.data.actorUid == request.auth.uid && request.resource.data.createdAt == request.time
-        && request.resource.data.module in ['rooms', 'students', 'employees', 'courses', 'exams', 'grades', 'enrollments', 'examBookings', 'calendarEvents', 'projects', 'research', 'labs', 'labBookings', 'documents', 'requests', 'finances', 'employeeSchedules', 'workEntries', 'vacations', 'alumniEvents', 'evaluations', 'notifications', 'users']
-        && request.resource.data.recordId is string && request.resource.data.recordId.size() <= 200
+        && request.resource.data.module in ['attendance', 'rooms', 'students', 'employees', 'courses', 'exams', 'grades', 'enrollments', 'examBookings', 'calendarEvents', 'projects', 'research', 'labs', 'labBookings', 'documents', 'requests', 'finances', 'employeeSchedules', 'workEntries', 'vacations', 'alumniEvents', 'evaluations', 'notifications', 'users']
+        && request.resource.data.recordId is string && request.resource.data.recordId.size() <= 1500
         && request.resource.data.action in ['create','update','archive','restore']
         && (admin() || (((request.resource.data.after != null
           && request.resource.data.after == getAfter(/databases/$(database)/documents/$(request.resource.data.module)/$(request.resource.data.recordId)).data

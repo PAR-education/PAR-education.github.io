@@ -7,6 +7,7 @@ export function validateFields(fields, values) {
     if (field.required && (value === "" || value == null))
       throw new Error(`${field.label}: obavezno polje.`);
     if (value === "" || value == null) {
+      if (field.type === "checkbox") { result[field.key] = false; continue; }
       if (
         !field.required &&
         ["url", "number", "time", "date"].includes(field.type)

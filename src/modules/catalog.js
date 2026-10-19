@@ -43,6 +43,31 @@ const instructors = {
   maxLength: 2000,
 };
 export const modules = {
+  attendance: {
+    title: "Prisutnost na nastavi",
+    group: "Akademija",
+    description: "Evidencija i statistika prisutnosti po terminu i studentu.",
+    columns: ["studentName", "courseTitle", "date", "status"],
+    fields: [
+      text("eventId", "Termin"),
+      text("enrollmentId", "Upis"),
+      text("studentId", "Student", false),
+      text("ownerUid", "Korisnički račun", false),
+      text("studentName", "Student"),
+      course,
+      text("courseTitle", "Kolegij"),
+      date("date"),
+      academicYear,
+      { ...instructor, required: false },
+      instructors,
+      select("status", "Prisutnost", [
+        "Prisutan",
+        "Odsutan",
+        "Opravdano odsutan",
+        "Nije evidentirano",
+      ]),
+    ],
+  },
   rooms: {
     title: "Dvorane",
     group: "Administracija",
@@ -215,7 +240,8 @@ export const modules = {
       text("room", "Dvorana", false),
       text("day", "Dan", false),
       text("instructorName", "Nastavnik", false),
-      note("description", "Opis"),
+      { key: "online", label: "Online nastava", type: "checkbox", required: false },
+      note("description", "Napomena / poveznica"),
     ],
   },
   projects: {

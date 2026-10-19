@@ -247,6 +247,36 @@ for (const [name, policy] of Object.entries(policies)) {
     }\n`;
 }
 matches += `
+    function attendanceSource(d, id) {
+      let event = get(/databases/$(database)/documents/calendarEvents/$(d.eventId)).data;
+      let enrollment = get(/databases/$(database)/documents/enrollments/$(d.enrollmentId)).data;
+      return id == d.eventId + '__' + d.enrollmentId
+        && instructor(event) && enrollment.status == 'Odobreno'
+        && enrollment.courseId == event.courseId && d.courseId == event.courseId
+        && (enrollment.get('academicYear','') == '' || enrollment.get('academicYear','') == event.get('academicYear',''))
+        && d.ownerUid == enrollment.get('ownerUid','') && d.studentId == enrollment.get('studentId','')
+        && d.studentName == enrollment.ownerName && d.courseTitle == event.title && d.date == event.date
+        && d.academicYear == event.get('academicYear', enrollment.get('academicYear',''))
+        && d.instructorUid == event.get('instructorUid','')
+        && d.instructorUids == event.get('instructorUids', [event.get('instructorUid','')]);
+    }
+    function attendanceReader(d) {
+      return admin() || (role('profesor') && instructor(get(/databases/$(database)/documents/courses/$(d.courseId)).data))
+        || (role('student') && own(get(/databases/$(database)/documents/enrollments/$(d.enrollmentId)).data));
+    }
+    match /attendance/{id} {
+      allow list: if attendanceReader(resource.data);
+      allow get: if attendanceReader(resource.data)
+        || (role('profesor') && !exists(/databases/$(database)/documents/attendance/$(id)));
+      allow create: if valid_attendance(request.resource.data) && created(request.resource.data)
+        && (admin() || attendanceSource(request.resource.data,id));
+      allow create: if admin() && valid_attendance(request.resource.data) && restored(request.resource.data);
+      allow update: if valid_attendance(request.resource.data) && updated(request.resource.data)
+        && (admin() || (attendanceSource(request.resource.data,id)
+          && request.resource.data.eventId == resource.data.eventId
+          && request.resource.data.enrollmentId == resource.data.enrollmentId));
+      allow delete: if admin();
+    }
     match /calendarLocks/{date} {
       allow read: if active();
       allow create, update: if active() && profile().role in ['admin','profesor']
@@ -260,7 +290,7 @@ matches += `
       allow create: if active() && request.resource.data.keys().hasOnly(['module','recordId','action','before','after','actorUid','createdAt'])
         && request.resource.data.actorUid == request.auth.uid && request.resource.data.createdAt == request.time
         && request.resource.data.module in [${Object.keys(modules).map(quote).join(", ")}]
-        && request.resource.data.recordId is string && request.resource.data.recordId.size() <= 200
+        && request.resource.data.recordId is string && request.resource.data.recordId.size() <= 1500
         && request.resource.data.action in ['create','update','archive','restore']
         && (admin() || (((request.resource.data.after != null
           && request.resource.data.after == getAfter(/databases/$(database)/documents/$(request.resource.data.module)/$(request.resource.data.recordId)).data

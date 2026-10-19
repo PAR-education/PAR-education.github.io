@@ -1,5 +1,6 @@
 import { escapeHTML as e } from "../utils/helpers.js";
 export const icons = {
+  attendance: "clipboard-check",
   dashboard: "chart-pie",
   rooms: "door-open",
   students: "users",

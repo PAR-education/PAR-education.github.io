@@ -1,4 +1,5 @@
 import { notifyChangeSafely } from "./notifications.js";
+import { attendanceValues, attendanceId } from "../utils/attendance.js";
 import { enrollmentId } from "../utils/academic-year.js";
 import { isInstructor, instructorFields } from "../utils/instructors.js";
 import { courseScheduleUpdates } from "./course-schedule.js";
@@ -67,6 +68,24 @@ export class DemoRecords {
     );
   }
   async listAll(name) {
+    if (
+      name === "attendance" &&
+      ["student", "profesor"].includes(this.profile.role)
+    ) {
+      const teacher = this.profile.role === "profesor";
+      return structuredClone(
+        (this.data.attendance || []).filter((row) =>
+          teacher
+            ? this.data.courses.some(
+                (c) => c.id === row.courseId && isInstructor(c, this.user.uid),
+              )
+            : this.data.enrollments.some(
+                (en) =>
+                  en.id === row.enrollmentId && en.ownerUid === this.user.uid,
+              ),
+        ),
+      );
+    }
     return this.list(name);
   }
   async save(name, values, id, options = {}) {
@@ -85,6 +104,24 @@ export class DemoRecords {
       values = { ...values, ownerUid: this.user.uid };
 
     this.data[name] ||= [];
+    if (name === "attendance") {
+      if (id !== attendanceId(values.eventId, values.enrollmentId))
+        throw new Error("Neispravan zapis prisutnosti.");
+      const event = this.data.calendarEvents.find(
+        (r) => r.id === values.eventId,
+      );
+      const enrollment = this.data.enrollments.find(
+        (r) => r.id === values.enrollmentId,
+      );
+      if (!event || !enrollment) throw new Error("Termin ili upis ne postoji.");
+      values = attendanceValues(
+        event,
+        enrollment,
+        values.status,
+        this.profile,
+        this.user.uid,
+      );
+    }
     const old = this.data[name].find((row) => row.id === id);
     if (options.expected && (!old || revisionOf(old) !== options.expected))
       throw new Error(

@@ -1,5 +1,127 @@
 import test from "node:test";
+import {
+  attendanceValues,
+  attendanceSummary,
+  attendanceId,
+  attendanceTotals,
+} from "../src/utils/attendance.js";
 import assert from "node:assert/strict";
+test("Attendance totals sum counts rather than averaging percentages and preserve student identities", () => {
+  const base = {
+    studentId: "s",
+    student: "Student",
+    year: "2026/2027",
+    total: 3,
+    present: 1,
+    absent: 0,
+    justified: 0,
+    unmarked: 2,
+  };
+  const totals = attendanceTotals([
+    base,
+    { ...base, total: 1, present: 0, absent: 1, unmarked: 0 },
+    { ...base, studentId: "other" },
+  ]);
+  assert.equal(totals.length, 2);
+  assert.equal(totals[0].percentage, "50%");
+  assert.equal(totals[0].unmarked, 2);
+  assert.equal(totals[0].total, 4);
+});
+
+test("Attendance validates approved year-specific enrollment and teacher ownership", () => {
+  const event = {
+    id: "event",
+    courseId: "course",
+    title: "Course",
+    academicYear: "2026/2027",
+    date: "2026-10-19",
+    instructorUids: ["teacher", "co-teacher"],
+  };
+  const enrollment = {
+    id: "enrollment",
+    studentId: "offline-student",
+    ownerName: "Student",
+    courseId: "course",
+    academicYear: "2026/2027",
+    status: "Odobreno",
+  };
+  const values = attendanceValues(
+    event,
+    enrollment,
+    "Prisutan",
+    { role: "profesor" },
+    "co-teacher",
+  );
+  assert.equal(values.ownerUid, "");
+  assert.equal(values.studentId, "offline-student");
+  assert.equal(attendanceId(event.id, enrollment.id), "event__enrollment");
+  assert.throws(() =>
+    attendanceValues(
+      event,
+      enrollment,
+      "Prisutan",
+      { role: "profesor" },
+      "other",
+    ),
+  );
+  assert.throws(() =>
+    attendanceValues(
+      event,
+      { ...enrollment, academicYear: "2025/2026" },
+      "Prisutan",
+      { role: "admin" },
+      "admin",
+    ),
+  );
+  assert.throws(() =>
+    attendanceValues(
+      event,
+      { ...enrollment, status: "Na čekanju" },
+      "Prisutan",
+      { role: "admin" },
+      "admin",
+    ),
+  );
+  assert.throws(() =>
+    attendanceValues(event, enrollment, "", { role: "admin" }, "admin"),
+  );
+});
+test("Attendance statistics keep unmarked sessions separate and do not count other years", () => {
+  const enrollment = {
+    id: "en",
+    studentId: "s",
+    ownerName: "Student",
+    courseId: "c",
+    courseTitle: "Course",
+    academicYear: "2026/2027",
+    status: "Odobreno",
+  };
+  const events = ["a", "b", "c", "d"].map((id) => ({
+    id,
+    courseId: "c",
+    title: "Course",
+    academicYear: "2026/2027",
+  }));
+  events.push({ id: "old", courseId: "c", academicYear: "2025/2026" });
+  const records = ["Prisutan", "Odsutan", "Opravdano odsutan"].map(
+    (status, i) => ({ eventId: events[i].id, enrollmentId: "en", status }),
+  );
+  const summary = attendanceSummary(events, [enrollment], records)[0];
+  assert.deepEqual(
+    [
+      summary.total,
+      summary.present,
+      summary.absent,
+      summary.justified,
+      summary.unmarked,
+      summary.percentage,
+    ],
+    [4, 1, 1, 1, 1, "33.3%"],
+  );
+  assert.equal(attendanceSummary(events, [enrollment], [])[0].percentage, "—");
+  const legacy = { ...enrollment, academicYear: "" };
+  assert.equal(attendanceSummary(events, [legacy], []).length, 2);
+});
 import { readFileSync } from "node:fs";
 import {
   buildBackup,

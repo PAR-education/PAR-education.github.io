@@ -7,6 +7,8 @@ import { revisionOf } from "./utils/schedule.js";
 import { planSeries } from "./services/calendar-series.js";
 import { setupLanguage } from "./utils/language.js";
 import { mountHistory } from "./components/history.js";
+import { mountAttendance } from "./components/attendance.js";
+import { setupTimeInputs } from "./components/time-input.js";
 import { mountDataQuality } from "./components/data-quality.js";
 import { dashboardModel } from "./services/dashboard.js";
 import { mountRecordSelectors } from "./components/record-selectors.js";
@@ -61,6 +63,7 @@ let authenticatedSession = null;
 let version = 0;
 let rows = [];
 let shownRows = [];
+let attendanceEvent = "";
 let exportRows = [];
 let page = 1;
 let active = "dashboard";
@@ -407,6 +410,17 @@ async function loadView(name) {
         $("content"),
         current,
         () => context === current && version === ticket,
+      );
+      return;
+    }
+    if (name === "attendance") {
+      const eventId = attendanceEvent;
+      attendanceEvent = "";
+      await mountAttendance(
+        $("content"),
+        current,
+        () => context === current && version === ticket,
+        eventId,
       );
       return;
     }
@@ -803,6 +817,17 @@ function showDetails(name, record) {
     closeDialog();
     showForm(name, record);
   });
+  if (name === "calendarEvents" && canEdit(name, record)) {
+    const button = document.createElement("button");
+    button.className = "button primary";
+    button.textContent = "Evidencija prisutnosti";
+    button.addEventListener("click", () => {
+      attendanceEvent = record.id;
+      closeDialog();
+      location.hash = "attendance";
+    });
+    document.querySelector(".detail-actions").append(button);
+  }
   if (name === "calendarEvents" && record.seriesId && canEdit(name, record)) {
     const seriesButton = document.createElement("button");
     seriesButton.className = "button";
@@ -1337,3 +1362,4 @@ $("logout").addEventListener("click", async () => {
 setupLanguage();
 
 setupActionMenus();
+setupTimeInputs();

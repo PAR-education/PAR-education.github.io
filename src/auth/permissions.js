@@ -9,6 +9,7 @@ export const roles = Object.freeze({
 });
 export const staffRoles = ["admin", "dept_head", "profesor", "lab_assistant"];
 const readers = {
+  attendance: ["admin", "profesor", "student"],
   rooms: Object.keys(roles),
   students: ["admin", "dept_head"],
   employees: ["admin", "dept_head"],
@@ -34,6 +35,7 @@ const readers = {
   users: ["admin"],
 };
 const writers = {
+  attendance: ["admin", "profesor"],
   courses: ["admin"],
   calendarEvents: ["admin", "profesor"],
   exams: ["admin", "profesor"],
@@ -90,10 +92,13 @@ export function scopeFor(role, collection) {
       "requests",
       "evaluations",
       "notifications",
+      "attendance",
     ].includes(collection)
   ) {
     return role === "profesor" &&
-      ["grades", "enrollments", "examBookings"].includes(collection)
+      ["grades", "enrollments", "examBookings", "attendance"].includes(
+        collection,
+      )
       ? "instructorUid"
       : "ownerUid";
   }

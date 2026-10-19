@@ -3,6 +3,7 @@ import { modules } from "../modules/catalog.js";
 const primary = {
   student: [
     "calendarEvents",
+    "attendance",
     "courses",
     "exams",
     "examBookings",
@@ -13,6 +14,7 @@ const primary = {
   ],
   profesor: [
     "calendarEvents",
+    "attendance",
     "courses",
     "enrollments",
     "exams",
@@ -31,6 +33,7 @@ const personal = {
   requests: "Moje zamolbe",
 };
 export function navigationLabel(role, name) {
+  if (role === "student" && name === "attendance") return "Moja prisutnost";
   if (role === "admin") return modules[name]?.title || "Nadzorna ploča";
   if (name === "calendarEvents" && !["student", "profesor"].includes(role))
     return "Raspored";
