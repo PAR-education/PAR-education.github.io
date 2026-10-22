@@ -2567,6 +2567,8 @@ td {
 }
 .calendar-filters input,
 .calendar-filters select,
+.filter-fields input,
+.filter-fields select,
 .calendar-filter-panel input,
 .calendar-filter-panel select,
 #excel-import select,
@@ -3716,5 +3718,125 @@ summary:focus-visible {
   }
   .calendar-page .calendar-period {
     flex-basis: 100%;
+  }
+}
+
+/* Shared page density and actions for every workspace module. */
+#content > .page-heading {
+  margin: 0 0 20px;
+  justify-content: center;
+  text-align: center;
+}
+#content > .page-heading h1,
+#content > h1 {
+  font-size: 24px;
+  line-height: 1.25;
+  margin: 0;
+}
+#content > .page-heading p {
+  font-size: 14px;
+  margin-top: 6px;
+}
+#content .module-toolbar[hidden],
+#content .attendance-tools[hidden] {
+  display: none;
+}
+.stats .stat {
+  min-height: 152px;
+  padding: 19px;
+  border-radius: 20px;
+}
+.stats .stat-icon {
+  width: 38px;
+  height: 38px;
+  font-size: 18px;
+  border-radius: 13px;
+  margin-bottom: 14px;
+}
+.stats .stat strong {
+  font-size: 29px;
+}
+.stats .stat p {
+  font-size: 12px;
+}
+.stats .stat small {
+  font-size: 12px;
+  margin-top: 5px;
+}
+.stats {
+  gap: 19px;
+  margin-bottom: 22px;
+}
+#calendar-topbar .page-actions {
+  max-width: 100%;
+}
+#calendar-topbar .module-filters > .filter-fields {
+  max-height: 70vh;
+  overflow-y: auto;
+}
+@media (max-width: 760px) {
+  #content > .page-heading {
+    text-align: left;
+    justify-content: flex-start;
+    margin-bottom: 16px;
+  }
+  #content > .page-heading h1,
+  #content > h1 {
+    font-size: 21px;
+  }
+  #calendar-topbar .module-filters > .filter-fields {
+    left: auto;
+    right: 0;
+    width: min(520px, calc(100vw - 40px));
+  }
+}
+
+/* Page names sit between global search and the shared action buttons. */
+#page-title {
+  flex: 1 1 160px;
+  min-width: 0;
+  text-align: center;
+}
+#page-title h1 {
+  font-size: 20px;
+  line-height: 1.25;
+  margin: 0;
+}
+.app-header .header-path {
+  flex: 0 1 240px;
+  min-width: 160px;
+}
+.app-header .header-search {
+  width: 100%;
+  min-width: 0;
+}
+.app-header .header-search input {
+  flex: 1;
+  width: 0;
+  min-width: 0;
+}
+.app-header .header-actions {
+  flex: 0 1 auto;
+  gap: 8px;
+}
+.calendar-page .calendar-period {
+  margin-right: auto;
+}
+#content > .page-heading[hidden] {
+  display: none;
+}
+@media (max-width: 760px) {
+  .app-header {
+    flex-wrap: wrap;
+  }
+  #page-title {
+    flex: 1 1 130px;
+    text-align: left;
+  }
+  #page-title h1 {
+    font-size: 18px;
+  }
+  .app-header .header-actions {
+    flex-wrap: wrap;
   }
 }

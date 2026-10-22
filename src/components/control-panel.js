@@ -33,7 +33,9 @@ export function mountControlPanel(root, context, isCurrent) {
       )
       .join("");
   root.innerHTML = `<div class="page-heading"><div><h1>Control panel</h1></div></div><div id="backup-message" role="status" aria-live="polite"></div><div class="backup-layout"><section class="panel backup-section"><h2>${icon("database")} Izvoz i backup</h2><details class="module-picker"><summary>Odabrani moduli <span id="backup-selected-label"></span></summary><div class="backup-selection"><button class="button" id="backup-all">Odaberi sve</button><button class="button" id="backup-none">Poništi odabir</button></div><div class="module-options">${choices(backupModules, "backup-module")}</div></details><div class="backup-fields"><label>Vrsta backupa<select id="backup-mode" aria-label="Vrsta backupa"><option value="full">Potpuni backup</option><option value="incremental">Inkrementalni backup</option><option value="range">Backup vremenskog raspona</option></select></label><label>Format<select id="backup-format" aria-label="Format backupa"><option value="json">JSON — strukturirani backup</option><option value="csv">CSV — backup i pregled u tablici</option><option value="zip">ZIP — JSON i CSV po modulima</option></select></label></div><div id="backup-range" class="backup-fields" hidden><label>Od datuma<input type="date" id="backup-from"></label><label>Do datuma<input type="date" id="backup-to"></label><p>Zapisi prema zadnjoj izmjeni (ili datumu kreiranja ako izmjena nije zabilježena). Oba datuma uključena su u raspon, u vremenskoj zoni Europe/Zagreb. Ova kopija ne mijenja polazište inkrementalnog backupa.</p></div><button id="backup-download" class="button primary">${icon("download")} Izradi i preuzmi backup</button><div id="backup-confirm" hidden><p>Provjerite da je datoteka spremljena. Tek potvrdom postaje polazište sljedećeg inkrementalnog backupa.</p><button id="backup-ack" class="button primary">Datoteka je spremljena — potvrdi backup</button></div><details><summary>Što se čuva u backupu?</summary><p>Svi zapisi odabranih modula, uključujući ID-eve i datume. Promjene se uspoređuju po sadržaju; obrisani zapisi imaju oznake brisanja. Evidencija zadnjeg backupa čuva se za ovaj račun u ovom pregledniku. Lozinke i Firebase Authentication računi nisu dio backupa.</p><p>Za vraćanje inkrementalnog backupa treba početni potpuni backup i zatim inkrementalni backupi redom. Čuvajte cijeli lanac.</p><p>Za provjeru promjena čitaju se svi zapisi odabranih modula; u inkrementalnu datoteku ulaze samo promjene. Kopija više modula nije jedna atomska snimka: najbolje je izraditi backup kad nema aktivnih izmjena.</p></details><div id="backup-history"></div></section><section class="panel backup-section"><h2>${icon("upload")} Import i vraćanje</h2><details class="context-help"><summary>Upute za vraćanje</summary><p>Učitajte PAR backup (.json, .csv ili .zip), do 25 MB. Nakon učitavanja odaberite module za povrat. CSV iz pojedinog modula služi za pregled; za povrat koristite backup iz ovog panela.</p></details><label class="file-label">Backup datoteka<input id="restore-file" type="file" accept=".json,.csv,.zip"></label><div id="restore-preview"></div><p class="muted">Vraćanje može zamijeniti postojeće podatke i uloge. Lozinke i prijavni računi nisu dio backupa.</p></section></div>`;
-  const $ = (id) => root.querySelector("#" + id);
+  const $ = (id) =>
+    root.querySelector("#" + id) ||
+    document.getElementById("calendar-topbar")?.querySelector("#" + id);
   $("backup-from").value = zagrebDate();
   $("backup-to").value = zagrebDate();
   $("backup-mode").addEventListener("change", () => {
@@ -62,8 +64,8 @@ export function mountControlPanel(root, context, isCurrent) {
   }
   function lock(value) {
     busy = value;
-    root
-      .querySelectorAll("button,input,select")
+    [root, document.getElementById("calendar-topbar")]
+      .flatMap((node) => [...node.querySelectorAll("button,input,select")])
       .forEach((el) => (el.disabled = value));
   }
   $("backup-all").addEventListener("click", () =>

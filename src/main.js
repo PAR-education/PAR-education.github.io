@@ -1,3 +1,4 @@
+import { setupPageToolbar } from "./components/page-toolbar.js";
 import { showCalendarTransfer } from "./components/calendar-transfer.js";
 import { setupGlobalSearch } from "./components/global-search.js";
 import { printCalendar } from "./components/calendar-export.js";
@@ -83,6 +84,7 @@ let statusFilter = "";
 let month = "";
 let toastTimer;
 theme();
+setupPageToolbar($("content"), $("calendar-topbar"), $("page-title"));
 setupGlobalSearch({
   getContext: () => context,
   onRecord: (name, record) => showDetails(name, record),
@@ -359,6 +361,8 @@ async function loadView(name) {
   const current = context;
   const ticket = ++version;
   calendarExportState = { events: [], date: "" };
+  $("page-title").replaceChildren();
+  $("page-title").hidden = true;
   $("calendar-topbar").replaceChildren();
   $("calendar-topbar").hidden = true;
   $("global-results").replaceChildren();

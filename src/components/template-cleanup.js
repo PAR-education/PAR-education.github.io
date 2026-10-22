@@ -18,14 +18,16 @@ export function mountTemplateCleanup(root, context, isCurrent) {
     busy = false,
     backedUp = false;
   root.innerHTML = `<div class="page-heading"><div><h1>Priprema baze za prave podatke</h1><p>Pregled oglednih zapisa. Korisnički profili i Authentication računi nikad se ne brišu ovim alatom.</p></div></div><section class="panel cleanup-panel"><p>Ne brišite cijele kolekcije. Ovdje se izdvajaju samo poznati zapisi <code>template-…</code> čiji sadržaj odgovara izvornom predlošku. Izmijenjeni, nepoznati i zapisi s vezama iz drugih evidencija ostaju.</p><p>Čišćenje radite prije uvoza pravih podataka. Dok traje čišćenje, drugi korisnici neka ne unose nove podatke.</p><button id="cleanup-review" class="button">Pregledaj bazu bez promjena</button><div id="cleanup-message" role="status" aria-live="polite"></div><div id="cleanup-results"></div></section>`;
-  const $ = (id) => root.querySelector("#" + id),
+  const $ = (id) =>
+      root.querySelector("#" + id) ||
+      document.getElementById("calendar-topbar")?.querySelector("#" + id),
     message = (text) => {
       $("cleanup-message").textContent = text;
     };
   function lock(value) {
     busy = value;
-    root
-      .querySelectorAll("button,input")
+    [root, document.getElementById("calendar-topbar")]
+      .flatMap((node) => [...node.querySelectorAll("button,input,select")])
       .forEach((el) => (el.disabled = value));
   }
   $("cleanup-review").addEventListener("click", async () => {

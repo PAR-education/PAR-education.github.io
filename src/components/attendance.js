@@ -58,7 +58,13 @@ export async function mountAttendance(
     "attendance-to",
   ];
   const previousState = Object.fromEntries(
-    controlIds.map((id) => [id, root.querySelector("#" + id)?.value || ""]),
+    controlIds.map((id) => [
+      id,
+      (
+        root.querySelector("#" + id) ||
+        document.getElementById("calendar-topbar")?.querySelector("#" + id)
+      )?.value || "",
+    ]),
   );
   const courseControl = `<label>Kolegij<select id="attendance-course"><option value="">${staff ? "Odaberite kolegij" : "Svi kolegiji"}</option>${[
     ...new Map(events.map((r) => [r.courseId, r.title])).entries(),
@@ -82,7 +88,9 @@ export async function mountAttendance(
     <div id="attendance-message" role="status" aria-live="polite"></div>
     ${staff ? '<div id="attendance-roster"></div>' : ""}
     <h2>Statistika</h2><details class="context-help"><summary>Kako se računa prisutnost?</summary><p>Postotak = dolasci / evidentirani termini. Neevidentirani termini nisu izostanci. Opravdani izostanci prikazuju se zasebno.</p></details><div id="attendance-stats"></div><details class="context-help"><summary>Evidencija po terminima</summary><div id="attendance-detail"></div></details></section>`;
-  const $ = (id) => root.querySelector("#" + id);
+  const $ = (id) =>
+    root.querySelector("#" + id) ||
+    document.getElementById("calendar-topbar")?.querySelector("#" + id);
   for (const [id, value] of Object.entries(previousState)) {
     if (!$(id)) continue;
     if (
