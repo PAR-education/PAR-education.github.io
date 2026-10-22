@@ -494,7 +494,7 @@ async function drawDashboard(ticket, current) {
   $("content").innerHTML =
     heading(
       navigationLabel(current.profile.role, "dashboard"),
-      `Dobrodošli, ${current.profile.name || current.user.email}. ${new Date().toLocaleDateString("hr-HR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}`,
+      "",
       `${current.profile.role === "admin" ? '<a class="button" href="#control-panel">Control panel i backup</a>' : ""}<button id="refresh" class="button">Osvježi podatke</button>`,
     ) +
     (failures.length
