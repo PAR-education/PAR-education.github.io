@@ -23,8 +23,8 @@ const primary = {
   ],
   profesor: [
     "calendarEvents",
-    "attendance",
     "courses",
+    "attendance",
     "enrollments",
     "exams",
     "examBookings",
