@@ -489,7 +489,7 @@ async function drawDashboard(ticket, current) {
   const stats = model.stats
     .map(
       (stat) =>
-        `<a href="#${stat.name}" class="stat stat-${stat.name}"><span class="stat-icon">${icon(stat.name)}</span><p>${e(modules[stat.name]?.title === stat.label ? stat.label : modules[stat.label]?.title || stat.label)}</p><strong>${e(stat.value)}</strong><small>${e(stat.detail)}</small></a>`,
+        `<a href="#${stat.name}" class="stat stat-${stat.name}"><p>${e(modules[stat.name]?.title === stat.label ? stat.label : modules[stat.label]?.title || stat.label)}</p><strong>${e(stat.value)}</strong></a>`,
     )
     .join("");
   $("content").innerHTML =
