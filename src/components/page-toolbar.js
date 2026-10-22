@@ -2,6 +2,12 @@
 export function setupPageToolbar(content, host, titleHost) {
   const sync = () => {
     observer.disconnect();
+    const ribbon = content.querySelector(".stats");
+    if (ribbon) {
+      document.getElementById("dashboard-ribbon")?.remove();
+      ribbon.id = "dashboard-ribbon";
+      document.querySelector(".app-header").after(ribbon);
+    }
     const heading = content.querySelector(".page-heading");
     let actions = host.querySelector(".page-actions");
     const incoming = heading?.querySelector(".page-actions");

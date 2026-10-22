@@ -360,6 +360,7 @@ async function loadView(name) {
   $("content").classList.toggle("calendar-page", name === "calendarEvents");
   const current = context;
   const ticket = ++version;
+  document.getElementById("dashboard-ribbon")?.remove();
   calendarExportState = { events: [], date: "" };
   $("page-title").replaceChildren();
   $("page-title").hidden = true;

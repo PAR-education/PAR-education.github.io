@@ -203,6 +203,7 @@ export async function mountAttendance(
           ? "Odaberite termin"
           : "Nema termina za odabrane filtre") +
       "</option>" +
+      (sorted.length ? '<option value="__all__">Svi termini</option>' : "") +
       sorted
         .map(
           (ev) =>
@@ -211,7 +212,11 @@ export async function mountAttendance(
         .join("");
     $("attendance-event").disabled = !sorted.length;
     const next = initialEvent || previous;
-    if (sorted.some((ev) => ev.id === next)) $("attendance-event").value = next;
+    if (
+      (next === "__all__" && sorted.length) ||
+      sorted.some((ev) => ev.id === next)
+    )
+      $("attendance-event").value = next;
     initialEvent = "";
     renderRoster();
   }
@@ -268,30 +273,47 @@ export async function mountAttendance(
       }),
     );
   }
-  function renderRoster() {
-    const event = events.find((ev) => ev.id === $("attendance-event").value);
-    if (!event) {
+  function renderRoster(limit = 100) {
+    const { selectedEvents, selectedEnrollments } = filtered();
+    const selection = $("attendance-event").value;
+    const chosen = $("attendance-course").value
+      ? selectedEvents.filter(
+          (ev) => selection === "__all__" || ev.id === selection,
+        )
+      : [];
+    if (!chosen.length) {
       $("attendance-roster").innerHTML = "";
       return;
     }
-    const roster = filtered().selectedEnrollments.filter((en) =>
-      enrollmentForEvent(en, event),
-    );
+    const roster = chosen
+      .slice()
+      .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time))
+      .flatMap((event) =>
+        selectedEnrollments
+          .filter((en) => enrollmentForEvent(en, event))
+          .map((enrollment) => ({ event, enrollment })),
+      );
     $("attendance-roster").innerHTML = roster.length
-      ? `<div class="table-scroll"><table><thead><tr><th>Student</th><th>Prisutnost</th><th></th></tr></thead><tbody>${roster
-          .map((en, i) => {
+      ? `<div class="table-scroll"><table><thead><tr><th>Termin nastave</th><th>Student</th><th>Prisutnost</th><th></th></tr></thead><tbody>${roster
+          .slice(0, limit)
+          .map(({ event, enrollment: en }, i) => {
             const saved = records.find(
               (r) => r.eventId === event.id && r.enrollmentId === en.id,
             );
-            return `<tr><td>${e(en.ownerName || "Student")}${editorLabel(saved) ? `<small class="attendance-editor">${e(editorLabel(saved))}</small>` : ""}</td><td><select data-attendance-status="${i}" aria-label="Prisutnost: ${e(en.ownerName)}"><option value="Nije evidentirano">Nije evidentirano</option>${attendanceStatuses.map((status) => `<option value="${e(status)}" ${saved?.status === status ? "selected" : ""}>${e(status)}</option>`).join("")}</select></td><td><button class="button" data-attendance-save="${i}">Spremi</button></td></tr>`;
+            return `<tr><td>${e(new Date(event.date + "T12:00:00Z").toLocaleDateString("hr-HR", { timeZone: "Europe/Zagreb" }))}<small class="attendance-editor">${e(event.time)}${event.endTime ? "–" + e(event.endTime) : ""} · ${e(event.room || (event.online ? "Online" : "Bez dvorane"))}</small></td><td>${e(en.ownerName || "Student")}${editorLabel(saved) ? `<small class="attendance-editor">${e(editorLabel(saved))}</small>` : ""}</td><td><select data-attendance-status="${i}" aria-label="Prisutnost: ${e(en.ownerName)}"><option value="Nije evidentirano">Nije evidentirano</option>${attendanceStatuses.map((status) => `<option value="${e(status)}" ${saved?.status === status ? "selected" : ""}>${e(status)}</option>`).join("")}</select></td><td><button class="button" data-attendance-save="${i}">Spremi</button></td></tr>`;
           })
-          .join("")}</tbody></table></div>`
+          .join(
+            "",
+          )}</tbody></table></div>${roster.length > limit ? '<button type="button" class="button" id="attendance-more">Prikaži još</button>' : ""}`
       : '<p class="panel-note">Nema odobrenih upisa za ovaj termin i odabrane filtre.</p>';
+    $("attendance-more")?.addEventListener("click", () =>
+      renderRoster(limit + 100),
+    );
     root.querySelectorAll("[data-attendance-save]").forEach((button) =>
       button.addEventListener("click", async () => {
         if (busy || !isCurrent()) return;
         const index = Number(button.dataset.attendanceSave),
-          enrollment = roster[index],
+          { event, enrollment } = roster[index],
           status = root.querySelector(
             `[data-attendance-status="${index}"]`,
           ).value;
@@ -342,7 +364,7 @@ export async function mountAttendance(
     $("attendance-grouping").value = "student";
     render();
   });
-  $("attendance-event")?.addEventListener("change", renderRoster);
+  $("attendance-event")?.addEventListener("change", () => renderRoster());
   $("attendance-refresh").addEventListener("click", async () => {
     try {
       await mountAttendance(
