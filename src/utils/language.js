@@ -1,5 +1,14 @@
 // UI text only. Stored values, IDs and imported course names are never rewritten.
 const words = {
+  "Unesite pojam": "Enter a search term",
+  "Kalendar nastave": "Teaching calendar",
+  "Popis / PDF": "List / PDF",
+  "Grafički prikaz · tjedan": "Calendar grid · week",
+  "Grafički prikaz · mjesec": "Calendar grid · month",
+  "Pretraživanje…": "Searching…",
+  "Otvori modul →": "Open module →",
+  "Neki izvori nisu dostupni. Pokušajte ponovno.":
+    "Some sources are unavailable. Please try again.",
   Pogled: "View",
   Raspored: "Timetable",
   Studij: "Study programme",
@@ -295,6 +304,16 @@ export function setupLanguage() {
         lang === "en" ? "en-GB" : "hr-HR",
         format,
       );
+      if (el.textContent !== text) el.textContent = text;
+    });
+    document.querySelectorAll("[data-calendar-month]").forEach((el) => {
+      const text = new Date(
+        el.dataset.calendarMonth + "-01T12:00:00Z",
+      ).toLocaleDateString(lang === "en" ? "en-GB" : "hr-HR", {
+        month: "long",
+        year: "numeric",
+        timeZone: "Europe/Zagreb",
+      });
       if (el.textContent !== text) el.textContent = text;
     });
     observer.observe(document.body, {

@@ -1,3 +1,5 @@
+import { setupGlobalSearch } from "./components/global-search.js";
+import { printCalendar } from "./components/calendar-export.js";
 import { mountMiniCalendar } from "./components/mini-calendar.js";
 import { mountCourseCalendar } from "./components/course-calendar.js";
 import { showAnnouncement } from "./components/announcement.js";
@@ -65,6 +67,7 @@ import {
 import { mountTemplateCleanup } from "./components/template-cleanup.js";
 const $ = (id) => document.getElementById(id);
 let calendarAnchor = "";
+let calendarExportState = { events: [], date: "" };
 let context = null;
 let authenticatedSession = null;
 let version = 0;
@@ -79,27 +82,9 @@ let statusFilter = "";
 let month = "";
 let toastTimer;
 theme();
-$("global-search")?.addEventListener("input", (event) => {
-  const value = event.target.value.trim().toLocaleLowerCase("hr");
-  const results = $("global-results");
-  results.hidden = !value;
-  results.innerHTML =
-    context && value
-      ? Object.entries(modules)
-          .filter(
-            ([name, m]) =>
-              canRead(context.profile.role, name) &&
-              m.title.toLocaleLowerCase("hr").includes(value),
-          )
-          .map(
-            ([name, m]) => `<a href="#${name}">${icon(name)} ${e(m.title)}</a>`,
-          )
-          .join("") || "<p>Nema rezultata</p>"
-      : "";
-});
-$("global-results")?.addEventListener("click", () => {
-  $("global-results").hidden = true;
-  $("global-search").value = "";
+setupGlobalSearch({
+  getContext: () => context,
+  onRecord: (name, record) => showDetails(name, record),
 });
 setupDialog();
 $("theme").addEventListener("click", toggleTheme);
@@ -372,6 +357,12 @@ async function loadView(name) {
   $("content").classList.toggle("calendar-page", name === "calendarEvents");
   const current = context;
   const ticket = ++version;
+  calendarExportState = { events: [], date: "" };
+  $("calendar-topbar").replaceChildren();
+  $("calendar-topbar").hidden = true;
+  $("global-results").replaceChildren();
+  $("global-results").hidden = true;
+  $("global-search").value = "";
   active = name;
   page = 1;
   search = "";
@@ -621,16 +612,17 @@ function drawModule() {
       : "";
   $("content").innerHTML =
     heading(
-      navigationLabel(context.profile.role, active),
+      active === "calendarEvents"
+        ? "Kalendar nastave"
+        : navigationLabel(context.profile.role, active),
       "",
-      `${active === "notifications" && canSendAnnouncement(context.profile.role) ? '<button class="button primary" id="send-announcement">Pošalji obavijest</button>' : ""}${active !== "notifications" && (canCreate(active) || canImport(context.profile.role, active)) ? actionMenu("Dodaj", `${canCreate(active) ? '<button id="create" type="button">Ručni unos</button>' : ""}${canImport(context.profile.role, active) ? '<button id="excel-open" type="button">Uvoz iz datoteke</button>' : ""}`, true) : ""}${actionMenu("Izvoz", '<button id="print" type="button">Ispis / PDF</button><button id="csv" type="button">CSV tablica</button>')}<button id="refresh" class="button icon-button" title="Osvježi" aria-label="Osvježi">${icon("arrows-rotate")}</button>`,
+      `${active === "notifications" && canSendAnnouncement(context.profile.role) ? '<button class="button primary" id="send-announcement">Pošalji obavijest</button>' : ""}${active !== "notifications" && (canCreate(active) || canImport(context.profile.role, active)) ? actionMenu("Dodaj", `${canCreate(active) ? '<button id="create" type="button">Ručni unos</button>' : ""}${canImport(context.profile.role, active) ? '<button id="excel-open" type="button">Uvoz iz datoteke</button>' : ""}`, true) : ""}${actionMenu("Izvoz", `<button id="print" type="button">${active === "calendarEvents" ? "Popis / PDF" : "Ispis / PDF"}</button>${active === "calendarEvents" ? '<button id="calendar-print-week" type="button">Grafički prikaz · tjedan</button><button id="calendar-print-month" type="button">Grafički prikaz · mjesec</button>' : ""}<button id="csv" type="button">CSV tablica</button>`)}<button id="refresh" class="button icon-button" title="Osvježi" aria-label="Osvježi">${icon("arrows-rotate")}</button>`,
     ) +
     `<section class="panel module-panel"><div class="toolbar module-toolbar"><label class="module-search" for="search"><span class="sr-only">Pretraživanje</span>${icon("magnifying-glass")}<input class="search" id="search" type="search" placeholder="Pretraži…" autocomplete="off"></label><div class="toolbar-actions">${filters || monthly ? `<details class="module-filters" id="module-filters"><summary class="button">${icon("filter")} <span id="filter-label">Filtri</span></summary><div class="filter-fields">${filters}${monthly}<button class="button" id="clear-filters">Očisti filtre</button></div></details>` : ""}${batchAllowed ? '<button class="button" id="batch-approve">Odobri više…</button>' : ""}</div></div><div id="table-area"></div><div class="table-footer" id="record-count"></div></section>`;
   if (active === "calendarEvents") {
     $("content").classList.add("calendar-page");
-    $("content")
-      .querySelector(".page-actions")
-      .prepend($("search").closest("label"));
+    $("calendar-topbar").hidden = false;
+    $("calendar-topbar").append($("content").querySelector(".page-heading"));
     $("content").querySelector(".module-toolbar").hidden = true;
   } else $("content").classList.remove("calendar-page");
   if ($("status-filter")) $("status-filter").value = statusFilter;
@@ -725,6 +717,18 @@ function drawModule() {
       notify(errorMessage(error));
     }
   });
+  for (const view of ["week", "month"])
+    $("calendar-print-" + view)?.addEventListener("click", () => {
+      try {
+        printCalendar(
+          calendarExportState.events,
+          calendarExportState.date,
+          view,
+        );
+      } catch (error) {
+        notify(errorMessage(error));
+      }
+    });
   $("csv").addEventListener("click", () =>
     exportCSV(
       active,
@@ -814,7 +818,10 @@ function drawTable() {
     const current = context;
     mountCalendarView($("table-area"), shownRows, {
       context: current,
-      toolbarRoot: $("content").querySelector(".page-actions"),
+      toolbarRoot: $("calendar-topbar").querySelector(".page-actions"),
+      onExportSource: (events, date) => {
+        calendarExportState = { events: events.slice(), date };
+      },
       initialDate: calendarAnchor,
       allEvents: rows,
       onVisible: (visible) => {

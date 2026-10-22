@@ -183,6 +183,7 @@ export function mountCalendarView(root, events, options) {
     for (const id of ["calendar-prev", "calendar-today", "calendar-next"])
       $(id).hidden = view === "semester";
     if (view === "rooms") {
+      options.onExportSource?.(visible, date);
       roomDay =
         $("calendar-body").querySelector("#schedule-day")?.value ?? roomDay;
       mountSchedule($("calendar-body"), visible, {
@@ -216,6 +217,7 @@ export function mountCalendarView(root, events, options) {
             },
             (_, i) => add(start, i),
           );
+    options.onExportSource?.(visible, date);
     const matching = visible.slice();
     if (view !== "semester")
       visible = visible.filter((r) => dates.includes(r.date));
@@ -244,7 +246,7 @@ export function mountCalendarView(root, events, options) {
               )
               .join("")}</div>`
           : view === "month"
-            ? `<h2 class="calendar-period">${e(new Date(date + "T12:00:00Z").toLocaleDateString("hr-HR", { month: "long", year: "numeric", timeZone: "Europe/Zagreb" }))}</h2>`
+            ? `<h2 class="calendar-period" data-calendar-month="${e(date.slice(0, 7))}">${e(new Date(date + "T12:00:00Z").toLocaleDateString("hr-HR", { month: "long", year: "numeric", timeZone: "Europe/Zagreb" }))}</h2>`
             : ""
       }<div class="calendar-agenda ${["semester", "month"].includes(view) ? "semester-agenda" : ""}">${
         dates

@@ -3584,3 +3584,93 @@ summary:focus-visible {
     margin-left: 0;
   }
 }
+
+/* Teaching tools share the application header; search spans permitted modules. */
+.app-header:has(#calendar-topbar:not([hidden])) {
+  flex-wrap: wrap;
+  gap: 14px;
+}
+#calendar-topbar {
+  flex: 1 1 500px;
+  min-width: 0;
+}
+#calendar-topbar .page-heading {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+#calendar-topbar h1 {
+  font-size: 21px;
+  margin: 0;
+  white-space: nowrap;
+}
+#calendar-topbar .page-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 0 auto;
+}
+#calendar-topbar .calendar-filter-panel {
+  position: relative;
+}
+#calendar-topbar .calendar-filter-panel > .filter-fields {
+  max-height: 70vh;
+  overflow-y: auto;
+}
+.header-search {
+  position: relative;
+}
+#global-results {
+  width: min(620px, calc(100vw - 40px));
+  max-height: 70vh;
+  overflow-y: auto;
+  right: auto;
+}
+#global-results h3 {
+  font-size: 12px;
+  padding: 10px 14px;
+  margin: 0;
+  background: var(--surface-soft);
+}
+#global-results p {
+  padding: 10px 14px;
+  font-size: 13px;
+}
+#global-results button {
+  display: block;
+  text-align: left;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  padding: 12px 14px;
+  cursor: pointer;
+}
+#global-results button:hover,
+#global-results button:focus-visible {
+  background: var(--accent-soft);
+}
+#global-results small {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+}
+@media (max-width: 1700px) {
+  #calendar-topbar {
+    order: 3;
+    flex-basis: 100%;
+  }
+}
+@media (max-width: 760px) {
+  #calendar-topbar .page-actions {
+    margin-left: 0;
+  }
+  #calendar-topbar .calendar-filter-panel > .filter-fields {
+    right: 0;
+    left: auto;
+    width: min(520px, calc(100vw - 40px));
+  }
+}

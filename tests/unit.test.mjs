@@ -754,3 +754,91 @@ test("Self check-in follows winter offset and Zagreb date at UTC midnight", asyn
     true,
   );
 });
+test("Global search connects permitted course and student records without matching technical UIDs", async () => {
+  const { searchRecords } = await import("../src/components/global-search.js");
+  const sources = {
+    courses: [{ id: "c", title: "Računovodstvo" }],
+    calendarEvents: [
+      { id: "lesson", courseId: "c", title: "Vježbe", date: "2026-10-22" },
+    ],
+    enrollments: [
+      {
+        id: "en",
+        courseId: "c",
+        ownerUid: "private-uid",
+        ownerName: "Ana Horvat",
+      },
+    ],
+    attendance: [
+      {
+        id: "a",
+        ownerUid: "private-uid",
+        studentName: "Ana",
+        courseId: "c",
+        status: "Prisutan",
+      },
+    ],
+  };
+  assert.equal(searchRecords(sources, "racunovodstvo").length, 4);
+  assert.deepEqual(
+    searchRecords(sources, "Ana Horvat").map((r) => r.name),
+    ["enrollments", "attendance"],
+  );
+  assert.equal(searchRecords(sources, "private-uid").length, 0);
+  assert.equal(searchRecords(sources, "  ").length, 0);
+});
+test("Graphical calendar exports respect the selected period and escape content", async () => {
+  const { calendarPrintHTML } =
+    await import("../src/components/calendar-export.js");
+  const rows = [
+    {
+      date: "2026-10-22",
+      time: "10:00",
+      endTime: "11:30",
+      title: "<script>unsafe</script>",
+      room: "Room 1",
+      instructorName: "Teacher",
+    },
+    {
+      date: "2026-11-02",
+      time: "10:00",
+      endTime: "11:00",
+      title: "Other month",
+    },
+  ];
+  for (const view of ["week", "month"]) {
+    const html = calendarPrintHTML(rows, "2026-10-22", view, "en");
+    assert.ok(html.includes("&lt;script&gt;unsafe&lt;/script&gt;"));
+    assert.ok(!html.includes("<script>"));
+    assert.ok(!html.includes("Other month"));
+    assert.ok(html.includes("Teacher"));
+    assert.ok(html.includes("Room 1"));
+    assert.ok(html.includes("Teaching calendar"));
+  }
+});
+test("Global search loads only modules readable by the current role", async () => {
+  const { loadSearchSources } =
+    await import("../src/components/global-search.js");
+  for (const role of ["profesor", "student", "administracija_par", "alumni"]) {
+    const requested = [];
+    const context = {
+      profile: { role },
+      repository: {
+        listAll: async (name) => {
+          requested.push(name);
+          return [];
+        },
+      },
+    };
+    const { sources, failures } = await loadSearchSources(context);
+    assert.equal(failures.length, 0);
+    assert.ok(!requested.includes("users"));
+    if (role === "profesor") {
+      assert.ok(requested.includes("attendance"));
+      assert.ok(requested.includes("enrollments"));
+      assert.ok(!requested.includes("students"));
+      assert.ok(!requested.includes("finances"));
+    }
+    for (const name of Object.keys(sources)) assert.ok(canRead(role, name));
+  }
+});
