@@ -61,6 +61,10 @@ export function navigationLabel(role, name) {
 export function roleNavigation(role) {
   const allowed = Object.keys(modules).filter((n) => canRead(role, n));
   if (role === "admin") return { primary: allowed, more: [] };
-  const main = (primary[role] || []).filter((n) => allowed.includes(n));
+  const preferred = primary[role] || [];
+  const attendanceIndex = preferred.indexOf("attendance");
+  const compact =
+    attendanceIndex < 0 ? preferred : preferred.slice(0, attendanceIndex + 1);
+  const main = compact.filter((n) => allowed.includes(n));
   return { primary: main, more: allowed.filter((n) => !main.includes(n)) };
 }

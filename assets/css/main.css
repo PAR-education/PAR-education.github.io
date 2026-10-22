@@ -808,6 +808,12 @@ dialog::backdrop {
   color: var(--muted);
   margin-bottom: 4px;
 }
+.syllabus-details .details {
+  grid-template-columns: minmax(0, 1fr);
+}
+.syllabus-details .details dd {
+  line-height: 1.65;
+}
 .details dd {
   font-size: 13px;
   margin: 0;
@@ -3391,6 +3397,9 @@ summary:focus-visible {
 }
 .mini-day.is-today {
   border-color: var(--accent);
+}
+.mini-day.has-lessons {
+  background: rgba(89, 143, 255, 0.16);
 }
 .mini-day[aria-pressed="true"] {
   background: var(--accent);

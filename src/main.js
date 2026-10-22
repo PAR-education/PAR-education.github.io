@@ -1,4 +1,5 @@
 import { courseCalendarItems } from "./utils/course-calendar.js";
+import { syllabusFields, syllabusRecord } from "./utils/syllabus.js";
 import { zagrebDate } from "./utils/calendar.js";
 import { setupPageToolbar } from "./components/page-toolbar.js";
 import { showCalendarTransfer } from "./components/calendar-transfer.js";
@@ -970,7 +971,9 @@ function showDetails(name, record) {
           : null;
   openDialog(
     record.name || record.title || modules[name].title,
-    detailsHTML(modules[name].fields, record) +
+    (name === "courses"
+      ? `<div class="syllabus-details">${detailsHTML(syllabusFields(modules[name].fields), syllabusRecord(record))}</div>`
+      : detailsHTML(modules[name].fields, record)) +
       `${role === "admin" ? `<details class="context-help"><summary>Podaci o zapisu</summary><p>ID: ${e(record.id)}</p></details>` : ""}<div class="detail-actions">${canEdit(name, record) ? '<button id="edit-record" class="button primary">Uredi</button>' : ""}<button id="print-record" class="button">Ispis / PDF</button>${record.url && /^https:\/\//i.test(record.url) ? `<a class="button" href="${e(record.url)}" target="_blank" rel="noopener noreferrer">Otvori dokument ↗</a>` : ""}${role === "student" && bookingTarget ? '<button id="book-record" class="button primary">Pošalji prijavu</button>' : ""}${canDecide && record.status === "Na čekanju" && ["vacations", "enrollments", "examBookings", "labBookings"].includes(name) ? '<button id="approve" class="button primary">Odobri</button><button id="reject" class="button">Odbij</button>' : ""}${canDelete(role, name) && (name !== "calendarEvents" || canEdit(name, record)) && !["users", "evaluations"].includes(name) ? '<button id="delete-record" class="button danger">Arhiviraj</button>' : ""}</div><div id="detail-error" role="alert"></div>`,
   );
   if (["courses", "calendarEvents", "exams"].includes(name)) {
@@ -1190,12 +1193,28 @@ function showDetails(name, record) {
     try {
       printReport(
         modules[name].title,
-        modules[name].fields.map((field) => ({
+        (name === "courses"
+          ? syllabusFields(modules[name].fields)
+          : modules[name].fields.filter(
+              (field) =>
+                ![
+                  "ownerUid",
+                  "instructorUid",
+                  "instructorUids",
+                  "departmentId",
+                  "studentId",
+                  "courseId",
+                  "examId",
+                  "labId",
+                ].includes(field.key),
+            )
+        ).map((field) => ({
           key: field.key,
           label: field.label,
         })),
-        [record],
-        `ID: ${record.id}`,
+        [name === "courses" ? syllabusRecord(record) : record],
+        "",
+        { detail: true },
       );
     } catch (error) {
       $("detail-error").textContent = errorMessage(error);

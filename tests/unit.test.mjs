@@ -406,15 +406,15 @@ test("AdministracijaPAR gets a focused dashboard, create-only people and schedul
   const { DemoRecords } = await import("../src/services/demo.js");
   const role = "administracija_par";
   const nav = roleNavigation(role);
-  assert.deepEqual(nav.primary, [
-    "calendarEvents",
-    "attendance",
+  assert.deepEqual(nav.primary, ["calendarEvents", "attendance"]);
+  for (const name of [
     "students",
     "employees",
     "courses",
     "rooms",
     "notifications",
-  ]);
+  ])
+    assert.ok(nav.more.includes(name));
   for (const name of [
     "users",
     "grades",
