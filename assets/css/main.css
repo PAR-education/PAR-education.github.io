@@ -3591,7 +3591,7 @@ summary:focus-visible {
   gap: 14px;
 }
 #calendar-topbar {
-  flex: 1 1 500px;
+  flex: 0 1 auto;
   min-width: 0;
 }
 #calendar-topbar .page-heading {
@@ -3630,10 +3630,13 @@ summary:focus-visible {
   right: auto;
 }
 #global-results h3 {
-  font-size: 12px;
+  font-size: 14px;
+  font-weight: 750;
+  color: var(--ink);
   padding: 10px 14px;
   margin: 0;
   background: var(--surface-soft);
+  border-bottom: 1px solid var(--border);
 }
 #global-results p {
   padding: 10px 14px;
@@ -3660,8 +3663,8 @@ summary:focus-visible {
 }
 @media (max-width: 1700px) {
   #calendar-topbar {
-    order: 3;
-    flex-basis: 100%;
+    order: 0;
+    flex-basis: auto;
   }
 }
 @media (max-width: 760px) {
@@ -3672,5 +3675,46 @@ summary:focus-visible {
     right: 0;
     left: auto;
     width: min(520px, calc(100vw - 40px));
+  }
+}
+
+.header-actions:has(#calendar-topbar:not([hidden])) {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+#calendar-topbar .page-actions {
+  margin: 0;
+}
+.calendar-page .calendar-paging {
+  gap: 8px;
+}
+.calendar-page .calendar-period {
+  margin: 0;
+  flex: 0 1 auto;
+}
+.calendar-page .calendar-title {
+  font-size: 20px;
+  margin: 0 auto;
+  text-align: center;
+  flex: 1;
+}
+#sidebar-tools {
+  padding: 10px 16px;
+}
+#sidebar-tools:empty,
+#sidebar-tools:has(> [hidden]) {
+  display: none;
+}
+#sidebar-tools .button {
+  width: 100%;
+}
+@media (max-width: 760px) {
+  .calendar-page .calendar-title {
+    flex-basis: 100%;
+    order: -1;
+    text-align: left;
+  }
+  .calendar-page .calendar-period {
+    flex-basis: 100%;
   }
 }

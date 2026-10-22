@@ -1,5 +1,9 @@
 // UI text only. Stored values, IDs and imported course names are never rewritten.
 const words = {
+  "Odabrani termini": "Selected sessions",
+  "Nema termina za odabrane filtre.": "No sessions match the selected filters.",
+  "Za prijenos svih termina preuzmite datoteku pa u Google Calendaru otvorite Postavke → Uvoz i izvoz → Uvoz. Promjene u PAR-u ne prenose se automatski.":
+    "To transfer all sessions, download the file, then open Settings → Import & export → Import in Google Calendar. Changes in PAR are not synced automatically.",
   "Unesite pojam": "Enter a search term",
   "Kalendar nastave": "Teaching calendar",
   "Popis / PDF": "List / PDF",

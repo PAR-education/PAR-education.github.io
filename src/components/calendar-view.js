@@ -78,7 +78,7 @@ export function mountCalendarView(root, events, options) {
     .map((v) => `<option>${e(v)}</option>`)
     .join(
       "",
-    )}</select></label><button class="button" id="calendar-clear-filters">Očisti filtre</button></div></details></div><div class="calendar-paging"><button class="button" id="calendar-prev">← Prethodno</button><button class="button" id="calendar-today">Danas</button><button class="button" id="calendar-next">Sljedeće →</button></div><p id="calendar-note" class="panel-note" role="status"></p><div id="calendar-body"></div>`;
+    )}</select></label><button class="button" id="calendar-clear-filters">Očisti filtre</button></div></details></div><div class="calendar-paging"><h1 class="calendar-title">Kalendar nastave</h1><button class="button" id="calendar-prev">← Prethodno</button><button class="button" id="calendar-today">Danas</button><button class="button" id="calendar-next">Sljedeće →</button></div><p id="calendar-note" class="panel-note" role="status"></p><div id="calendar-body"></div>`;
   const $ = (id) => find("#" + id);
   if (options.toolbarRoot)
     options.toolbarRoot.append($("calendar-filters-panel"));

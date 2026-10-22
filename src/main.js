@@ -1,3 +1,4 @@
+import { showCalendarTransfer } from "./components/calendar-transfer.js";
 import { setupGlobalSearch } from "./components/global-search.js";
 import { printCalendar } from "./components/calendar-export.js";
 import { mountMiniCalendar } from "./components/mini-calendar.js";
@@ -182,7 +183,7 @@ async function startApplication(
     toggle.id = "demo-toggle";
     toggle.className = "button";
     toggle.addEventListener("click", toggleDemo);
-    document.querySelector(".header-actions").prepend(toggle);
+    document.getElementById("sidebar-tools").append(toggle);
   }
   toggle.hidden = !canUseDemo(
     authenticatedSession?.user,
@@ -616,13 +617,15 @@ function drawModule() {
         ? "Kalendar nastave"
         : navigationLabel(context.profile.role, active),
       "",
-      `${active === "notifications" && canSendAnnouncement(context.profile.role) ? '<button class="button primary" id="send-announcement">Pošalji obavijest</button>' : ""}${active !== "notifications" && (canCreate(active) || canImport(context.profile.role, active)) ? actionMenu("Dodaj", `${canCreate(active) ? '<button id="create" type="button">Ručni unos</button>' : ""}${canImport(context.profile.role, active) ? '<button id="excel-open" type="button">Uvoz iz datoteke</button>' : ""}`, true) : ""}${actionMenu("Izvoz", `<button id="print" type="button">${active === "calendarEvents" ? "Popis / PDF" : "Ispis / PDF"}</button>${active === "calendarEvents" ? '<button id="calendar-print-week" type="button">Grafički prikaz · tjedan</button><button id="calendar-print-month" type="button">Grafički prikaz · mjesec</button>' : ""}<button id="csv" type="button">CSV tablica</button>`)}<button id="refresh" class="button icon-button" title="Osvježi" aria-label="Osvježi">${icon("arrows-rotate")}</button>`,
+      `${active === "notifications" && canSendAnnouncement(context.profile.role) ? '<button class="button primary" id="send-announcement">Pošalji obavijest</button>' : ""}${active !== "notifications" && (canCreate(active) || canImport(context.profile.role, active)) ? actionMenu("Dodaj", `${canCreate(active) ? '<button id="create" type="button">Ručni unos</button>' : ""}${canImport(context.profile.role, active) ? '<button id="excel-open" type="button">Uvoz iz datoteke</button>' : ""}`, true) : ""}${actionMenu("Izvoz", `<button id="print" type="button">${active === "calendarEvents" ? "Popis / PDF" : "Ispis / PDF"}</button>${active === "calendarEvents" ? '<button id="calendar-google" type="button">Dodaj u Google kalendar</button><button id="calendar-print-week" type="button">Grafički prikaz · tjedan</button><button id="calendar-print-month" type="button">Grafički prikaz · mjesec</button>' : ""}<button id="csv" type="button">CSV tablica</button>`)}<button id="refresh" class="button icon-button" title="Osvježi" aria-label="Osvježi">${icon("arrows-rotate")}</button>`,
     ) +
     `<section class="panel module-panel"><div class="toolbar module-toolbar"><label class="module-search" for="search"><span class="sr-only">Pretraživanje</span>${icon("magnifying-glass")}<input class="search" id="search" type="search" placeholder="Pretraži…" autocomplete="off"></label><div class="toolbar-actions">${filters || monthly ? `<details class="module-filters" id="module-filters"><summary class="button">${icon("filter")} <span id="filter-label">Filtri</span></summary><div class="filter-fields">${filters}${monthly}<button class="button" id="clear-filters">Očisti filtre</button></div></details>` : ""}${batchAllowed ? '<button class="button" id="batch-approve">Odobri više…</button>' : ""}</div></div><div id="table-area"></div><div class="table-footer" id="record-count"></div></section>`;
   if (active === "calendarEvents") {
     $("content").classList.add("calendar-page");
     $("calendar-topbar").hidden = false;
-    $("calendar-topbar").append($("content").querySelector(".page-heading"));
+    const pageHeading = $("content").querySelector(".page-heading");
+    $("calendar-topbar").append(pageHeading.querySelector(".page-actions"));
+    pageHeading.remove();
     $("content").querySelector(".module-toolbar").hidden = true;
   } else $("content").classList.remove("calendar-page");
   if ($("status-filter")) $("status-filter").value = statusFilter;
@@ -717,6 +720,9 @@ function drawModule() {
       notify(errorMessage(error));
     }
   });
+  $("calendar-google")?.addEventListener("click", () =>
+    showCalendarTransfer(exportRows),
+  );
   for (const view of ["week", "month"])
     $("calendar-print-" + view)?.addEventListener("click", () => {
       try {
