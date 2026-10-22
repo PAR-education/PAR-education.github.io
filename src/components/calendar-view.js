@@ -44,6 +44,7 @@ export function mountCalendarView(root, events, options) {
     (matchMedia("(max-width: 760px)").matches ? "day" : "week");
   const priorFilters = Object.fromEntries(
     [
+      "calendar-course",
       "calendar-study",
       "calendar-group",
       "calendar-semester",
@@ -53,11 +54,29 @@ export function mountCalendarView(root, events, options) {
   let roomDay = root.querySelector("#schedule-day")?.value;
   const oldScope =
     find("#calendar-scope")?.value ||
-    (["student", "profesor"].includes(role) ? "mine" : "all");
+    (options.initialCourse
+      ? "all"
+      : ["student", "profesor"].includes(role)
+        ? "mine"
+        : "all");
   const priorStudent = find("#calendar-student")?.value || "";
   const filtersOpen = find("#calendar-filters-panel")?.open;
   options.toolbarRoot?.querySelector("#calendar-filters-panel")?.remove();
-  root.innerHTML = `<div class="calendar-filters calendar-controls"><details class="calendar-filter-panel" id="calendar-filters-panel" ${filtersOpen ? "open" : ""}><summary class="button"><i class="fa-solid fa-filter" aria-hidden="true"></i> <span id="calendar-filter-label">Filtri</span></summary><div class="filter-fields"><label>Pogled<select id="calendar-view"><option value="week">Tjedan</option><option value="day">Dan</option><option value="month">Mjesec</option><option value="semester">Semestar / pregled datuma</option><option value="rooms">Dvorane i dostupnost</option></select></label><label>Datum<input id="calendar-anchor" type="date" value="${e(previous)}"></label><label>Raspored<select id="calendar-scope"><option value="all">Sva nastava</option>${["student", "profesor"].includes(role) ? '<option value="mine">Moj raspored</option>' : ""}</select></label><label>Studij<select id="calendar-study"><option value="">Svi studiji</option>${[
+  root.innerHTML = `<div class="calendar-filters calendar-controls"><details class="calendar-filter-panel" id="calendar-filters-panel" ${filtersOpen ? "open" : ""}><summary class="button"><i class="fa-solid fa-filter" aria-hidden="true"></i> <span id="calendar-filter-label">Filtri</span></summary><div class="filter-fields"><label>Kolegij<select id="calendar-course"><option value="">Svi kolegiji</option>${[
+    ...new Map([
+      ...events
+        .filter((r) => r.courseId)
+        .map((r) => [r.courseId, r.title || r.courseTitle || r.courseId]),
+      ...(options.initialCourse
+        ? [[options.initialCourse.id, options.initialCourse.title]]
+        : []),
+    ]).entries(),
+  ]
+    .sort((a, b) => a[1].localeCompare(b[1], "hr"))
+    .map(([id, title]) => `<option value="${e(id)}">${e(title)}</option>`)
+    .join(
+      "",
+    )}</select></label><label>Pogled<select id="calendar-view"><option value="week">Tjedan</option><option value="day">Dan</option><option value="month">Mjesec</option><option value="semester">Semestar / pregled datuma</option><option value="rooms">Dvorane i dostupnost</option></select></label><label>Datum<input id="calendar-anchor" type="date" value="${e(previous)}"></label><label>Raspored<select id="calendar-scope"><option value="all">Sva nastava</option>${["student", "profesor"].includes(role) ? '<option value="mine">Moj raspored</option>' : ""}</select></label><label>Studij<select id="calendar-study"><option value="">Svi studiji</option>${[
     ...new Set(events.map((r) => r.study).filter(Boolean)),
   ]
     .sort()
@@ -99,6 +118,16 @@ export function mountCalendarView(root, events, options) {
   for (const [id, value] of Object.entries(priorFilters))
     if (Array.from($(id).options).some((o) => o.value === value))
       $(id).value = value;
+  if (options.initialCourse) {
+    $("calendar-course").value = options.initialCourse.id;
+    if (
+      options.initialCourse.academicYear &&
+      [...$("calendar-year").options].some(
+        (o) => o.value === options.initialCourse.academicYear,
+      )
+    )
+      $("calendar-year").value = options.initialCourse.academicYear;
+  }
   let studentEnrollments = [];
   let enrolled = null,
     busy = false,
@@ -130,6 +159,8 @@ export function mountCalendarView(root, events, options) {
       view = $("calendar-view").value;
     let visible = events.filter(
       (r) =>
+        (!$("calendar-course").value ||
+          r.courseId === $("calendar-course").value) &&
         (!$("calendar-study").value || r.study === $("calendar-study").value) &&
         (!$("calendar-group").value || r.group === $("calendar-group").value) &&
         (!$("calendar-semester").value ||
@@ -159,6 +190,7 @@ export function mountCalendarView(root, events, options) {
         ? "Prikaži svu nastavu"
         : "Prikaži samo moju nastavu";
     const count = [
+      "calendar-course",
       "calendar-study",
       "calendar-group",
       "calendar-semester",
@@ -278,6 +310,7 @@ export function mountCalendarView(root, events, options) {
         .querySelector("#calendar-reset-filters")
         ?.addEventListener("click", () => {
           for (const id of [
+            "calendar-course",
             "calendar-study",
             "calendar-group",
             "calendar-semester",
@@ -388,6 +421,7 @@ export function mountCalendarView(root, events, options) {
     .forEach((el) => el.addEventListener("change", render));
   $("calendar-clear-filters").addEventListener("click", () => {
     for (const id of [
+      "calendar-course",
       "calendar-study",
       "calendar-group",
       "calendar-semester",

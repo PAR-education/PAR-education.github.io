@@ -1,3 +1,5 @@
+import { courseCalendarItems } from "./utils/course-calendar.js";
+import { zagrebDate } from "./utils/calendar.js";
 import { setupPageToolbar } from "./components/page-toolbar.js";
 import { showCalendarTransfer } from "./components/calendar-transfer.js";
 import { setupGlobalSearch } from "./components/global-search.js";
@@ -69,6 +71,7 @@ import {
 import { mountTemplateCleanup } from "./components/template-cleanup.js";
 const $ = (id) => document.getElementById(id);
 let calendarAnchor = "";
+let calendarCourseTarget = null;
 let calendarExportState = { events: [], date: "" };
 let context = null;
 let authenticatedSession = null;
@@ -124,6 +127,7 @@ function heading(title, description, actions = "") {
 }
 function clearPrivateContent() {
   calendarAnchor = "";
+  calendarCourseTarget = null;
   version++;
   context = null;
   authenticatedSession = null;
@@ -834,6 +838,7 @@ function drawTable() {
         calendarExportState = { events: events.slice(), date };
       },
       initialDate: calendarAnchor,
+      initialCourse: calendarCourseTarget,
       allEvents: rows,
       onVisible: (visible) => {
         exportRows = visible.slice();
@@ -862,6 +867,7 @@ function drawTable() {
       },
     });
     calendarAnchor = "";
+    calendarCourseTarget = null;
   } else if (visual) $("table-area").innerHTML = visual;
   else
     $("table-area").innerHTML =
@@ -886,6 +892,66 @@ function drawTable() {
         showDetails(active, shownRows[Number(button.dataset.row)]),
       ),
     );
+  if (active === "courses") {
+    const current = context;
+    $("table-area")
+      .querySelectorAll("[data-course-calendar]")
+      .forEach((button) =>
+        button.addEventListener("click", () => {
+          const course = shownRows[Number(button.dataset.courseCalendar)];
+          openDialog(
+            "Dodaj u kalendar",
+            '<section id="card-calendar-preview"></section>',
+          );
+          const preview = $("card-calendar-preview");
+          mountCourseCalendar(
+            preview,
+            "courses",
+            course,
+            current,
+            () => context === current && preview.isConnected,
+          );
+          const trigger = preview.querySelector("#course-calendar-open");
+          trigger.click();
+          trigger.hidden = true;
+        }),
+      );
+    $("table-area")
+      .querySelectorAll("[data-course-schedule]")
+      .forEach((button) =>
+        button.addEventListener("click", async () => {
+          const course = shownRows[Number(button.dataset.courseSchedule)];
+          button.disabled = true;
+          try {
+            const events = await current.repository.listAll("calendarEvents");
+            if (
+              context !== current ||
+              active !== "courses" ||
+              !button.isConnected
+            )
+              return;
+            const dates = courseCalendarItems(course, events)
+              .map((item) => events.find((ev) => ev.id === item.id)?.date)
+              .filter(Boolean)
+              .sort();
+            calendarAnchor =
+              dates.find((date) => date >= zagrebDate()) ||
+              dates.at(-1) ||
+              zagrebDate();
+            calendarCourseTarget = {
+              id: course.id,
+              title: course.title,
+              academicYear: course.academicYear || "",
+            };
+            location.hash = "calendarEvents";
+          } catch (error) {
+            notify(errorMessage(error));
+          } finally {
+            if (button.isConnected) button.disabled = false;
+          }
+        }),
+      );
+  }
 }
 function showDetails(name, record) {
   const current = context;

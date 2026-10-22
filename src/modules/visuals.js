@@ -141,7 +141,7 @@ export function visualRecords(name, rows, badge) {
     return cards(
       rows,
       (r, i) =>
-        `<article class="record-card course-card"><div class="card-top">${badge(r.courseType || "Kolegij")}<strong class="ects">${r.ects == null ? "ECTS nije naveden" : e(r.ects) + " ECTS"}</strong></div><h2>${e(r.title)}</h2><p class="instructor">${icon("chalkboard-user")} ${e(r.instructorName || "Nastavnik nije naveden")}</p>${open(i, "Silabus i detalji")}</article>`,
+        `<article class="record-card course-card"><div class="card-top">${badge(r.courseType || "Kolegij")}<strong class="ects">${r.ects == null ? "ECTS nije naveden" : e(r.ects) + " ECTS"}</strong></div><h2>${e(r.title)}</h2><p class="instructor">${icon("chalkboard-user")} ${e(r.instructorName || "Nastavnik nije naveden")}</p><div class="course-card-actions"><button class="button" data-row="${i}" title="Silabus i detalji">Silabus</button><button class="button" data-course-schedule="${i}">Raspored</button><button class="button" data-course-calendar="${i}">U kalendar</button></div></article>`,
     );
   if (name === "projects")
     return cards(

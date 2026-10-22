@@ -3880,3 +3880,17 @@ summary:focus-visible {
   grid-row: 1;
   font-size: 26px;
 }
+
+.course-card-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  margin-top: auto;
+  padding-top: 14px;
+}
+.course-card-actions .button {
+  min-width: 0;
+  padding: 10px 6px;
+  font-size: 12px;
+  white-space: normal;
+}

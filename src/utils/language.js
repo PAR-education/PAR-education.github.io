@@ -1,5 +1,7 @@
 // UI text only. Stored values, IDs and imported course names are never rewritten.
 const words = {
+  "U kalendar": "Add to calendar",
+  Silabus: "Syllabus",
   "Svi termini": "All sessions",
   "Silabus i detalji": "Syllabus and details",
   "Projekt i partneri": "Project and partners",
