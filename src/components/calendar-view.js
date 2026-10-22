@@ -25,8 +25,11 @@ export function mountCalendarView(root, events, options) {
   const { context } = options,
     role = context.profile.role,
     uid = context.user.uid;
+  const find = (selector) =>
+    root.querySelector(selector) ||
+    options.toolbarRoot?.querySelector(selector);
   const previous =
-    root.querySelector("#calendar-anchor")?.value ||
+    find("#calendar-anchor")?.value ||
     options.initialDate ||
     (role === "profesor"
       ? firstTeachingDate(
@@ -37,7 +40,7 @@ export function mountCalendarView(root, events, options) {
         )
       : zagrebDate());
   const oldView =
-    root.querySelector("#calendar-view")?.value ||
+    find("#calendar-view")?.value ||
     (matchMedia("(max-width: 760px)").matches ? "day" : "week");
   const priorFilters = Object.fromEntries(
     [
@@ -45,15 +48,16 @@ export function mountCalendarView(root, events, options) {
       "calendar-group",
       "calendar-semester",
       "calendar-year",
-    ].map((id) => [id, root.querySelector("#" + id)?.value || ""]),
+    ].map((id) => [id, find("#" + id)?.value || ""]),
   );
   let roomDay = root.querySelector("#schedule-day")?.value;
   const oldScope =
-    root.querySelector("#calendar-scope")?.value ||
+    find("#calendar-scope")?.value ||
     (["student", "profesor"].includes(role) ? "mine" : "all");
-  const priorStudent = root.querySelector("#calendar-student")?.value || "";
-  const filtersOpen = root.querySelector("#calendar-filters-panel")?.open;
-  root.innerHTML = `<div class="calendar-filters calendar-controls"><div class="calendar-primary"><label>Pogled<select id="calendar-view"><option value="week">Tjedan</option><option value="day">Dan</option><option value="month">Mjesec</option><option value="semester">Semestar / pregled datuma</option><option value="rooms">Dvorane i dostupnost</option></select></label><label>Datum<input id="calendar-anchor" type="date" value="${e(previous)}"></label><label>Raspored<select id="calendar-scope"><option value="all">Sva nastava</option>${["student", "profesor"].includes(role) ? '<option value="mine">Moj raspored</option>' : ""}</select></label></div><details class="calendar-filter-panel" id="calendar-filters-panel" ${filtersOpen ? "open" : ""}><summary class="button"><i class="fa-solid fa-filter" aria-hidden="true"></i> <span id="calendar-filter-label">Filtri</span></summary><div class="filter-fields"><label>Studij<select id="calendar-study"><option value="">Svi studiji</option>${[
+  const priorStudent = find("#calendar-student")?.value || "";
+  const filtersOpen = find("#calendar-filters-panel")?.open;
+  options.toolbarRoot?.querySelector("#calendar-filters-panel")?.remove();
+  root.innerHTML = `<div class="calendar-filters calendar-controls"><details class="calendar-filter-panel" id="calendar-filters-panel" ${filtersOpen ? "open" : ""}><summary class="button"><i class="fa-solid fa-filter" aria-hidden="true"></i> <span id="calendar-filter-label">Filtri</span></summary><div class="filter-fields"><label>Pogled<select id="calendar-view"><option value="week">Tjedan</option><option value="day">Dan</option><option value="month">Mjesec</option><option value="semester">Semestar / pregled datuma</option><option value="rooms">Dvorane i dostupnost</option></select></label><label>Datum<input id="calendar-anchor" type="date" value="${e(previous)}"></label><label>Raspored<select id="calendar-scope"><option value="all">Sva nastava</option>${["student", "profesor"].includes(role) ? '<option value="mine">Moj raspored</option>' : ""}</select></label><label>Studij<select id="calendar-study"><option value="">Svi studiji</option>${[
     ...new Set(events.map((r) => r.study).filter(Boolean)),
   ]
     .sort()
@@ -75,7 +79,9 @@ export function mountCalendarView(root, events, options) {
     .join(
       "",
     )}</select></label><button class="button" id="calendar-clear-filters">Očisti filtre</button></div></details></div><div class="calendar-paging"><button class="button" id="calendar-prev">← Prethodno</button><button class="button" id="calendar-today">Danas</button><button class="button" id="calendar-next">Sljedeće →</button></div><p id="calendar-note" class="panel-note" role="status"></p><div id="calendar-body"></div>`;
-  const $ = (id) => root.querySelector("#" + id);
+  const $ = (id) => find("#" + id);
+  if (options.toolbarRoot)
+    options.toolbarRoot.append($("calendar-filters-panel"));
   $("calendar-view").value = oldView;
   $("calendar-scope").value = oldScope;
   if (["student", "profesor"].includes(role)) {
@@ -88,7 +94,7 @@ export function mountCalendarView(root, events, options) {
         $("calendar-scope").value === "mine" ? "all" : "mine";
       render();
     });
-    root.querySelector(".calendar-primary").append(toggle);
+    root.querySelector(".calendar-paging").append(toggle);
   }
   for (const [id, value] of Object.entries(priorFilters))
     if (Array.from($(id).options).some((o) => o.value === value))
@@ -105,12 +111,20 @@ export function mountCalendarView(root, events, options) {
       year: "numeric",
       timeZone: "Europe/Zagreb",
     });
+  const compactDate = (date) =>
+    new Date(date + "T12:00:00Z").toLocaleDateString("hr-HR", {
+      day: "numeric",
+      month: "numeric",
+      year: "numeric",
+      timeZone: "Europe/Zagreb",
+    });
   function add(date, n) {
     const d = new Date(date + "T12:00:00Z");
     d.setUTCDate(d.getUTCDate() + n);
     return d.toISOString().slice(0, 10);
   }
   function render() {
+    root.querySelector(".calendar-paging .calendar-period")?.remove();
     const mine = $("calendar-scope").value === "mine",
       date = $("calendar-anchor").value || zagrebDate(),
       view = $("calendar-view").value;
@@ -166,7 +180,8 @@ export function mountCalendarView(root, events, options) {
       "rooms",
       "semester",
     ].includes(view);
-    root.querySelector(".calendar-paging").hidden = view === "semester";
+    for (const id of ["calendar-prev", "calendar-today", "calendar-next"])
+      $(id).hidden = view === "semester";
     if (view === "rooms") {
       roomDay =
         $("calendar-body").querySelector("#schedule-day")?.value ?? roomDay;
@@ -215,10 +230,10 @@ export function mountCalendarView(root, events, options) {
     $("calendar-body").innerHTML =
       `<div id="calendar-move-message" role="status" aria-live="polite"></div>${
         !["semester", "month"].includes(view)
-          ? `<h2 class="calendar-period">${e(label(dates[0]))}${dates.length > 1 ? " – " + e(label(dates.at(-1))) : ""} <span class="pill">W${isoWeek(date).week} · ${isoWeek(date).week}. tjedan</span></h2><div class="calendar-week" style="--day-count:${dates.length}">${dates
+          ? `<h2 class="calendar-period">${e(compactDate(dates[0]))}${dates.length > 1 ? " – " + e(compactDate(dates.at(-1))) : ""} <span class="pill">W${isoWeek(date).week}</span></h2><div class="calendar-week" style="--day-count:${dates.length}">${dates
               .map(
                 (day) =>
-                  `<section class="calendar-week-day ${day === zagrebDate() ? "is-today" : ""} ${visible.some((r) => r.date === day && r.online) ? "has-online" : ""}"><h3 title="${e(label(day))}">${e(new Date(day + "T12:00:00Z").toLocaleDateString("hr-HR", { weekday: "short", day: "numeric", month: "numeric", timeZone: "Europe/Zagreb" }))}</h3><div class="calendar-time-track drop-slot" data-date="${e(day)}" style="height:${(hi - lo) * 1.2}px">${Array.from({ length: Math.ceil((hi - lo) / 60) }, (_, i) => `<div class="calendar-hour" style="top:${i * 72}px">${timeAt(lo + i * 60)}</div>`).join("")}${calendarLanes(
+                  `<section class="calendar-week-day ${day === zagrebDate() ? "is-today" : ""} ${visible.some((r) => r.date === day && r.online) ? "has-online" : ""}"><h3 data-calendar-day="${e(day)}" title="${e(label(day))}">${e(new Date(day + "T12:00:00Z").toLocaleDateString("hr-HR", { weekday: "short", day: "numeric", month: "numeric", timeZone: "Europe/Zagreb" }))}</h3><div class="calendar-time-track drop-slot" data-date="${e(day)}" style="height:${(hi - lo) * 1.2}px">${Array.from({ length: Math.ceil((hi - lo) / 60) }, (_, i) => `<div class="calendar-hour" style="top:${i * 72}px">${timeAt(lo + i * 60)}</div>`).join("")}${calendarLanes(
                     visible.filter((r) => r.date === day),
                   )
                     .map(
@@ -238,7 +253,7 @@ export function mountCalendarView(root, events, options) {
           )
           .map(
             (day) =>
-              `<section class="drop-slot ${visible.some((r) => r.date === day && r.online) ? "has-online" : ""}" data-date="${e(day)}"><h3>${e(label(day))}</h3>${
+              `<section class="drop-slot ${visible.some((r) => r.date === day && r.online) ? "has-online" : ""}" data-date="${e(day)}"><h3 data-calendar-day="${e(day)}" data-calendar-format="long">${e(label(day))}</h3>${
                 visible
                   .filter((r) => r.date === day)
                   .sort((a, b) => a.time.localeCompare(b.time))
@@ -249,6 +264,8 @@ export function mountCalendarView(root, events, options) {
           .join("") ||
         '<p class="panel-note">Nema termina za odabrane filtre.</p>'
       }</div>`;
+    const period = $("calendar-body").querySelector(".calendar-period");
+    if (period) root.querySelector(".calendar-paging").prepend(period);
     if (!visible.length) {
       const { event: next, past } = adjacentTeaching(matching, date);
       const note = document.createElement("div");
@@ -339,8 +356,8 @@ export function mountCalendarView(root, events, options) {
       }
     };
     show("Spremanje nove satnice…");
-    root
-      .querySelectorAll("button,input,select")
+    [root, $("calendar-filters-panel")]
+      .flatMap((node) => [...node.querySelectorAll("button,input,select")])
       .forEach((el) => (el.disabled = true));
     try {
       await options.onMove(record, target);
@@ -359,13 +376,13 @@ export function mountCalendarView(root, events, options) {
       busy = false;
       suppressClick = false;
       if (root.isConnected)
-        root
-          .querySelectorAll("button,input,select")
+        [root, $("calendar-filters-panel")]
+          .flatMap((node) => [...node.querySelectorAll("button,input,select")])
           .forEach((el) => (el.disabled = false));
     }
   }
-  root
-    .querySelectorAll(".calendar-filters input,.calendar-filters select")
+  $("calendar-filters-panel")
+    .querySelectorAll("input,select")
     .forEach((el) => el.addEventListener("change", render));
   $("calendar-clear-filters").addEventListener("click", () => {
     for (const id of [
@@ -420,7 +437,9 @@ export function mountCalendarView(root, events, options) {
             select = document.createElement("select");
             select.id = "calendar-student";
             label.append(select);
-            root.querySelector(".filter-fields").prepend(label);
+            $("calendar-filters-panel")
+              .querySelector(".filter-fields")
+              .prepend(label);
             select.addEventListener("change", render);
           }
           const people = [

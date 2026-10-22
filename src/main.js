@@ -316,8 +316,9 @@ function drawNavigation() {
   const moreOpen = $("navigation").querySelector("#navigation-more")?.open;
   const role = context.profile.role;
   const navigation = roleNavigation(role);
+  const integrationLink = `<a class="nav-item ${active === "calendar-integration" ? "active" : ""}" href="#calendar-integration" ${active === "calendar-integration" ? 'aria-current="page"' : ""}><span class="nav-symbol">${icon("calendar-days")}</span>Integracija kalendara</a>`;
   const link = (name) =>
-    `<a class="nav-item ${active === name ? "active" : ""}" href="#${name}" ${active === name ? 'aria-current="page"' : ""}><span class="nav-symbol">${icon(name)}</span>${e(navigationLabel(role, name))}</a>`;
+    `<a class="nav-item ${active === name ? "active" : ""}" href="#${name}" ${active === name ? 'aria-current="page"' : ""}><span class="nav-symbol">${icon(name)}</span>${e(navigationLabel(role, name))}</a>${name === "calendarEvents" ? integrationLink : ""}`;
   const groups = [
     "Akademija",
     "Istraživanje i resursi",
@@ -327,7 +328,7 @@ function drawNavigation() {
   let html = `<a class="nav-item ${active === "dashboard" ? "active" : ""}" href="#dashboard" ${active === "dashboard" ? 'aria-current="page"' : ""}><span class="nav-symbol">${icon("dashboard")}</span>${e(navigationLabel(role, "dashboard"))}</a>`;
   if (role !== "admin") {
     html += navigation.primary.map(link).join("");
-    html += `<details id="navigation-more" ${moreOpen || navigation.more.includes(active) || ["help", "calendar-integration"].includes(active) ? "open" : ""}><summary class="nav-item">Više</summary>${navigation.more.map(link).join("")}`;
+    html += `<details id="navigation-more" ${moreOpen || navigation.more.includes(active) || ["help"].includes(active) ? "open" : ""}><summary class="nav-item">Više</summary>${navigation.more.map(link).join("")}`;
   }
   if (role === "admin")
     for (const group of groups) {
@@ -341,11 +342,10 @@ function drawNavigation() {
         allowed
           .map(
             ([name, module]) =>
-              `<a class="nav-item ${active === name ? "active" : ""}" href="#${name}" ${active === name ? 'aria-current="page"' : ""}><span class="nav-symbol">${icon(name)}</span>${e(module.title)}</a>`,
+              `<a class="nav-item ${active === name ? "active" : ""}" href="#${name}" ${active === name ? 'aria-current="page"' : ""}><span class="nav-symbol">${icon(name)}</span>${e(module.title)}</a>${name === "calendarEvents" ? integrationLink : ""}`,
           )
           .join("");
     }
-  html += `<a class="nav-item ${active === "calendar-integration" ? "active" : ""}" href="#calendar-integration"><span class="nav-symbol">${icon("calendar-days")}</span>Integracija kalendara</a>`;
   if (context.profile.role === "admin")
     html += `<a class="nav-item ${active === "control-panel" ? "active" : ""}" href="#control-panel"><span class="nav-symbol">${icon("sliders")}</span>Control panel i backup</a>`;
   if (context.profile.role === "admin")
@@ -369,6 +369,7 @@ window.addEventListener("hashchange", () => {
 });
 async function loadView(name) {
   if (!context) return;
+  $("content").classList.toggle("calendar-page", name === "calendarEvents");
   const current = context;
   const ticket = ++version;
   active = name;
@@ -625,6 +626,13 @@ function drawModule() {
       `${active === "notifications" && canSendAnnouncement(context.profile.role) ? '<button class="button primary" id="send-announcement">Pošalji obavijest</button>' : ""}${active !== "notifications" && (canCreate(active) || canImport(context.profile.role, active)) ? actionMenu("Dodaj", `${canCreate(active) ? '<button id="create" type="button">Ručni unos</button>' : ""}${canImport(context.profile.role, active) ? '<button id="excel-open" type="button">Uvoz iz datoteke</button>' : ""}`, true) : ""}${actionMenu("Izvoz", '<button id="print" type="button">Ispis / PDF</button><button id="csv" type="button">CSV tablica</button>')}<button id="refresh" class="button icon-button" title="Osvježi" aria-label="Osvježi">${icon("arrows-rotate")}</button>`,
     ) +
     `<section class="panel module-panel"><div class="toolbar module-toolbar"><label class="module-search" for="search"><span class="sr-only">Pretraživanje</span>${icon("magnifying-glass")}<input class="search" id="search" type="search" placeholder="Pretraži…" autocomplete="off"></label><div class="toolbar-actions">${filters || monthly ? `<details class="module-filters" id="module-filters"><summary class="button">${icon("filter")} <span id="filter-label">Filtri</span></summary><div class="filter-fields">${filters}${monthly}<button class="button" id="clear-filters">Očisti filtre</button></div></details>` : ""}${batchAllowed ? '<button class="button" id="batch-approve">Odobri više…</button>' : ""}</div></div><div id="table-area"></div><div class="table-footer" id="record-count"></div></section>`;
+  if (active === "calendarEvents") {
+    $("content").classList.add("calendar-page");
+    $("content")
+      .querySelector(".page-actions")
+      .prepend($("search").closest("label"));
+    $("content").querySelector(".module-toolbar").hidden = true;
+  } else $("content").classList.remove("calendar-page");
   if ($("status-filter")) $("status-filter").value = statusFilter;
   if ($("month-filter")) $("month-filter").value = month;
   $("clear-filters")?.addEventListener("click", () => {
@@ -806,6 +814,7 @@ function drawTable() {
     const current = context;
     mountCalendarView($("table-area"), shownRows, {
       context: current,
+      toolbarRoot: $("content").querySelector(".page-actions"),
       initialDate: calendarAnchor,
       allEvents: rows,
       onVisible: (visible) => {
@@ -883,7 +892,7 @@ function showDetails(name, record) {
   if (["courses", "calendarEvents", "exams"].includes(name)) {
     const root = document.createElement("section");
     root.className = "course-calendar-actions";
-    $("dialog-body").append(root);
+    $("dialog-body").prepend(root);
     mountCourseCalendar(
       root,
       name,
@@ -891,6 +900,10 @@ function showDetails(name, record) {
       current,
       () => context === current && root.isConnected,
     );
+    const calendarButton = root.querySelector("#course-calendar-open");
+    calendarButton.dataset.dialogAction = "calendar";
+    $("close-dialog").before(calendarButton);
+    root.hidden = true;
   }
   if (
     name === "courses" &&

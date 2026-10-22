@@ -5,6 +5,9 @@ let previousFocus;
 const dialog = () => document.getElementById("record-dialog");
 export function openDialog(title, body) {
   previousFocus = document.activeElement;
+  dialog()
+    .querySelectorAll(".dialog-header [data-dialog-action]")
+    .forEach((node) => node.remove());
   document.getElementById("dialog-title").textContent = title;
   document.getElementById("dialog-body").innerHTML = body;
   dialog().showModal();

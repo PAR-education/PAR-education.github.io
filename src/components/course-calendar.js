@@ -13,6 +13,7 @@ export function mountCourseCalendar(root, name, record, context, isCurrent) {
   const button = root.querySelector("button");
   button.addEventListener("click", async () => {
     if (button.disabled) return;
+    root.hidden = false;
     button.disabled = true;
     const preview = root.querySelector("#course-calendar-preview");
     preview.textContent = "Učitavanje termina…";

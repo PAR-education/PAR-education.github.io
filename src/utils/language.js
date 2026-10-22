@@ -1,5 +1,19 @@
 // UI text only. Stored values, IDs and imported course names are never rewritten.
 const words = {
+  Pogled: "View",
+  Raspored: "Timetable",
+  Studij: "Study programme",
+  Grupa: "Group",
+  "Svi studiji": "All study programmes",
+  "Sve grupe": "All groups",
+  "Svi semestri": "All semesters",
+  "Sve godine": "All years",
+  "Akademska godina": "Academic year",
+  "← Prethodno": "← Previous",
+  "Sljedeće →": "Next →",
+  "Dvorane i dostupnost": "Rooms and availability",
+  "Semestar / pregled datuma": "Semester / date overview",
+  "Pretraži…": "Search…",
   "Prijava na nastavu": "Class check-in",
   Evidentirano: "Recorded",
   Evidentirao: "Recorded by",
@@ -211,6 +225,7 @@ export function setupLanguage() {
   } catch {
     lang = "hr";
   }
+  const placeholders = new WeakMap();
   const originals = new WeakMap(),
     last = new WeakMap();
   const control = document.createElement("button");
@@ -230,6 +245,15 @@ export function setupLanguage() {
         ? "Switch interface to English"
         : "Prebaci sučelje na hrvatski",
     );
+    document.querySelectorAll("input[placeholder]").forEach((input) => {
+      if (!placeholders.has(input))
+        placeholders.set(input, input.getAttribute("placeholder"));
+      const original = placeholders.get(input);
+      input.setAttribute(
+        "placeholder",
+        lang === "en" ? words[original] || original : original,
+      );
+    });
     const walker = document.createTreeWalker(
       document.body,
       NodeFilter.SHOW_TEXT,
@@ -245,6 +269,9 @@ export function setupLanguage() {
         trimmed = original.trim(),
         translation =
           words[trimmed] ||
+          (/^Filtri \(\d+\)$/.test(trimmed)
+            ? trimmed.replace("Filtri", "Filters")
+            : null) ||
           (trimmed === trimmed.toUpperCase()
             ? words[trimmed[0] + trimmed.slice(1).toLowerCase()]?.toUpperCase()
             : null);
@@ -255,6 +282,21 @@ export function setupLanguage() {
       if (node.textContent !== value) node.textContent = value;
       last.set(node, value);
     }
+    document.querySelectorAll("[data-calendar-day]").forEach((el) => {
+      const date = new Date(el.dataset.calendarDay + "T12:00:00Z");
+      const format = {
+        weekday: el.dataset.calendarFormat === "long" ? "long" : "short",
+        day: "numeric",
+        month: "numeric",
+        timeZone: "Europe/Zagreb",
+        ...(el.dataset.calendarFormat === "long" ? { year: "numeric" } : {}),
+      };
+      const text = date.toLocaleDateString(
+        lang === "en" ? "en-GB" : "hr-HR",
+        format,
+      );
+      if (el.textContent !== text) el.textContent = text;
+    });
     observer.observe(document.body, {
       childList: true,
       subtree: true,

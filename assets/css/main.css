@@ -2567,6 +2567,8 @@ td {
 }
 .calendar-filters input,
 .calendar-filters select,
+.calendar-filter-panel input,
+.calendar-filter-panel select,
 #excel-import select,
 #excel-import input:not([type="checkbox"]):not([type="file"]) {
   width: 100%;
@@ -3287,7 +3289,9 @@ summary:focus-visible {
   min-height: 38px;
 }
 .calendar-controls select,
-.calendar-controls input {
+.calendar-controls input,
+.calendar-filter-panel input,
+.calendar-filter-panel select {
   color: var(--ink);
 }
 @media (max-width: 760px) {
@@ -3441,6 +3445,27 @@ summary:focus-visible {
   border-top: 1px solid var(--border);
   padding-top: 20px;
 }
+.dialog-header #dialog-title {
+  flex: 1;
+  min-width: 0;
+}
+.dialog-header #course-calendar-open {
+  flex-shrink: 0;
+}
+.dialog-header #close-dialog {
+  flex-shrink: 0;
+}
+@media (max-width: 600px) {
+  .dialog-header:has(#course-calendar-open) {
+    flex-wrap: wrap;
+  }
+  .dialog-header:has(#course-calendar-open) #dialog-title {
+    flex-basis: calc(100% - 60px);
+  }
+  .dialog-header #course-calendar-open {
+    order: 3;
+  }
+}
 .course-calendar-list {
   max-height: 320px;
   overflow-y: auto;
@@ -3483,4 +3508,79 @@ summary:focus-visible {
   margin-top: 5px;
   font-size: 11px;
   color: var(--muted);
+}
+
+/* Compact calendar tools and a single view/filter disclosure. */
+.calendar-page .page-heading {
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+.calendar-page .page-actions {
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.calendar-page .module-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: clamp(160px, 18vw, 250px);
+  margin: 0;
+}
+.calendar-page .module-search input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  padding: 10px 0;
+}
+.calendar-page .module-toolbar[hidden],
+.calendar-controls:empty {
+  display: none;
+}
+.calendar-page .calendar-layout {
+  padding-top: 16px;
+}
+.calendar-page .calendar-paging {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.calendar-page .calendar-period {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0 auto 0 0;
+  color: var(--muted);
+}
+.calendar-page .calendar-period .pill {
+  margin-left: 6px;
+}
+.calendar-page .calendar-filter-panel {
+  position: relative;
+}
+.calendar-page .calendar-filter-panel > .filter-fields {
+  max-height: min(70vh, 620px);
+  overflow-y: auto;
+}
+.calendar-page .calendar-paging #calendar-scope-toggle {
+  margin-left: auto;
+}
+@media (max-width: 760px) {
+  .calendar-page .page-actions {
+    width: 100%;
+  }
+  .calendar-page .module-search {
+    flex: 1 1 100%;
+    width: 100%;
+  }
+  .calendar-page .calendar-filter-panel > .filter-fields {
+    left: auto;
+    right: 0;
+    width: min(520px, calc(100vw - 40px));
+  }
+  .calendar-page .calendar-paging #calendar-scope-toggle {
+    margin-left: 0;
+  }
 }

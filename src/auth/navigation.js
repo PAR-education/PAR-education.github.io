@@ -32,7 +32,7 @@ const primary = {
   ],
   dept_head: ["students", "employees", "calendarEvents", "courses", "projects"],
   lab_assistant: ["labs", "labBookings", "calendarEvents"],
-  alumni: ["alumniEvents", "documents", "requests"],
+  alumni: ["calendarEvents", "alumniEvents", "documents", "requests"],
 };
 const personal = {
   dashboard: "Moj pregled",
