@@ -24,7 +24,12 @@ import { mountDataQuality } from "./components/data-quality.js";
 import { dashboardModel } from "./services/dashboard.js";
 import { mountRecordSelectors } from "./components/record-selectors.js";
 import { isInstructor } from "./utils/instructors.js";
-import { roleNavigation, navigationLabel } from "./auth/navigation.js";
+import {
+  roleNavigation,
+  navigationLabel,
+  moduleAvailable,
+} from "./auth/navigation.js";
+import { mountWorkTime } from "./components/work-time.js";
 import { linkStudentAccount } from "./services/student-link.js";
 import { observeSession, logout } from "./auth/auth.js";
 import {
@@ -156,7 +161,7 @@ function route() {
     ) &&
       context?.profile.role === "admin") ||
     key === "dashboard" ||
-    (Object.hasOwn(modules, key) && canRead(context?.profile.role, key))
+    (Object.hasOwn(modules, key) && moduleAvailable(context?.profile.role, key))
     ? key
     : "dashboard";
 }
@@ -321,13 +326,16 @@ function drawNavigation() {
   let html = `<a class="nav-item ${active === "dashboard" ? "active" : ""}" href="#dashboard" ${active === "dashboard" ? 'aria-current="page"' : ""}><span class="nav-symbol">${icon("dashboard")}</span>${e(navigationLabel(role, "dashboard"))}</a>`;
   if (role !== "admin") {
     html += navigation.primary.map(link).join("");
-    html += `<details id="navigation-more" ${moreOpen || navigation.more.includes(active) || ["help"].includes(active) ? "open" : ""}><summary class="nav-item">Više</summary>${navigation.more.map(link).join("")}`;
+    if (navigation.more.length)
+      html += `<details id="navigation-more" ${moreOpen || navigation.more.includes(active) || ["help"].includes(active) ? "open" : ""}><summary class="nav-item">Više</summary>${navigation.more.map(link).join("")}`;
   }
   if (role === "admin")
     for (const group of groups) {
       const allowed = Object.entries(modules).filter(
         ([name, module]) =>
-          module.group === group && canRead(context.profile.role, name),
+          !module.internal &&
+          module.group === group &&
+          canRead(context.profile.role, name),
       );
       if (!allowed.length) continue;
       html +=
@@ -350,8 +358,9 @@ function drawNavigation() {
       '<a class="nav-item" href="#template-cleanup"><span class="nav-symbol">' +
       icon("database") +
       "</span>Priprema baze / ogledni podaci</a>";
-  html += `<a class="nav-item ${active === "help" ? "active" : ""}" href="#help"><span class="nav-symbol">${icon("help")}</span>Pomoć i integracije</a>`;
-  if (role !== "admin") html += "</details>";
+  if (role === "admin")
+    html += `<a class="nav-item ${active === "help" ? "active" : ""}" href="#help"><span class="nav-symbol">${icon("help")}</span>Pomoć i integracije</a>`;
+  if (role !== "admin" && navigation.more.length) html += "</details>";
   $("navigation").innerHTML = html;
 }
 window.addEventListener("hashchange", () => {
@@ -362,6 +371,11 @@ window.addEventListener("hashchange", () => {
 });
 async function loadView(name) {
   if (!context) return;
+  if (
+    Object.hasOwn(modules, name) &&
+    !moduleAvailable(context.profile.role, name)
+  )
+    name = "dashboard";
   $("content").classList.toggle("calendar-page", name === "calendarEvents");
   const current = context;
   const ticket = ++version;
@@ -416,6 +430,14 @@ async function loadView(name) {
     return;
   }
   try {
+    if (name === "workEntries") {
+      await mountWorkTime(
+        $("content"),
+        current,
+        () => context === current && version === ticket,
+      );
+      return;
+    }
     if (name === "history") {
       await mountHistory(
         $("content"),
@@ -489,9 +511,11 @@ async function drawDashboard(ticket, current) {
   const model = await dashboardModel(current);
   if (ticket !== version || current !== context) return;
   const { notices } = model,
-    choices = model.stats,
+    choices = model.stats.filter((stat) =>
+      moduleAvailable(current.profile.role, stat.name),
+    ),
     failures = model.failures.map((reason) => ({ reason }));
-  const stats = model.stats
+  const stats = choices
     .map(
       (stat) =>
         `<a href="#${stat.name}" class="stat stat-${stat.name}"><p>${e(modules[stat.name]?.title === stat.label ? stat.label : modules[stat.label]?.title || stat.label)}</p><strong>${e(stat.value)}</strong></a>`,
@@ -506,7 +530,7 @@ async function drawDashboard(ticket, current) {
     (failures.length
       ? `<div class="notice error">Neki podaci nisu dostupni. ${e(errorMessage(failures[0].reason))}</div>`
       : "") +
-    `<section class="stats stats-${choices.length}" aria-label="Pregled podataka">${stats}</section><div class="dashboard-grid"><section class="panel"><div class="panel-title"><h2>${current.profile.role === "administracija_par" ? "Studentski ured" : "Radni prostor"}</h2><span class="pill">${e(roles[current.profile.role])}</span></div>${current.profile.role === "administracija_par" ? '<div class="detail-actions office-actions"><button class="button primary" data-office-add="calendarEvents">Dodaj termin</button><button class="button" data-office-add="students">Dodaj studenta</button><button class="button" data-office-add="employees">Dodaj profesora</button></div>' : ""}<div class="link-list">${Object.entries(
+    `<section class="stats stats-${choices.length}" aria-label="Pregled podataka">${stats}</section><div class="dashboard-grid"><section class="panel"><div class="panel-title"><h2>${current.profile.role === "administracija_par" ? "Studentski ured" : "Radni prostor"}</h2><span class="pill">${e(roles[current.profile.role])}</span></div>${current.profile.role === "administracija_par" ? '<div class="detail-actions office-actions"><button class="button primary" data-office-add="calendarEvents">Dodaj termin</button></div>' : ""}<div class="link-list">${Object.entries(
       modules,
     )
       .filter(
@@ -529,7 +553,7 @@ async function drawDashboard(ticket, current) {
       )
       .join(
         "",
-      )}</div></section><aside class="panel dashboard-agenda"><div id="dashboard-mini-calendar"></div><div class="panel-title"><h2>Obavijesti</h2><a href="#notifications">Sve obavijesti</a></div>${canSendAnnouncement(current.profile.role) ? '<div class="announcement-action"><button class="button" id="dashboard-announce">Pošalji obavijest</button></div>' : ""}${model.unavailable?.includes("notifications") ? '<p class="panel-note">Obavijesti nisu dostupne.</p>' : notices.length ? `<div class="calendar-list">${notices.map((row, i) => `<button class="notice-preview" data-notice="${i}"><strong>${e(row.title)}</strong><span>${e(row.message)}</span></button>`).join("")}</div>` : '<p class="panel-note">Trenutno nema novih obavijesti.</p>'}</aside></div>`;
+      )}</div></section><aside class="panel dashboard-agenda"><div id="dashboard-mini-calendar"></div><div class="panel-title"><h2>Obavijesti</h2>${moduleAvailable(current.profile.role, "notifications") ? '<a href="#notifications">Sve obavijesti</a>' : ""}</div>${canSendAnnouncement(current.profile.role) ? '<div class="announcement-action"><button class="button" id="dashboard-announce">Pošalji obavijest</button></div>' : ""}${model.unavailable?.includes("notifications") ? '<p class="panel-note">Obavijesti nisu dostupne.</p>' : notices.length ? `<div class="calendar-list">${notices.map((row, i) => `<button class="notice-preview" data-notice="${i}"><strong>${e(row.title)}</strong><span>${e(row.message)}</span></button>`).join("")}</div>` : '<p class="panel-note">Trenutno nema novih obavijesti.</p>'}</aside></div>`;
   mountMiniCalendar($("dashboard-mini-calendar"), model.events, {
     onEvent: (record) => {
       if (context === current) showDetails("calendarEvents", record);

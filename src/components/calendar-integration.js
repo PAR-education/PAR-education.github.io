@@ -1,4 +1,4 @@
-import { canRead } from "../auth/permissions.js";
+import { moduleAvailable } from "../auth/navigation.js";
 import { escapeHTML as e, errorMessage } from "../utils/helpers.js";
 import { icon } from "../modules/visuals.js";
 import {
@@ -15,7 +15,7 @@ import { downloadFile } from "../utils/download.js";
 export function mountCalendarIntegration(root, context, isCurrent) {
   const allowed = Object.keys(calendarSources).filter(
     (name) =>
-      canRead(context.profile.role, name) &&
+      moduleAvailable(context.profile.role, name) &&
       !(
         ["profesor", "student"].includes(context.profile.role) &&
         name === "courses"

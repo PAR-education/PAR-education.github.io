@@ -1,6 +1,7 @@
 import { isInstructor } from "../utils/instructors.js";
 import { modules } from "../modules/catalog.js";
 import { validateFields } from "../utils/validation.js";
+import { workValues, workConflicts } from "../utils/work-time.js";
 import { canImport } from "../auth/permissions.js";
 import {
   teachingConflicts,
@@ -26,6 +27,10 @@ export function importFields(name, role) {
       (f) =>
         !(
           role !== "admin" &&
+          !(
+            role === "administracija_par" &&
+            ["workEntries", "workPlans"].includes(name)
+          ) &&
           [
             "ownerUid",
             "ownerName",
@@ -77,7 +82,10 @@ export function normalizeRow(name, row, role, uid, profile, defaults = {}) {
     else if (field.type !== "uids") values[field.key] = String(v).trim();
   }
   if (role !== "admin") {
-    if (["workEntries", "research"].includes(name)) {
+    if (
+      ["workEntries", "research"].includes(name) &&
+      !(role === "administracija_par" && name === "workEntries")
+    ) {
       values.ownerUid = uid;
       if (modules[name].fields.some((f) => f.key === "ownerName"))
         values.ownerName = profile.name;
@@ -91,7 +99,10 @@ export function normalizeRow(name, row, role, uid, profile, defaults = {}) {
     values.endTime = timeAt(minutes(values.time) + 120);
   if (name === "enrollments" && !values.ownerUid && !values.studentId)
     throw new Error("Upis zahtijeva Firebase UID ili ID studentskog dosjea.");
-  return validateFields(modules[name].fields, values);
+  return validateFields(
+    modules[name].fields,
+    name === "workEntries" ? workValues(values) : values,
+  );
 }
 export function expandTeaching(values, raw) {
   const repeat = raw.repeat || "Jednom",
@@ -139,6 +150,16 @@ export function expandTeaching(values, raw) {
   return result;
 }
 const natural = {
+  workEntries: [
+    "ownerUid",
+    "date",
+    "category",
+    "activity",
+    "startTime",
+    "endTime",
+    "description",
+  ],
+  workPlans: ["ownerUid", "month", "category", "activity", "projectId"],
   students: ["jmbag"],
   enrollments: ["studentId", "ownerUid", "courseId", "academicYear"],
   employees: ["email"],
@@ -325,6 +346,7 @@ export async function prepareImport({
           old &&
           ((name === "calendarEvents" && !isInstructor(old, uid)) ||
             (["research", "workEntries"].includes(name) &&
+              !(role === "administracija_par" && name === "workEntries") &&
               old.ownerUid !== uid))
         )
           throw new Error("Ne smijete mijenjati tuđi zapis.");
@@ -347,6 +369,31 @@ export async function prepareImport({
               ? "update"
               : "skip"
             : "create";
+        if (name === "workEntries" && action !== "skip") {
+          const all = [
+            ...existing.filter(
+              (r) =>
+                !proposed.some((p) => p.id === r.id && p.action !== "skip"),
+            ),
+            ...proposed
+              .filter((p) => p.action !== "skip")
+              .map((p) => ({ ...p.data, id: p.id })),
+          ];
+          if (workConflicts(all, data, id).length)
+            throw new Error("Termin rada preklapa se s postojećom aktivnošću.");
+          if (
+            all
+              .filter(
+                (r) =>
+                  r.id !== id &&
+                  r.ownerUid === data.ownerUid &&
+                  r.date === data.date,
+              )
+              .reduce((s, r) => s + Number(r.hours || 0), Number(data.hours)) >
+            24.0001
+          )
+            throw new Error("Zbroj dnevnih sati ne smije biti veći od 24.");
+        }
         if (name === "calendarEvents" && action !== "skip") {
           const conflicts = teachingConflicts(
             [

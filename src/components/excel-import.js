@@ -14,7 +14,7 @@ import {
 import { teachingConflicts } from "../utils/schedule.js";
 import { csvContent } from "./export.js";
 
-export function showExcelImport(context, name, onDone) {
+export function showExcelImport(context, name, onDone, preset = {}) {
   if (!canImport(context.profile.role, name))
     throw new Error("Nemate ovlasti za uvoz.");
   openDialog(
@@ -115,7 +115,9 @@ export function showExcelImport(context, name, onDone) {
     role: context.profile.role,
     uid: context.user.uid,
     profile: context.profile,
-    rows: parsed,
+    rows: Object.keys(preset).length
+      ? parsed.map((row) => ({ ...row, ...preset }))
+      : parsed,
     mode: $("excel-mode").value,
     defaults:
       name === "calendarEvents"
@@ -126,7 +128,7 @@ export function showExcelImport(context, name, onDone) {
               ["study", $("excel-study").value],
             ].filter(([, v]) => v),
           )
-        : {},
+        : preset,
   });
   $("excel-preview").addEventListener("click", async () => {
     if (busy) return;

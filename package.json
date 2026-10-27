@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "node scripts/serve.mjs",
     "check": "node scripts/check.mjs",
-    "test": "node --test tests/unit.test.mjs tests/backup-calendar.test.mjs tests/excel-import.test.mjs tests/private-demo-import.test.mjs",
+    "test": "node --test tests/unit.test.mjs tests/backup-calendar.test.mjs tests/excel-import.test.mjs tests/private-demo-import.test.mjs tests/work-time.test.mjs",
     "test:rules": "firebase emulators:exec --only firestore --project demo-par-education \"node --test tests/firestore.test.mjs\""
   },
   "devDependencies": {

@@ -1,5 +1,43 @@
 // UI text only. Stored values, IDs and imported course names are never rewritten.
 const words = {
+  "Evidencija rada": "Work log",
+  "Mjesečni plan rada": "Monthly work plan",
+  "Mjesečni plan": "Monthly plan",
+  "Nova aktivnost": "New activity",
+  "Uredi aktivnost": "Edit activity",
+  "Aktivnost / zadatak": "Activity / task",
+  Skupina: "Category",
+  "Cjeloživotno obrazovanje": "Lifelong learning",
+  Ostalo: "Other",
+  "Projekt / oznaka": "Project / reference",
+  "Od (24 h)": "From (24 h)",
+  "Do (24 h)": "To (24 h)",
+  "Planirano sati": "Planned hours",
+  Planirano: "Planned",
+  "Plan [h]": "Plan [h]",
+  Realizirano: "Actual",
+  Odstupanje: "Variance",
+  Evidentirano: "Logged",
+  Aktivnosti: "Activities",
+  "Bez satnice": "No time interval",
+  "Zaposlenik u evidenciji": "Employee in work log",
+  "Uvoz mjesečne tablice (.xlsx)": "Import monthly workbook (.xlsx)",
+  "Standardni uvoz (.xlsx, .json, .csv)":
+    "Standard import (.xlsx, .json, .csv)",
+  "Godišnja tablica (.xlsx)": "Annual workbook (.xlsx)",
+  "Uvoz mjesečne evidencije": "Import monthly work log",
+  "Uvezi potvrđene podatke": "Import confirmed records",
+  "Unesite vrijeme od–do ili samo sate. Kad unesete vrijeme, sati se izračunaju automatski.":
+    "Enter a time interval or hours only. Hours are calculated automatically when times are entered.",
+  "Ovo dodaje osobu u evidenciju rada. Ne stvara korisnički račun.":
+    "This adds an employee to the work log without creating a user account.",
+  "Osoba ostaje na popisu nakon prvog spremljenog zapisa.":
+    "The employee remains on the list after their first record is saved.",
+  "Nema evidentiranih aktivnosti.": "No activities logged.",
+  "Nema evidentiranih aktivnosti za ovo razdoblje.":
+    "No activities logged in this period.",
+  "Odstupanje = planirano − realizirano. Crtica znači da plan nije unesen. Klik na dan otvara aktivnosti, a klik na aktivnost mjesečni plan.":
+    "Variance = planned − actual. A dash means no plan has been entered. Click a day to view activities or an activity to edit its monthly plan.",
   Integracija: "Integration",
   Silabus: "Syllabus",
   "Svi termini": "All sessions",

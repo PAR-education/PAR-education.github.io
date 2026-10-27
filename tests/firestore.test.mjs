@@ -22,6 +22,55 @@ import {
 } from "firebase/firestore";
 import { prepareCalendarMove } from "../src/utils/schedule.js";
 let env;
+test("Work records and monthly plans are office/admin only, including another employee and archive", async () => {
+  const sdk = await import("firebase/firestore");
+  const { writeImportedRecord } = await import("../src/services/records.js");
+  const { archiveRecord } = await import("../src/services/audit.js");
+  const office = database("office"),
+    admin = database("admin");
+  const entries = {
+    ownerUid: "teacher",
+    ownerName: "Nastavnik",
+    date: "2026-10-26",
+    category: "Studij",
+    activity: "Nastava",
+    hours: 2,
+    startTime: "08:00",
+    endTime: "10:00",
+    description: "Predavanje",
+    projectId: "",
+  };
+  const plan = {
+    ownerUid: "teacher",
+    ownerName: "Nastavnik",
+    month: "2026-10",
+    category: "Studij",
+    activity: "Nastava",
+    plannedHours: 10,
+    projectId: "",
+  };
+  for (const [name, data] of [
+    ["workEntries", entries],
+    ["workPlans", plan],
+  ]) {
+    await writeImportedRecord(sdk, office, name, "test-work", data, "office");
+    await assertSucceeds(getDoc(doc(admin, name, "test-work")));
+    await assertSucceeds(getDocs(collection(office, name)));
+    for (const uid of ["teacher", "student-a", "head", "lab", "alumni"]) {
+      await assertFails(getDoc(doc(database(uid), name, "test-work")));
+      await assertFails(
+        setDoc(doc(database(uid), name, "forbidden"), {
+          ...data,
+          ...meta(),
+          createdBy: uid,
+        }),
+      );
+    }
+    await writeImportedRecord(sdk, office, name, "test-work", data, "office");
+    await archiveRecord(sdk, office, name, "test-work", "office");
+    assert.equal((await getDoc(doc(admin, name, "test-work"))).exists(), false);
+  }
+});
 test("Attendance is canonical, teacher-scoped, student read-only and audit-backed", async () => {
   const sdk = await import("firebase/firestore");
   const { saveAttendanceRecord } =

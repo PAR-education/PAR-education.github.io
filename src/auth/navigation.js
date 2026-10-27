@@ -3,6 +3,7 @@ import { modules } from "../modules/catalog.js";
 const primary = {
   administracija_par: [
     "calendarEvents",
+    "workEntries",
     "attendance",
     "students",
     "employees",
@@ -59,12 +60,19 @@ export function navigationLabel(role, name) {
   return personal[name] || modules[name]?.title || name;
 }
 export function roleNavigation(role) {
-  const allowed = Object.keys(modules).filter((n) => canRead(role, n));
+  const allowed = Object.keys(modules).filter(
+    (n) => !modules[n].internal && canRead(role, n),
+  );
   if (role === "admin") return { primary: allowed, more: [] };
   const preferred = primary[role] || [];
   const attendanceIndex = preferred.indexOf("attendance");
   const compact =
     attendanceIndex < 0 ? preferred : preferred.slice(0, attendanceIndex + 1);
   const main = compact.filter((n) => allowed.includes(n));
-  return { primary: main, more: allowed.filter((n) => !main.includes(n)) };
+  return { primary: main, more: [] };
+}
+export function moduleAvailable(role, name) {
+  return role === "admin"
+    ? canRead(role, name)
+    : roleNavigation(role).primary.includes(name);
 }

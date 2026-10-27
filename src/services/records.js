@@ -1,3 +1,4 @@
+import { workValues, workConflicts } from "../utils/work-time.js";
 import { sendCourseNotice } from "./course-notices.js";
 import { audiencesFor, validateNotice } from "../utils/notices.js";
 import { validateFields } from "../utils/validation.js";
@@ -53,17 +54,13 @@ export async function writeImportedRecord(sdk, db, name, id, values, uid) {
     if (name === "notifications" && values.audience && !id)
       return saveAnnouncementRecord(sdk, db, this.user, this.profile, values);
     if (current.exists()) {
-      tx.update(ref, data);
-      appendAudit(
-        tx,
-        sdk,
-        db,
-        name,
-        id,
-        current.data(),
-        { ...current.data(), ...data },
-        uid,
-      );
+      const after = { ...current.data(), ...data };
+      if (name === "workEntries") {
+        if (!values.startTime) delete after.startTime;
+        if (!values.endTime) delete after.endTime;
+        tx.set(ref, after);
+      } else tx.update(ref, data);
+      appendAudit(tx, sdk, db, name, id, current.data(), after, uid);
     } else {
       const after = {
         ...data,
@@ -178,6 +175,41 @@ export class Records {
       values.ownerUid
     )
       throw new Error("Korisnički račun s dosjeom povezuje administrator.");
+    if (name === "workEntries") {
+      values = validateFields(
+        modules.workEntries.fields,
+        workValues({
+          ...values,
+          ownerUid: ["admin", "administracija_par"].includes(role)
+            ? values.ownerUid
+            : this.user.uid,
+        }),
+      );
+      const existing = await this.listAll("workEntries");
+      if (
+        existing
+          .filter(
+            (r) =>
+              r.id !== id &&
+              r.ownerUid === values.ownerUid &&
+              r.date === values.date,
+          )
+          .reduce((s, r) => s + Number(r.hours || 0), values.hours) > 24.0001
+      )
+        throw new Error("Zbroj dnevnih sati ne smije biti veći od 24.");
+      if (workConflicts(existing, values, id).length)
+        throw new Error("Termin rada preklapa se s postojećom aktivnošću.");
+    }
+    if (name === "workPlans") {
+      values = validateFields(modules.workPlans.fields, {
+        ...values,
+        ownerUid: ["admin", "administracija_par"].includes(role)
+          ? values.ownerUid
+          : this.user.uid,
+      });
+      if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(values.month))
+        throw new Error("Odaberite ispravan mjesec plana.");
+    }
     if (name === "notifications") {
       values = validateFields(modules.notifications.fields, values);
       validateNotice(values, role);
@@ -185,14 +217,15 @@ export class Records {
     const ownCreation =
       ["requests", "evaluations"].includes(name) ||
       (staffRoles.includes(role) &&
-        ["workEntries", "vacations", "research"].includes(name));
+        ["workEntries", "workPlans", "vacations", "research"].includes(name));
     if (
       !(
         canManage(role, name) ||
         (!id && canAdd(role, name)) ||
         (role === "student" && name === "attendance")
       ) &&
-      (!ownCreation || (id && !["workEntries", "research"].includes(name)))
+      (!ownCreation ||
+        (id && !["workEntries", "workPlans", "research"].includes(name)))
     )
       throw new Error("Nemate ovlasti za spremanje.");
     const { db, firestore: sdk } = await getFirebase();

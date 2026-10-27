@@ -1,5 +1,5 @@
 import { modules } from "../modules/catalog.js";
-import { canRead } from "../auth/permissions.js";
+import { moduleAvailable } from "../auth/navigation.js";
 import { escapeHTML as e } from "../utils/helpers.js";
 
 export const searchTerm = (value) =>
@@ -60,8 +60,9 @@ export function searchRecords(sources, term) {
 export async function loadSearchSources(context) {
   const sources = {},
     failures = [];
-  const queue = Object.keys(modules).filter((name) =>
-    canRead(context.profile.role, name),
+  const queue = Object.keys(modules).filter(
+    (name) =>
+      !modules[name].internal && moduleAvailable(context.profile.role, name),
   );
   await Promise.all(
     Array.from({ length: 4 }, async () => {
@@ -115,7 +116,8 @@ export function setupGlobalSearch({ getContext, onRecord }) {
       matches = searchRecords(sources, term);
       const moduleHits = Object.entries(modules).filter(
         ([name, m]) =>
-          canRead(context.profile.role, name) &&
+          !m.internal &&
+          moduleAvailable(context.profile.role, name) &&
           searchTerm(m.title).includes(searchTerm(term)),
       );
       results.innerHTML =
@@ -177,7 +179,7 @@ export function setupGlobalSearch({ getContext, onRecord }) {
     if (
       hit &&
       getContext() === resultContext &&
-      canRead(getContext()?.profile.role, hit.name)
+      moduleAvailable(getContext()?.profile.role, hit.name)
     )
       onRecord(hit.name, hit.record);
   });

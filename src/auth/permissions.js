@@ -26,7 +26,8 @@ const readers = {
   alumniEvents: ["admin", "alumni"],
   finances: ["admin", "student"],
   employeeSchedules: staffRoles,
-  workEntries: staffRoles,
+  workEntries: ["admin", "administracija_par"],
+  workPlans: ["admin", "administracija_par"],
   vacations: staffRoles,
   enrollments: ["admin", "administracija_par", "profesor", "student"],
   examBookings: ["admin", "profesor", "student"],
@@ -36,6 +37,8 @@ const readers = {
   users: ["admin"],
 };
 const writers = {
+  workEntries: ["admin", "administracija_par"],
+  workPlans: ["admin", "administracija_par"],
   attendance: ["admin", "administracija_par", "profesor"],
   courses: ["admin"],
   calendarEvents: ["admin", "administracija_par", "profesor"],
@@ -60,6 +63,8 @@ export function canRead(role, collection) {
       "courses",
       "documents",
       "notifications",
+      "workEntries",
+      "workPlans",
     ].includes(collection);
   return (
     Object.hasOwn(readers, collection) && readers[collection].includes(role)
@@ -80,6 +85,8 @@ export function canAdd(role, collection) {
   );
 }
 export function canDelete(role, collection) {
+  if (["workEntries", "workPlans"].includes(collection))
+    return ["admin", "administracija_par"].includes(role);
   return role !== "administracija_par" && canManage(role, collection);
 }
 export function isActiveProfile(profile) {
@@ -92,20 +99,24 @@ export function canEditCalendar(role, uid, record) {
   );
 }
 export function canImport(role, name) {
+  if (["workEntries", "workPlans"].includes(name))
+    return ["admin", "administracija_par"].includes(role);
   if (role === "admin") return Object.hasOwn(readers, name);
   if (role === "profesor")
-    return ["calendarEvents", "workEntries", "research"].includes(name);
+    return ["calendarEvents", "research"].includes(name);
   if (role === "dept_head")
-    return ["projects", "workEntries", "research"].includes(name);
+    return ["projects", "research"].includes(name);
   if (role === "lab_assistant")
-    return ["labs", "workEntries", "research"].includes(name);
+    return ["labs", "research"].includes(name);
   return false;
 }
 export function scopeFor(role, collection) {
   if (
     role === "admin" ||
     (role === "administracija_par" &&
-      ["attendance", "enrollments"].includes(collection))
+      ["attendance", "enrollments", "workEntries", "workPlans"].includes(
+        collection,
+      ))
   )
     return null;
   if (role === "lab_assistant" && collection === "labBookings") return null;
@@ -115,6 +126,7 @@ export function scopeFor(role, collection) {
     [
       "employeeSchedules",
       "workEntries",
+      "workPlans",
       "vacations",
       "grades",
       "enrollments",

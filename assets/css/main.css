@@ -3903,3 +3903,157 @@ summary:focus-visible {
   font-size: 12px;
   white-space: normal;
 }
+.work-panel {
+  padding: 22px;
+}
+.work-period,
+.work-navigation,
+.work-summary {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.work-period > span {
+  color: var(--muted);
+  font-size: 13px;
+}
+.work-navigation {
+  margin-left: auto;
+  gap: 7px;
+}
+.work-summary {
+  padding: 20px 0;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 16px;
+}
+.work-summary > span {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding-right: 24px;
+  color: var(--muted);
+  font-size: 13px;
+}
+.work-summary strong {
+  font-size: 22px;
+  color: var(--ink);
+}
+.work-matrix-scroll {
+  overflow-x: auto;
+  max-width: 100%;
+}
+.work-matrix {
+  min-width: 1450px;
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.work-matrix th,
+.work-matrix td {
+  padding: 9px 5px;
+  border: 1px solid var(--border);
+  text-align: center;
+  min-width: 32px;
+}
+.work-matrix th:first-child {
+  min-width: 220px;
+  max-width: 300px;
+  text-align: left;
+  position: sticky;
+  left: 0;
+  background: var(--surface);
+  z-index: 1;
+}
+.work-matrix .work-group th {
+  background: var(--surface-soft);
+  font-weight: 750;
+}
+.work-matrix button {
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  text-align: inherit;
+  font: inherit;
+}
+.work-matrix button:hover {
+  text-decoration: underline;
+}
+.work-matrix button small {
+  display: block;
+  color: var(--muted);
+}
+.work-weekend {
+  background: var(--surface-soft);
+}
+.work-total {
+  font-weight: 750;
+}
+.work-day h2 {
+  font-size: 16px;
+  margin: 22px 0 10px;
+}
+.work-day h2 small {
+  color: var(--muted);
+  font-weight: 400;
+  margin-left: 14px;
+}
+.work-entry {
+  display: grid;
+  grid-template-columns: 145px minmax(0, 1fr);
+  gap: 16px;
+  width: 100%;
+  padding: 16px;
+  margin-bottom: 8px;
+  background: var(--surface-soft);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: 10px;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.work-entry > span {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow-wrap: anywhere;
+}
+.work-entry small {
+  color: var(--muted);
+}
+.work-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+}
+.work-form-grid label,
+#work-person-form label,
+#work-import label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.work-wide {
+  grid-column: 1 / -1;
+}
+#work-error:not(:empty),
+#work-message:not(:empty) {
+  color: var(--danger);
+}
+@media (max-width: 650px) {
+  .work-panel {
+    padding: 14px;
+  }
+  .work-navigation {
+    margin-left: 0;
+  }
+  .work-form-grid {
+    grid-template-columns: 1fr;
+  }
+  .work-entry {
+    grid-template-columns: 95px minmax(0, 1fr);
+  }
+}

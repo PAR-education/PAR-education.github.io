@@ -390,9 +390,9 @@ test("Role navigation keeps primary tasks compact and never exposes admin module
     if (role !== "admin") assert.ok(!names.includes("users"));
   }
   assert.ok(roleNavigation("student").primary.includes("calendarEvents"));
-  assert.ok(roleNavigation("student").more.includes("labs"));
+  assert.deepEqual(roleNavigation("student").more, []);
   assert.ok(!roleNavigation("profesor").primary.includes("projects"));
-  assert.ok(roleNavigation("profesor").more.includes("research"));
+  assert.deepEqual(roleNavigation("profesor").more, []);
   assert.equal(navigationLabel("student", "grades"), "Moje ocjene");
   assert.equal(navigationLabel("profesor", "courses"), "Moji kolegiji");
   assert.ok(roleNavigation("admin").primary.includes("users"));
@@ -406,7 +406,11 @@ test("AdministracijaPAR gets a focused dashboard, create-only people and schedul
   const { DemoRecords } = await import("../src/services/demo.js");
   const role = "administracija_par";
   const nav = roleNavigation(role);
-  assert.deepEqual(nav.primary, ["calendarEvents", "attendance"]);
+  assert.deepEqual(nav.primary, [
+    "calendarEvents",
+    "workEntries",
+    "attendance",
+  ]);
   for (const name of [
     "students",
     "employees",
@@ -414,7 +418,7 @@ test("AdministracijaPAR gets a focused dashboard, create-only people and schedul
     "rooms",
     "notifications",
   ])
-    assert.ok(nav.more.includes(name));
+    assert.ok(!nav.primary.includes(name) && !nav.more.includes(name));
   for (const name of [
     "users",
     "grades",
@@ -422,7 +426,6 @@ test("AdministracijaPAR gets a focused dashboard, create-only people and schedul
 
     "projects",
     "evaluations",
-    "workEntries",
     "vacations",
   ]) {
     assert.equal(canRead(role, name), false);
@@ -835,7 +838,7 @@ test("Global search loads only modules readable by the current role", async () =
     assert.ok(!requested.includes("users"));
     if (role === "profesor") {
       assert.ok(requested.includes("attendance"));
-      assert.ok(requested.includes("enrollments"));
+      assert.ok(!requested.includes("enrollments"));
       assert.ok(!requested.includes("students"));
       assert.ok(!requested.includes("finances"));
     }

@@ -1,3 +1,4 @@
+import { workValues, workConflicts } from "../utils/work-time.js";
 import {
   courseNoticeRecipients,
   courseNoticeValues,
@@ -168,6 +169,41 @@ export class DemoRecords {
       values.ownerUid
     )
       throw new Error("Korisnički račun s dosjeom povezuje administrator.");
+    if (name === "workEntries") {
+      values = validateFields(
+        modules.workEntries.fields,
+        workValues({
+          ...values,
+          ownerUid: ["admin", "administracija_par"].includes(role)
+            ? values.ownerUid
+            : this.user.uid,
+        }),
+      );
+      const existing = await this.listAll("workEntries");
+      if (
+        existing
+          .filter(
+            (r) =>
+              r.id !== id &&
+              r.ownerUid === values.ownerUid &&
+              r.date === values.date,
+          )
+          .reduce((s, r) => s + Number(r.hours || 0), values.hours) > 24.0001
+      )
+        throw new Error("Zbroj dnevnih sati ne smije biti veći od 24.");
+      if (workConflicts(existing, values, id).length)
+        throw new Error("Termin rada preklapa se s postojećom aktivnošću.");
+    }
+    if (name === "workPlans") {
+      values = validateFields(modules.workPlans.fields, {
+        ...values,
+        ownerUid: ["admin", "administracija_par"].includes(role)
+          ? values.ownerUid
+          : this.user.uid,
+      });
+      if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(values.month))
+        throw new Error("Odaberite ispravan mjesec plana.");
+    }
     if (name === "notifications") {
       values = validateFields(modules.notifications.fields, values);
       validateNotice(values, role);
@@ -175,7 +211,7 @@ export class DemoRecords {
     const ownCreation =
       ["requests", "evaluations"].includes(name) ||
       (staffRoles.includes(role) &&
-        ["workEntries", "vacations", "research"].includes(name));
+        ["workEntries", "workPlans", "vacations", "research"].includes(name));
     if (
       !this.profile.active ||
       (!(
@@ -183,7 +219,8 @@ export class DemoRecords {
         (!id && canAdd(role, name)) ||
         (role === "student" && name === "attendance")
       ) &&
-        (!ownCreation || (id && !["workEntries", "research"].includes(name))))
+        (!ownCreation ||
+          (id && !["workEntries", "workPlans", "research"].includes(name))))
     )
       throw new Error("Nemate ovlasti za spremanje.");
     if (!canAdd(role, name) || (name === "research" && role !== "admin"))
@@ -219,8 +256,8 @@ export class DemoRecords {
       );
     if (
       old &&
-      role !== "admin" &&
-      ["workEntries", "research"].includes(name) &&
+      !["admin", "administracija_par"].includes(role) &&
+      ["workEntries", "workPlans", "research"].includes(name) &&
       old.ownerUid !== this.user.uid
     )
       throw new Error("Nemate ovlasti za tuđi zapis.");
@@ -293,9 +330,13 @@ export class DemoRecords {
       actorUid: this.user.uid,
       createdAt: new Date().toISOString(),
     });
-    if (old)
+    if (old) {
       Object.assign(old, values, { updatedAt: new Date().toISOString() });
-    else
+      if (name === "workEntries") {
+        if (!values.startTime) delete old.startTime;
+        if (!values.endTime) delete old.endTime;
+      }
+    } else
       this.data[name].push({
         ...values,
         id: recordId,

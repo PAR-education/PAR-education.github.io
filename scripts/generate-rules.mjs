@@ -45,6 +45,10 @@ const schemas = Object.entries(modules)
       `d.keys().hasAll([${required.map(quote).join(", ")}])`,
       ...config.fields.map(fieldCheck),
     ];
+    if (name === "workPlans")
+      expressions.push("d.month.matches('^[0-9]{4}-(0[1-9]|1[0-2])$')");
+    if (name === "workEntries")
+      expressions.push("(('startTime' in d) == ('endTime' in d))");
     if (keys.includes("startDate") && keys.includes("endDate"))
       expressions.push("d.endDate >= d.startDate");
     if (keys.includes("startTime") && keys.includes("endTime"))
@@ -240,11 +244,16 @@ const policies = {
     write: "admin()",
   },
   workEntries: {
-    read: "admin() || (staff() && own(resource.data))",
-    write: "admin() || (staff() && own(request.resource.data))",
-    update:
-      "admin() || (staff() && own(resource.data) && own(request.resource.data))",
-    remove: "admin()",
+    read: "admin() || role('administracija_par')",
+    write: "admin() || role('administracija_par')",
+    update: "admin() || role('administracija_par')",
+    remove: "admin() || role('administracija_par')",
+  },
+  workPlans: {
+    read: "admin() || role('administracija_par')",
+    write: "admin() || role('administracija_par')",
+    update: "admin() || role('administracija_par')",
+    remove: "admin() || role('administracija_par')",
   },
   vacations: {
     read: "admin() || (staff() && own(resource.data))",

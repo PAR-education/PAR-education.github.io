@@ -322,15 +322,32 @@ service cloud.firestore {
         && (!('startTime' in d) || !('endTime' in d) || d.endTime > d.startTime);
     }
     function valid_workEntries(d) {
-      return d.keys().hasOnly(['ownerUid', 'ownerName', 'date', 'category', 'hours', 'projectId', 'description', 'createdAt', 'createdBy', 'updatedAt'])
+      return d.keys().hasOnly(['ownerUid', 'ownerName', 'date', 'startTime', 'endTime', 'activity', 'category', 'hours', 'projectId', 'description', 'createdAt', 'createdBy', 'updatedAt'])
         && d.keys().hasAll(['ownerUid', 'ownerName', 'date', 'category', 'hours', 'description', 'createdAt', 'createdBy', 'updatedAt'])
         && (d.ownerUid is string && d.ownerUid.size() <= 200 && d.ownerUid.size() > 0)
         && (d.ownerName is string && d.ownerName.size() <= 200 && d.ownerName.size() > 0)
         && (d.date is string && d.date.size() <= 200 && d.date.size() > 0 && d.date.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$'))
-        && (d.category is string && d.category.size() <= 200 && d.category.size() > 0 && d.category in ['Administracija', 'Nastava', 'Rad na projektu', 'Znanstveni rad', 'Izvanredne aktivnosti'])
-        && (d.hours is number && d.hours >= 0.25 && d.hours <= 24)
+        && (!('startTime' in d) || (d.startTime is string && d.startTime.size() <= 200 && d.startTime.matches('^([01][0-9]|2[0-3]):[0-5][0-9]$')))
+        && (!('endTime' in d) || (d.endTime is string && d.endTime.size() <= 200 && d.endTime.matches('^([01][0-9]|2[0-3]):[0-5][0-9]$')))
+        && (!('activity' in d) || d.activity == '' || (d.activity is string && d.activity.size() <= 200))
+        && (d.category is string && d.category.size() <= 200 && d.category.size() > 0 && d.category in ['Studij', 'Cjeloživotno obrazovanje', 'Projekti', 'Ostalo', 'Administracija', 'Nastava', 'Rad na projektu', 'Znanstveni rad', 'Izvanredne aktivnosti'])
+        && (d.hours is number && d.hours >= 0.0001 && d.hours <= 24)
         && (!('projectId' in d) || d.projectId == '' || (d.projectId is string && d.projectId.size() <= 200))
-        && (d.description is string && d.description.size() <= 2000 && d.description.size() > 0);
+        && (d.description is string && d.description.size() <= 2000 && d.description.size() > 0)
+        && (('startTime' in d) == ('endTime' in d))
+        && (!('startTime' in d) || !('endTime' in d) || d.endTime > d.startTime);
+    }
+    function valid_workPlans(d) {
+      return d.keys().hasOnly(['ownerUid', 'ownerName', 'month', 'category', 'activity', 'projectId', 'plannedHours', 'createdAt', 'createdBy', 'updatedAt'])
+        && d.keys().hasAll(['ownerUid', 'ownerName', 'month', 'category', 'activity', 'plannedHours', 'createdAt', 'createdBy', 'updatedAt'])
+        && (d.ownerUid is string && d.ownerUid.size() <= 200 && d.ownerUid.size() > 0)
+        && (d.ownerName is string && d.ownerName.size() <= 200 && d.ownerName.size() > 0)
+        && (d.month is string && d.month.size() <= 200 && d.month.size() > 0)
+        && (d.category is string && d.category.size() <= 200 && d.category.size() > 0)
+        && (d.activity is string && d.activity.size() <= 200 && d.activity.size() > 0)
+        && (!('projectId' in d) || d.projectId == '' || (d.projectId is string && d.projectId.size() <= 200))
+        && (d.plannedHours is number && d.plannedHours >= 0 && d.plannedHours <= 744)
+        && d.month.matches('^[0-9]{4}-(0[1-9]|1[0-2])$');
     }
     function valid_vacations(d) {
       return d.keys().hasOnly(['ownerUid', 'ownerName', 'startDate', 'endDate', 'days', 'status', 'details', 'createdAt', 'createdBy', 'updatedAt'])
@@ -537,13 +554,22 @@ service cloud.firestore {
       allow delete: if admin();
     }
     match /workEntries/{id} {
-      allow read: if admin() || (staff() && own(resource.data));
+      allow read: if admin() || role('administracija_par');
       
-      allow create: if (admin() || (staff() && own(request.resource.data))) && valid_workEntries(request.resource.data) && created(request.resource.data);
+      allow create: if (admin() || role('administracija_par')) && valid_workEntries(request.resource.data) && created(request.resource.data);
       allow create: if admin() && valid_workEntries(request.resource.data) && restored(request.resource.data);
-      allow update: if (admin() || (staff() && own(resource.data) && own(request.resource.data))) && valid_workEntries(request.resource.data) && updated(request.resource.data);
+      allow update: if (admin() || role('administracija_par')) && valid_workEntries(request.resource.data) && updated(request.resource.data);
       allow update: if admin() && valid_workEntries(request.resource.data) && updated(request.resource.data);
-      allow delete: if admin();
+      allow delete: if admin() || role('administracija_par');
+    }
+    match /workPlans/{id} {
+      allow read: if admin() || role('administracija_par');
+      
+      allow create: if (admin() || role('administracija_par')) && valid_workPlans(request.resource.data) && created(request.resource.data);
+      allow create: if admin() && valid_workPlans(request.resource.data) && restored(request.resource.data);
+      allow update: if (admin() || role('administracija_par')) && valid_workPlans(request.resource.data) && updated(request.resource.data);
+      allow update: if admin() && valid_workPlans(request.resource.data) && updated(request.resource.data);
+      allow delete: if admin() || role('administracija_par');
     }
     match /vacations/{id} {
       allow read: if admin() || (staff() && own(resource.data));
@@ -640,7 +666,7 @@ service cloud.firestore {
       allow read: if admin();
       allow create: if active() && request.resource.data.keys().hasOnly(['module','recordId','action','before','after','actorUid','createdAt'])
         && request.resource.data.actorUid == request.auth.uid && request.resource.data.createdAt == request.time
-        && request.resource.data.module in ['attendance', 'rooms', 'students', 'employees', 'courses', 'exams', 'grades', 'enrollments', 'examBookings', 'calendarEvents', 'projects', 'research', 'labs', 'labBookings', 'documents', 'requests', 'finances', 'employeeSchedules', 'workEntries', 'vacations', 'alumniEvents', 'evaluations', 'notifications', 'users']
+        && request.resource.data.module in ['attendance', 'rooms', 'students', 'employees', 'courses', 'exams', 'grades', 'enrollments', 'examBookings', 'calendarEvents', 'projects', 'research', 'labs', 'labBookings', 'documents', 'requests', 'finances', 'employeeSchedules', 'workEntries', 'workPlans', 'vacations', 'alumniEvents', 'evaluations', 'notifications', 'users']
         && request.resource.data.recordId is string && request.resource.data.recordId.size() <= 1500
         && request.resource.data.action in ['create','update','archive','restore']
         && (admin() || (((request.resource.data.after != null
