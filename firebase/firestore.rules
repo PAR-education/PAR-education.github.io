@@ -35,6 +35,23 @@ service cloud.firestore {
         && d.email == request.auth.token.email && d.emailVerificationRequired == true
         && d.emailVerified == request.auth.token.get('email_verified', false) && created(d);
     }
+    function verifiedInviteEmail() { return signedIn() && request.auth.token.get('email_verified', false) && request.auth.token.get('email','') != ''; }
+    function inviteData() { return get(/databases/$(database)/documents/registrationInvites/$(request.auth.token.email.lower())).data; }
+    function inviteVisible() {
+      return verifiedInviteEmail() && inviteData().enabled == true && inviteData().claimedBy in ['', request.auth.uid];
+    }
+    function inviteLinkedAfter() {
+      let i = inviteData();
+      let s = getAfter(/databases/$(database)/documents/students/$(i.studentId)).data;
+      let en = getAfter(/databases/$(database)/documents/enrollments/$(i.enrollmentId)).data;
+      let p = getAfter(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+      let after = getAfter(/databases/$(database)/documents/registrationInvites/$(request.auth.token.email.lower())).data;
+      return inviteVisible() && i.claimedBy == '' && after.claimedBy == request.auth.uid && after.claimedAt == request.time
+        && s.ownerUid == request.auth.uid && s.email.lower() == request.auth.token.email.lower()
+        && en.ownerUid == request.auth.uid && en.studentId == i.studentId && en.courseId == i.courseId
+        && en.get('academicYear','') == i.academicYear && en.status == 'Odobreno'
+        && p.role == 'student' && p.active == true && p.emailVerificationRequired == true && p.emailVerified == true;
+    }
     function updated(d) {
       return d.updatedAt == request.time && d.createdAt == resource.data.createdAt
         && d.createdBy == resource.data.createdBy;
@@ -46,8 +63,9 @@ service cloud.firestore {
     }
     function enrollmentKey(d, uid) { return d.courseId + '__' + uid + (d.get('academicYear','') == '' ? '' : '__' + d.academicYear.split('/')[0]); }
     function enrolledStudent(d) {
-      let enrollment = get(/databases/$(database)/documents/enrollments/$(enrollmentKey(d, d.ownerUid))).data;
-      return enrollment.ownerUid == d.ownerUid && enrollment.courseId == d.courseId && enrollment.status == 'Odobreno';
+      let enrollment = get(/databases/$(database)/documents/enrollments/$(d.get('enrollmentId', enrollmentKey(d, d.ownerUid)))).data;
+      return enrollment.ownerUid == d.ownerUid && enrollment.courseId == d.courseId && enrollment.status == 'Odobreno'
+        && (d.get('academicYear','') == '' || enrollment.get('academicYear','') in ['', d.academicYear]);
     }
     function broadcastVisible(d) {
       return active() && ((role('administracija_par') && d.get('audience','') in ['student','profesor','students_professors'])
@@ -74,7 +92,7 @@ service cloud.firestore {
       let source = get(/databases/$(database)/documents/$(d.sourceModule)/$(d.sourceId)).data;
       return role('profesor') && d.sourceModule in ['calendarEvents','enrollments','examBookings'] && instructor(source)
         && ((d.sourceModule in ['enrollments','examBookings'] && source.ownerUid == d.ownerUid)
-          || (d.sourceModule == 'calendarEvents' && enrolledStudent({'courseId':source.courseId,'ownerUid':d.ownerUid,'academicYear':source.get('academicYear','')})));
+          || (d.sourceModule == 'calendarEvents' && enrolledStudent({'courseId':source.courseId,'ownerUid':d.ownerUid,'academicYear':source.get('academicYear',''), 'enrollmentId':d.get('enrollmentId',enrollmentKey(source, d.ownerUid))})));
     }
     function studentEnrollment(d, id) {
       let c = get(/databases/$(database)/documents/courses/$(d.courseId)).data;
@@ -416,7 +434,37 @@ service cloud.firestore {
       allow update: if signedIn() && request.auth.uid == uid && request.auth.token.get('email_verified', false)
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['emailVerified','updatedAt'])
         && request.resource.data.emailVerified == true && request.resource.data.updatedAt == request.time;
+      allow update: if verifiedInviteEmail() && request.auth.uid == uid && resource.data.role == 'student'
+        && resource.data.email.lower() == request.auth.token.email.lower() && inviteLinkedAfter()
+        && valid_users(request.resource.data) && updated(request.resource.data)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['active','name','departmentId','emailVerified','emailVerificationRequired','updatedAt'])
+        && request.resource.data.name == getAfter(/databases/$(database)/documents/students/$(inviteData().studentId)).data.name
+        && request.resource.data.departmentId == getAfter(/databases/$(database)/documents/students/$(inviteData().studentId)).data.departmentId;
       allow delete: if false;
+    }
+    match /registrationInvites/{email} {
+      allow get: if admin() || (verifiedInviteEmail() && email == request.auth.token.email.lower());
+      allow list: if admin();
+      allow create, update: if admin() && request.resource.data.keys().hasOnly(['email','studentId','enrollmentId','courseId','academicYear','enabled','claimedBy','claimedAt','createdAt','createdBy','updatedAt'])
+        && request.resource.data.email == email && email == email.lower() && email.size() <= 200
+        && request.resource.data.studentId is string && request.resource.data.enrollmentId is string
+        && request.resource.data.courseId is string && request.resource.data.academicYear is string
+        && request.resource.data.enabled is bool && request.resource.data.claimedBy is string && request.resource.data.updatedAt == request.time;
+      allow update: if verifiedInviteEmail() && email == request.auth.token.email.lower() && inviteLinkedAfter()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['claimedBy','claimedAt','updatedAt']) && updated(request.resource.data);
+      allow delete: if admin();
+    }
+    match /students/{id} {
+      allow get: if inviteVisible() && id == inviteData().studentId && resource.data.email.lower() == request.auth.token.email.lower();
+      allow update: if inviteLinkedAfter() && id == inviteData().studentId && resource.data.get('ownerUid','') in ['', request.auth.uid]
+        && resource.data.email.lower() == request.auth.token.email.lower() && updated(request.resource.data)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['ownerUid','updatedAt']);
+    }
+    match /enrollments/{id} {
+      allow get: if inviteVisible() && id == inviteData().enrollmentId;
+      allow update: if inviteLinkedAfter() && id == inviteData().enrollmentId && resource.data.get('ownerUid','') in ['', request.auth.uid]
+        && resource.data.status == 'Odobreno' && updated(request.resource.data)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['ownerUid','updatedAt']);
     }
     match /rooms/{id} {
       allow read: if active();

@@ -20,7 +20,7 @@ let verificationRequired = false;
 const verificationTools = document.createElement("div");
 verificationTools.id = "verification-tools";
 verificationTools.innerHTML =
-  '<p>Potvrdite svoju e-adresu putem poveznice iz e-pošte. Pristup zatim odobrava administrator.</p><button class="button" id="send-verification">Pošalji novu poveznicu</button><button class="button" id="check-verification">Potvrdio/la sam e-adresu</button>';
+  '<p>Potvrdite svoju e-adresu putem poveznice iz e-pošte. Ako je vaš upis unaprijed pripremljen, račun će se povezati automatski. Ostale račune odobrava administrator.</p><button class="button" id="send-verification">Pošalji novu poveznicu</button><button class="button" id="check-verification">Potvrdio/la sam e-adresu</button>';
 $("login-status").after(verificationTools);
 $("send-verification").addEventListener("click", async (event) => {
   event.target.disabled = true;
@@ -51,12 +51,18 @@ function show(message, error = false) {
   $("login-status").classList.toggle("error", error);
 }
 function renderControls() {
-  verificationTools.hidden = !sessionUser || !verificationRequired;
+  verificationTools.hidden = !sessionUser || profileLoading;
+  $("send-verification").hidden = !verificationRequired;
+  $("check-verification").textContent = verificationRequired
+    ? "Potvrdio/la sam e-adresu"
+    : "Provjeri upis i pristup";
   $("auth-description").textContent =
     sessionUser && profileFailed
       ? "Potrebno je dovršiti pripremu korisničkog profila."
       : sessionUser
-        ? "Pristup se aktivira nakon administratorskog odobrenja."
+        ? verificationRequired
+          ? "Potvrdite e-adresu da biste nastavili."
+          : "Pripremljeni upisi povezuju se nakon potvrde e-adrese; ostale račune odobrava administrator."
         : mode === "register"
           ? "Izradite svoj korisnički račun."
           : "Unesite podatke svojeg PAR računa.";
@@ -80,7 +86,9 @@ function renderControls() {
       : sessionUser
         ? profileLoading
           ? "Priprema profila"
-          : "Čeka odobrenje"
+          : verificationRequired
+            ? "Potvrda e-adrese"
+            : "Čeka odobrenje"
         : mode === "login"
           ? "Prijava u sustav"
           : "Registracija";

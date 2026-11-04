@@ -22,6 +22,278 @@ import {
 } from "firebase/firestore";
 import { prepareCalendarMove } from "../src/utils/schedule.js";
 let env;
+test("Prepared registrations activate only the verified invited student and preserve original enrollment/history IDs", async () => {
+  const sdk = await import("firebase/firestore");
+  const { prepareRegistrationInvite, claimRegistrationInvite } =
+    await import("../src/services/registration-invites.js");
+  const admin = database("admin");
+  await updateDoc(doc(admin, "courses", "c1"), {
+    academicYear: "2026/2027",
+    updatedAt: serverTimestamp(),
+  });
+  const context = {
+    user: { uid: "admin" },
+    profile: { role: "admin", active: true },
+    repository: {
+      listAll: async (name) =>
+        (await getDocs(collection(admin, name))).docs.map((s) => ({
+          id: s.id,
+          ...s.data(),
+        })),
+    },
+  };
+  const row = { name: "Prepared Student", email: "prepared@example.test" };
+  const { studentId } = await prepareRegistrationInvite(
+    context,
+    row,
+    { id: "c1", academicYear: "2026/2027" },
+    "",
+    "business",
+    async () => ({ db: admin, firestore: sdk }),
+  );
+  const invite = (
+    await getDoc(doc(admin, "registrationInvites", row.email))
+  ).data();
+  await prepareRegistrationInvite(
+    context,
+    row,
+    { id: "c1", academicYear: "2026/2027" },
+    studentId,
+    "business",
+    async () => ({ db: admin, firestore: sdk }),
+  );
+  assert.equal(
+    (await getDoc(doc(admin, "registrationInvites", row.email))).data()
+      .studentId,
+    studentId,
+  );
+  const uid = "prepared-user";
+  await setDoc(doc(admin, "users", uid), {
+    name: "Registration name",
+    email: row.email,
+    role: "student",
+    active: false,
+    departmentId: "",
+    emailVerified: false,
+    emailVerificationRequired: true,
+    ...meta(),
+    createdBy: "admin",
+  });
+  const unverified = env
+    .authenticatedContext(uid, { email: row.email, email_verified: false })
+    .firestore();
+  const verified = env
+    .authenticatedContext(uid, {
+      email: "PREPARED@EXAMPLE.TEST",
+      email_verified: true,
+    })
+    .firestore();
+  await assertFails(getDoc(doc(unverified, "registrationInvites", row.email)));
+  await assertFails(
+    updateDoc(doc(unverified, "users", uid), {
+      active: true,
+      updatedAt: serverTimestamp(),
+    }),
+  );
+  await assertFails(getDocs(collection(verified, "registrationInvites")));
+  await assertFails(
+    getDoc(doc(verified, "registrationInvites", "someone-else@example.test")),
+  );
+  await assertFails(
+    updateDoc(doc(verified, "users", uid), {
+      active: true,
+      updatedAt: serverTimestamp(),
+    }),
+  );
+  const user = { uid, email: "PREPARED@EXAMPLE.TEST", emailVerified: true };
+  assert.equal(
+    await claimRegistrationInvite(user, async () => ({
+      db: verified,
+      firestore: sdk,
+    })),
+    true,
+  );
+  const profile = (await getDoc(doc(admin, "users", uid))).data();
+  assert.equal(profile.role, "student");
+  assert.equal(profile.active, true);
+  assert.equal(profile.emailVerified, true);
+  assert.equal(profile.name, row.name);
+  assert.equal(
+    (await getDoc(doc(admin, "students", studentId))).data().ownerUid,
+    uid,
+  );
+  assert.equal(
+    (await getDoc(doc(admin, "enrollments", invite.enrollmentId))).data()
+      .ownerUid,
+    uid,
+  );
+  const own = await getDocs(
+    query(collection(verified, "enrollments"), where("ownerUid", "==", uid)),
+  );
+  assert.equal(own.docs.length, 1);
+  assert.equal(own.docs[0].id, invite.enrollmentId);
+  await setDoc(doc(admin, "calendarEvents", "invite-event"), {
+    title: "Business",
+    date: "2026-11-04",
+    time: "10:00",
+    endTime: "12:00",
+    courseId: "c1",
+    academicYear: "2026/2027",
+    instructorUid: "teacher",
+    ...meta(),
+    createdBy: "admin",
+  });
+  await setDoc(
+    doc(admin, "attendance", "invite-event__" + invite.enrollmentId),
+    {
+      eventId: "invite-event",
+      enrollmentId: invite.enrollmentId,
+      studentId,
+      ownerUid: "",
+      studentName: row.name,
+      courseId: "c1",
+      courseTitle: "Business",
+      date: "2026-11-04",
+      academicYear: "2026/2027",
+      instructorUid: "teacher",
+      status: "Prisutan",
+      ...meta(),
+      createdBy: "admin",
+    },
+  );
+  await assertSucceeds(
+    getDoc(doc(verified, "attendance", "invite-event__" + invite.enrollmentId)),
+  );
+  await assertSucceeds(
+    setDoc(
+      doc(database("teacher"), "notifications", "invite-schedule-notice"),
+      {
+        ownerUid: uid,
+        title: "Promjena rasporeda",
+        message: "Test",
+        sourceModule: "calendarEvents",
+        sourceId: "invite-event",
+        enrollmentId: invite.enrollmentId,
+        ...meta(),
+        createdBy: "teacher",
+      },
+    ),
+  );
+  assert.equal(
+    await claimRegistrationInvite(user, async () => ({
+      db: verified,
+      firestore: sdk,
+    })),
+    false,
+  );
+  await updateDoc(doc(admin, "users", uid), {
+    active: false,
+    updatedAt: serverTimestamp(),
+  });
+  assert.equal(
+    await claimRegistrationInvite(user, async () => ({
+      db: verified,
+      firestore: sdk,
+    })),
+    false,
+  );
+  assert.equal((await getDoc(doc(admin, "users", uid))).data().active, false);
+});
+test("Prepared invite cannot be claimed by another address, a privileged account, or by modifying course/status", async () => {
+  const sdk = await import("firebase/firestore");
+  const admin = database("admin"),
+    email = "guard@example.test",
+    uid = "guard-user";
+  await setDoc(doc(admin, "users", uid), {
+    name: "Guard",
+    email,
+    role: "student",
+    active: false,
+    departmentId: "",
+    emailVerified: false,
+    emailVerificationRequired: true,
+    ...meta(),
+    createdBy: "admin",
+  });
+  await setDoc(doc(admin, "students", "guard-student"), {
+    name: "Guard",
+    email,
+    departmentId: "business",
+    status: "Erasmus",
+    ...meta(),
+    createdBy: "admin",
+  });
+  await setDoc(doc(admin, "enrollments", "guard-enrollment"), {
+    studentId: "guard-student",
+    ownerUid: "",
+    ownerName: "Guard",
+    courseId: "c1",
+    courseTitle: "Business",
+    instructorUid: "teacher",
+    academicYear: "2026/2027",
+    status: "Odobreno",
+    ...meta(),
+    createdBy: "admin",
+  });
+  await setDoc(doc(admin, "registrationInvites", email), {
+    email,
+    studentId: "guard-student",
+    enrollmentId: "guard-enrollment",
+    courseId: "c1",
+    academicYear: "2026/2027",
+    enabled: true,
+    claimedBy: "",
+    ...meta(),
+    createdBy: "admin",
+  });
+  const verified = env
+    .authenticatedContext(uid, { email, email_verified: true })
+    .firestore();
+  const batch = sdk.writeBatch(verified);
+  batch.update(doc(verified, "users", uid), {
+    role: "admin",
+    active: true,
+    emailVerified: true,
+    updatedAt: serverTimestamp(),
+  });
+  batch.update(doc(verified, "students", "guard-student"), {
+    ownerUid: uid,
+    updatedAt: serverTimestamp(),
+  });
+  batch.update(doc(verified, "enrollments", "guard-enrollment"), {
+    ownerUid: uid,
+    courseId: "c2",
+    updatedAt: serverTimestamp(),
+  });
+  batch.update(doc(verified, "registrationInvites", email), {
+    claimedBy: uid,
+    claimedAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  });
+  await assertFails(batch.commit());
+  const stranger = env
+    .authenticatedContext("stranger", {
+      email: "stranger@example.test",
+      email_verified: true,
+    })
+    .firestore();
+  await assertFails(getDoc(doc(stranger, "students", "guard-student")));
+  await assertFails(getDoc(doc(stranger, "enrollments", "guard-enrollment")));
+  await assertFails(
+    setDoc(doc(stranger, "registrationInvites", email), {
+      email,
+      enabled: true,
+      updatedAt: serverTimestamp(),
+    }),
+  );
+  await assertFails(
+    updateDoc(doc(verified, "registrationInvites", email), {
+      studentId: "s1",
+      updatedAt: serverTimestamp(),
+    }),
+  );
+  assert.equal((await getDoc(doc(admin, "users", uid))).data().active, false);
+});
 test("Work records and monthly plans are office/admin only, including another employee and archive", async () => {
   const sdk = await import("firebase/firestore");
   const { writeImportedRecord } = await import("../src/services/records.js");

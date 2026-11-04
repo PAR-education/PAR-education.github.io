@@ -30,6 +30,7 @@ import {
   moduleAvailable,
 } from "./auth/navigation.js";
 import { mountWorkTime } from "./components/work-time.js";
+import { showRegistrationInvites } from "./components/registration-invites.js";
 import { linkStudentAccount } from "./services/student-link.js";
 import { observeSession, logout } from "./auth/auth.js";
 import {
@@ -651,7 +652,7 @@ function drawModule() {
         ? "Kalendar nastave"
         : navigationLabel(context.profile.role, active),
       "",
-      `${active === "notifications" && canSendAnnouncement(context.profile.role) ? '<button class="button primary" id="send-announcement">Pošalji obavijest</button>' : ""}${active !== "notifications" && (canCreate(active) || canImport(context.profile.role, active)) ? actionMenu("Dodaj", `${canCreate(active) ? '<button id="create" type="button">Ručni unos</button>' : ""}${canImport(context.profile.role, active) ? '<button id="excel-open" type="button">Uvoz iz datoteke</button>' : ""}`, true) : ""}${actionMenu("Izvoz", `<button id="print" type="button">${active === "calendarEvents" ? "Popis / PDF" : "Ispis / PDF"}</button>${active === "calendarEvents" ? '<button id="calendar-google" type="button">Dodaj u Google kalendar</button><button id="calendar-print-week" type="button">Grafički prikaz · tjedan</button><button id="calendar-print-month" type="button">Grafički prikaz · mjesec</button>' : ""}<button id="csv" type="button">CSV tablica</button>`)}<button id="refresh" class="button icon-button" title="Osvježi" aria-label="Osvježi">${icon("arrows-rotate")}</button>`,
+      `${active === "users" && context.profile.role === "admin" && !context.demo ? '<button class="button" id="prepare-registration">Pripremi upise</button>' : ""}${active === "notifications" && canSendAnnouncement(context.profile.role) ? '<button class="button primary" id="send-announcement">Pošalji obavijest</button>' : ""}${active !== "notifications" && (canCreate(active) || canImport(context.profile.role, active)) ? actionMenu("Dodaj", `${canCreate(active) ? '<button id="create" type="button">Ručni unos</button>' : ""}${canImport(context.profile.role, active) ? '<button id="excel-open" type="button">Uvoz iz datoteke</button>' : ""}`, true) : ""}${actionMenu("Izvoz", `<button id="print" type="button">${active === "calendarEvents" ? "Popis / PDF" : "Ispis / PDF"}</button>${active === "calendarEvents" ? '<button id="calendar-google" type="button">Dodaj u Google kalendar</button><button id="calendar-print-week" type="button">Grafički prikaz · tjedan</button><button id="calendar-print-month" type="button">Grafički prikaz · mjesec</button>' : ""}<button id="csv" type="button">CSV tablica</button>`)}<button id="refresh" class="button icon-button" title="Osvježi" aria-label="Osvježi">${icon("arrows-rotate")}</button>`,
     ) +
     `<section class="panel module-panel"><div class="toolbar module-toolbar"><label class="module-search" for="search"><span class="sr-only">Pretraživanje</span>${icon("magnifying-glass")}<input class="search" id="search" type="search" placeholder="Pretraži…" autocomplete="off"></label><div class="toolbar-actions">${filters || monthly ? `<details class="module-filters" id="module-filters"><summary class="button">${icon("filter")} <span id="filter-label">Filtri</span></summary><div class="filter-fields">${filters}${monthly}<button class="button" id="clear-filters">Očisti filtre</button></div></details>` : ""}${batchAllowed ? '<button class="button" id="batch-approve">Odobri više…</button>' : ""}</div></div><div id="table-area"></div><div class="table-footer" id="record-count"></div></section>`;
   if (active === "calendarEvents") {
@@ -722,6 +723,11 @@ function drawModule() {
     });
   });
   $("create")?.addEventListener("click", () => showForm(active));
+  $("prepare-registration")?.addEventListener("click", () =>
+    showRegistrationInvites(context).catch((error) =>
+      notify(errorMessage(error)),
+    ),
+  );
   $("refresh").addEventListener("click", () => loadView(active));
   $("search").addEventListener("input", (event) => {
     page = 1;

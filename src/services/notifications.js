@@ -9,6 +9,7 @@ export async function notifyChange(context, name, id, row, decision) {
   // Office scheduling does not grant access to enrollments or broadcast messages.
   if (context.profile.role === "administracija_par") return { sent: 0 };
   let recipients = [];
+  const enrollmentRefs = new Map();
   if (name === "calendarEvents" && row.courseId) {
     const enrollments = await context.repository.listAll("enrollments");
     recipients = enrollments
@@ -20,7 +21,10 @@ export async function notifyChange(context, name, id, row, decision) {
             !r.academicYear ||
             r.academicYear === row.academicYear),
       )
-      .map((r) => r.ownerUid);
+      .map((r) => {
+        if (r.ownerUid) enrollmentRefs.set(r.ownerUid, r.id);
+        return r.ownerUid;
+      });
   } else if (row.ownerUid) recipients = [row.ownerUid];
   recipients = [...new Set(recipients.filter(Boolean))];
   const title =
@@ -35,6 +39,9 @@ export async function notifyChange(context, name, id, row, decision) {
     message,
     sourceModule: name,
     sourceId: id,
+    ...(enrollmentRefs.has(ownerUid)
+      ? { enrollmentId: enrollmentRefs.get(ownerUid) }
+      : {}),
   }));
   if (context.demo) {
     context.repository.data.notifications ||= [];

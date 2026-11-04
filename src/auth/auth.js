@@ -2,6 +2,7 @@ import { getFirebase } from "../config/firebase.js";
 import { isActiveProfile } from "./permissions.js";
 import { pendingProfile } from "./profile.js";
 import { validateRegistration } from "./registration.js";
+import { claimRegistrationInvite } from "../services/registration-invites.js";
 let registrationTask = null;
 export async function register(name, email, password, confirmation) {
   const input = validateRegistration(name, email, password, confirmation);
@@ -51,6 +52,20 @@ export async function observeSession(callback, onError) {
     auth,
     (user) => {
       stopProfile();
+      let attemptedInvite = false,
+        claimingInvite = false;
+      const emit = (profile) =>
+        callback({
+          user,
+          profile:
+            isActiveProfile(profile) &&
+            (!profile.emailVerificationRequired || user.emailVerified)
+              ? profile
+              : null,
+          verificationRequired:
+            !!profile?.emailVerificationRequired && !user.emailVerified,
+          loading: false,
+        });
       callback({ user, profile: null, loading: !!user });
       if (!user) return;
       stopProfile = firestore.onSnapshot(
@@ -68,6 +83,36 @@ export async function observeSession(callback, onError) {
             })().catch((error) => {
               if (auth.currentUser?.uid === user.uid) onError(error);
             });
+            return;
+          }
+          if (claimingInvite) return;
+          if (
+            !attemptedInvite &&
+            user.emailVerified &&
+            profile.role === "student"
+          ) {
+            attemptedInvite = true;
+            claimingInvite = true;
+            callback({ user, profile: null, loading: true });
+            claimRegistrationInvite(user)
+              .then(async () => {
+                if (auth.currentUser?.uid !== user.uid) return;
+                const latest = await firestore.getDocFromServer(
+                  firestore.doc(db, "users", user.uid),
+                );
+                claimingInvite = false;
+                emit(latest.data());
+              })
+              .catch((error) => {
+                claimingInvite = false;
+                if (auth.currentUser?.uid !== user.uid) return;
+                if (
+                  error.code === "permission-denied" &&
+                  isActiveProfile(profile)
+                )
+                  emit(profile);
+                else onError(error);
+              });
             return;
           }
           callback({
@@ -124,6 +169,7 @@ export async function refreshVerification() {
     throw new Error(
       "E-adresa još nije potvrđena. Otvorite poveznicu iz poruke.",
     );
+  await claimRegistrationInvite(user);
   await firestore.updateDoc(firestore.doc(db, "users", user.uid), {
     emailVerified: true,
     updatedAt: firestore.serverTimestamp(),

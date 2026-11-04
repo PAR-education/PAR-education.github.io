@@ -1,5 +1,19 @@
 // UI text only. Stored values, IDs and imported course names are never rewritten.
 const words = {
+  "Potvrda e-adrese": "Email verification",
+  "Provjeri upis i pristup": "Check enrolment and access",
+  "Potvrdite e-adresu da biste nastavili.": "Verify your email to continue.",
+  "Pripremljeni upisi povezuju se nakon potvrde e-adrese; ostale račune odobrava administrator.":
+    "Prepared enrolments are linked after email verification; other accounts require administrator approval.",
+  "Odaberite dosje ili novi": "Choose an existing or new record",
+  "Pripremi upise": "Prepare enrolments",
+  "Priprema registracija i upisa": "Prepare registrations and enrolments",
+  "Odjel za nove dosjee": "Department for new student records",
+  "Popis studenata": "Student list",
+  "Učitaj popis (.csv ili .txt)": "Load list (.csv or .txt)",
+  "Provjeri popis": "Check list",
+  "Dosje za povezivanje": "Student record to link",
+  "Novi dosje": "New student record",
   "Evidencija rada": "Work log",
   "Mjesečni plan rada": "Monthly work plan",
   "Mjesečni plan": "Monthly plan",
