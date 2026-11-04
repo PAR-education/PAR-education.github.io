@@ -1003,8 +1003,15 @@ function showDetails(name, record) {
     record.name || record.title || modules[name].title,
     (name === "courses"
       ? `<div class="syllabus-details">${detailsHTML(syllabusFields(modules[name].fields), syllabusRecord(record))}</div>`
-      : detailsHTML(modules[name].fields, record)) +
-      `${role === "admin" ? `<details class="context-help"><summary>Podaci o zapisu</summary><p>ID: ${e(record.id)}</p></details>` : ""}<div class="detail-actions">${canEdit(name, record) ? '<button id="edit-record" class="button primary">Uredi</button>' : ""}<button id="print-record" class="button">Ispis / PDF</button>${record.url && /^https:\/\//i.test(record.url) ? `<a class="button" href="${e(record.url)}" target="_blank" rel="noopener noreferrer">Otvori dokument ↗</a>` : ""}${role === "student" && bookingTarget ? '<button id="book-record" class="button primary">Pošalji prijavu</button>' : ""}${canDecide && record.status === "Na čekanju" && ["vacations", "enrollments", "examBookings", "labBookings"].includes(name) ? '<button id="approve" class="button primary">Odobri</button><button id="reject" class="button">Odbij</button>' : ""}${canDelete(role, name) && (name !== "calendarEvents" || canEdit(name, record)) && !["users", "evaluations"].includes(name) ? '<button id="delete-record" class="button danger">Arhiviraj</button>' : ""}</div><div id="detail-error" role="alert"></div>`,
+      : detailsHTML(
+          modules[name].fields.filter(
+            (f) =>
+              name !== "users" ||
+              !["emailVerificationRequired", "emailVerified"].includes(f.key),
+          ),
+          record,
+        )) +
+      `${role === "admin" ? `<details class="context-help"><summary>Podaci o zapisu</summary><p>ID: ${e(record.id)}</p></details>` : ""}<div class="detail-actions">${name === "users" && role === "admin" && !record.active ? '<button id="approve-user" class="button primary">Odobri pristup</button>' : ""}${canEdit(name, record) ? '<button id="edit-record" class="button primary">Uredi</button>' : ""}<button id="print-record" class="button">Ispis / PDF</button>${record.url && /^https:\/\//i.test(record.url) ? `<a class="button" href="${e(record.url)}" target="_blank" rel="noopener noreferrer">Otvori dokument ↗</a>` : ""}${role === "student" && bookingTarget ? '<button id="book-record" class="button primary">Pošalji prijavu</button>' : ""}${canDecide && record.status === "Na čekanju" && ["vacations", "enrollments", "examBookings", "labBookings"].includes(name) ? '<button id="approve" class="button primary">Odobri</button><button id="reject" class="button">Odbij</button>' : ""}${canDelete(role, name) && (name !== "calendarEvents" || canEdit(name, record)) && !["users", "evaluations"].includes(name) ? '<button id="delete-record" class="button danger">Arhiviraj</button>' : ""}</div><div id="detail-error" role="alert"></div>`,
   );
   if (["courses", "calendarEvents", "exams"].includes(name)) {
     const root = document.createElement("section");
@@ -1250,6 +1257,22 @@ function showDetails(name, record) {
       $("detail-error").textContent = errorMessage(error);
     }
   });
+  $("approve-user")?.addEventListener("click", (event) =>
+    mutate(
+      event.currentTarget,
+      () =>
+        current.repository.save(
+          "users",
+          validateFields(modules.users.fields, {
+            ...record,
+            active: true,
+            emailVerificationRequired: false,
+          }),
+          record.id,
+        ),
+      "Pristup je odobren.",
+    ),
+  );
   $("book-record")?.addEventListener("click", (event) =>
     mutate(
       event.currentTarget,
@@ -1400,6 +1423,10 @@ function showForm(name, record = {}) {
     name,
     modules[name].fields.filter(
       (field) =>
+        !(
+          name === "users" &&
+          ["emailVerificationRequired", "emailVerified"].includes(field.key)
+        ) &&
         !(mine && ["ownerUid", "ownerName", "response"].includes(field.key)) &&
         !(
           role === "administracija_par" &&
@@ -1480,6 +1507,14 @@ function showForm(name, record = {}) {
     try {
       const values = Object.fromEntries(new FormData(form));
       for (const field of modules[name].fields) {
+        if (
+          name === "users" &&
+          ["emailVerificationRequired", "emailVerified"].includes(field.key)
+        ) {
+          values[field.key] =
+            field.key === "emailVerified" ? !!record.emailVerified : false;
+          continue;
+        }
         if (readonly(field)) values[field.key] = defaults[field.key];
         if (field.type === "uids")
           values[field.key] = [

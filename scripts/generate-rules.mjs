@@ -78,8 +78,7 @@ service cloud.firestore {
     function active() {
       let p = profile();
       return signedIn() && p.active == true
-        && p.role in ['admin', 'administracija_par', 'dept_head', 'profesor', 'lab_assistant', 'student', 'alumni']
-        && (!p.get('emailVerificationRequired', false) || request.auth.token.get('email_verified', false));
+        && p.role in ['admin', 'administracija_par', 'dept_head', 'profesor', 'lab_assistant', 'student', 'alumni'];
     }
     function role(r) { return active() && profile().role == r; }
     function admin() { return role('admin'); }
@@ -102,13 +101,13 @@ service cloud.firestore {
     function pendingSelf(uid, d) {
       return signedIn() && uid == request.auth.uid
         && d.role == 'student' && d.active == false && d.departmentId == ''
-        && d.email == request.auth.token.email && d.emailVerificationRequired == true
+        && d.email == request.auth.token.email && d.emailVerificationRequired == false
         && d.emailVerified == request.auth.token.get('email_verified', false) && created(d);
     }
-    function verifiedInviteEmail() { return signedIn() && request.auth.token.get('email_verified', false) && request.auth.token.get('email','') != ''; }
+    function approvedInviteAccount() { return role('student') && request.auth.token.get('email','') != ''; }
     function inviteData() { return get(/databases/$(database)/documents/registrationInvites/$(request.auth.token.email.lower())).data; }
     function inviteVisible() {
-      return verifiedInviteEmail() && inviteData().enabled == true && inviteData().claimedBy in ['', request.auth.uid];
+      return approvedInviteAccount() && inviteData().enabled == true && inviteData().claimedBy in ['', request.auth.uid];
     }
     function inviteLinkedAfter() {
       let i = inviteData();
@@ -120,7 +119,7 @@ service cloud.firestore {
         && s.ownerUid == request.auth.uid && s.email.lower() == request.auth.token.email.lower()
         && en.ownerUid == request.auth.uid && en.studentId == i.studentId && en.courseId == i.courseId
         && en.get('academicYear','') == i.academicYear && en.status == 'Odobreno'
-        && p.role == 'student' && p.active == true && p.emailVerificationRequired == true && p.emailVerified == true;
+        && p.role == 'student' && p.active == true;
     }
     function updated(d) {
       return d.updatedAt == request.time && d.createdAt == resource.data.createdAt
@@ -188,23 +187,23 @@ ${schemas}
       allow update: if signedIn() && request.auth.uid == uid && request.auth.token.get('email_verified', false)
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['emailVerified','updatedAt'])
         && request.resource.data.emailVerified == true && request.resource.data.updatedAt == request.time;
-      allow update: if verifiedInviteEmail() && request.auth.uid == uid && resource.data.role == 'student'
+      allow update: if approvedInviteAccount() && request.auth.uid == uid && resource.data.role == 'student'
         && resource.data.email.lower() == request.auth.token.email.lower() && inviteLinkedAfter()
         && valid_users(request.resource.data) && updated(request.resource.data)
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['active','name','departmentId','emailVerified','emailVerificationRequired','updatedAt'])
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name','departmentId','updatedAt'])
         && request.resource.data.name == getAfter(/databases/$(database)/documents/students/$(inviteData().studentId)).data.name
         && request.resource.data.departmentId == getAfter(/databases/$(database)/documents/students/$(inviteData().studentId)).data.departmentId;
       allow delete: if false;
     }
     match /registrationInvites/{email} {
-      allow get: if admin() || (verifiedInviteEmail() && email == request.auth.token.email.lower());
+      allow get: if admin() || (approvedInviteAccount() && email == request.auth.token.email.lower());
       allow list: if admin();
       allow create, update: if admin() && request.resource.data.keys().hasOnly(['email','studentId','enrollmentId','courseId','academicYear','enabled','claimedBy','claimedAt','createdAt','createdBy','updatedAt'])
         && request.resource.data.email == email && email == email.lower() && email.size() <= 200
         && request.resource.data.studentId is string && request.resource.data.enrollmentId is string
         && request.resource.data.courseId is string && request.resource.data.academicYear is string
         && request.resource.data.enabled is bool && request.resource.data.claimedBy is string && request.resource.data.updatedAt == request.time;
-      allow update: if verifiedInviteEmail() && email == request.auth.token.email.lower() && inviteLinkedAfter()
+      allow update: if approvedInviteAccount() && email == request.auth.token.email.lower() && inviteLinkedAfter()
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['claimedBy','claimedAt','updatedAt']) && updated(request.resource.data);
       allow delete: if admin();
     }

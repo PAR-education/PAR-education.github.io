@@ -8,8 +8,6 @@ export function validateStudentLink(student, account, uid) {
     account.active !== true
   )
     throw new Error("Odaberite aktivan studentski račun.");
-  if (account.emailVerificationRequired && !account.emailVerified)
-    throw new Error("Student mora potvrditi e-adresu prije povezivanja.");
   if (
     !student.email ||
     student.email.trim().toLowerCase() !== account.email?.trim().toLowerCase()

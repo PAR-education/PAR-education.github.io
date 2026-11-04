@@ -25,7 +25,7 @@ export async function showRegistrationInvites(context) {
   );
   let preview = [],
     busy = false;
-  root.innerHTML = `<p>Priprema odobren upis i povezuje dosje s budućim računom. Račun se aktivira tek nakon potvrde e-adrese. Lozinke se ne stvaraju niti šalju.</p><div class="work-form-grid"><label>Kolegij<select id="prep-course"><option value="">Odaberite kolegij</option>${courses.map((c) => `<option value="${e(c.id)}" ${preferred.length === 1 && preferred[0].id === c.id ? "selected" : ""}>${e(c.title)} · ${e(c.academicYear || "Nedostaje godina")} · ${e(c.instructorName || "Nedostaje nastavnik")}</option>`).join("")}</select></label><label>Odjel za nove dosjee<input id="prep-department" maxlength="200" placeholder="Oznaka odjela"></label></div><label>Popis studenata<textarea id="prep-roster" rows="7" placeholder="Ime i prezime;email@example.com"></textarea></label><label>Učitaj popis (.csv ili .txt)<input id="prep-file" type="file" accept=".csv,.txt"></label><button class="button" id="prep-preview">Provjeri popis</button><p id="prep-message" role="status"></p><div id="prep-results"></div><label><input id="prep-confirm" type="checkbox"> Provjerio sam odabrani kolegij i dosjee; odobravam aktivaciju navedenih studenata nakon potvrde njihove e-adrese.</label><button class="button primary" id="prep-save" disabled>Pripremi upise</button>`;
+  root.innerHTML = `<p>Priprema odobren upis i povezuje dosje s budućim računom. Prvo administrator mora odobriti registrirani račun. Potvrda e-adrese nije potrebna. Lozinke se ne stvaraju niti šalju.</p><div class="work-form-grid"><label>Kolegij<select id="prep-course"><option value="">Odaberite kolegij</option>${courses.map((c) => `<option value="${e(c.id)}" ${preferred.length === 1 && preferred[0].id === c.id ? "selected" : ""}>${e(c.title)} · ${e(c.academicYear || "Nedostaje godina")} · ${e(c.instructorName || "Nedostaje nastavnik")}</option>`).join("")}</select></label><label>Odjel za nove dosjee<input id="prep-department" maxlength="200" placeholder="Oznaka odjela"></label></div><label>Popis studenata<textarea id="prep-roster" rows="7" placeholder="Ime i prezime;email@example.com"></textarea></label><label>Učitaj popis (.csv ili .txt)<input id="prep-file" type="file" accept=".csv,.txt"></label><button class="button" id="prep-preview">Provjeri popis</button><p id="prep-message" role="status"></p><div id="prep-results"></div><label><input id="prep-confirm" type="checkbox"> Provjerio sam odabrani kolegij i dosjee; pripremam upise navedenih studenata za povezivanje nakon administratorskog odobrenja računa.</label><button class="button primary" id="prep-save" disabled>Pripremi upise</button>`;
   const $ = (id) => root.querySelector("#" + id);
   const invalidate = () => {
     preview = [];
@@ -116,7 +116,7 @@ export async function showRegistrationInvites(context) {
           `Pripremljeno ${count} / ${preview.length}.`;
       }
       $("prep-message").textContent =
-        `Pripremljeno ${count} upisa. Studenti se registriraju navedenim e-adresama, potvrde poruku i kliknu „Potvrdio/la sam e-adresu”. Već registrirani studenti mogu se ponovno prijaviti.`;
+        `Pripremljeno ${count} upisa. Studenti se registriraju navedenim e-adresama. Zatim u Korisnici i uloge odobrite njihove račune gumbom „Odobri pristup”. Upis se povezuje bez potvrde e-poštom.`;
       preview = [];
     } catch (error) {
       if (root.isConnected)

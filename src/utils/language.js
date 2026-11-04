@@ -1,5 +1,7 @@
 // UI text only. Stored values, IDs and imported course names are never rewritten.
 const words = {
+  "Odobri pristup": "Approve access",
+  "Pristup je odobren.": "Access approved.",
   "Potvrda e-adrese": "Email verification",
   "Provjeri upis i pristup": "Check enrolment and access",
   "Potvrdite e-adresu da biste nastavili.": "Verify your email to continue.",

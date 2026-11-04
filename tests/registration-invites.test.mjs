@@ -37,7 +37,7 @@ test("Registration roster normalizes e-mail case, names and rejects duplicate or
     "",
   );
 });
-test("Claim validation requires verified invited identity and a matching approved course/year", () => {
+test("Claim validation requires administrator-approved invited identity and a matching approved course/year", () => {
   const user = {
     uid: "student",
     email: "TEST@example.test",
@@ -51,7 +51,7 @@ test("Claim validation requires verified invited identity and a matching approve
     courseId: "c",
     academicYear: "2026/2027",
   };
-  const profile = { role: "student", email: "test@example.test" };
+  const profile = { active: true, role: "student", email: "test@example.test" };
   const student = { email: "Test@example.test", ownerUid: "" };
   const enrollment = {
     studentId: "s",
@@ -63,7 +63,7 @@ test("Claim validation requires verified invited identity and a matching approve
   assert.doesNotThrow(() =>
     assertRegistrationClaim(invite, profile, student, enrollment, user),
   );
-  assert.throws(() =>
+  assert.doesNotThrow(() =>
     assertRegistrationClaim(invite, profile, student, enrollment, {
       ...user,
       emailVerified: false,

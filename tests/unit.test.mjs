@@ -55,7 +55,7 @@ test("New profiles always wait for approval and never copy a requested role", ()
     active: true,
   });
   assert.deepEqual(profile, {
-    emailVerificationRequired: true,
+    emailVerificationRequired: false,
     emailVerified: false,
     name: "Person",
     email: "person@example.test",

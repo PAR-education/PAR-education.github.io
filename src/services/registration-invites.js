@@ -154,10 +154,18 @@ export async function prepareRegistrationInvite(
   });
 }
 export async function claimRegistrationInvite(user, connect = getFirebase) {
-  if (!user?.emailVerified || !user.email) return false;
+  if (!user?.email) return false;
   const { db, firestore: sdk } = await connect();
   const email = registrationEmail(user.email);
   return sdk.runTransaction(db, async (tx) => {
+    const userRef = sdk.doc(db, "users", user.uid),
+      account = await tx.get(userRef);
+    if (
+      !account.exists() ||
+      account.data().role !== "student" ||
+      account.data().active !== true
+    )
+      return false;
     const inviteRef = sdk.doc(db, "registrationInvites", email),
       invitation = await tx.get(inviteRef);
     if (
@@ -167,11 +175,9 @@ export async function claimRegistrationInvite(user, connect = getFirebase) {
     )
       return false;
     const invite = invitation.data(),
-      userRef = sdk.doc(db, "users", user.uid),
       studentRef = sdk.doc(db, "students", invite.studentId),
       enRef = sdk.doc(db, "enrollments", invite.enrollmentId);
-    const account = await tx.get(userRef),
-      student = await tx.get(studentRef),
+    const student = await tx.get(studentRef),
       enrollment = await tx.get(enRef);
     assertRegistrationClaim(
       invite,
@@ -184,11 +190,8 @@ export async function claimRegistrationInvite(user, connect = getFirebase) {
     tx.update(studentRef, { ownerUid: user.uid, ...meta });
     tx.update(enRef, { ownerUid: user.uid, ...meta });
     tx.update(userRef, {
-      active: true,
       name: student.data().name,
       departmentId: student.data().departmentId,
-      emailVerified: true,
-      emailVerificationRequired: true,
       ...meta,
     });
     tx.update(inviteRef, {

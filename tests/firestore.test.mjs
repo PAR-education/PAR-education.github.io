@@ -22,7 +22,7 @@ import {
 } from "firebase/firestore";
 import { prepareCalendarMove } from "../src/utils/schedule.js";
 let env;
-test("Prepared registrations activate only the verified invited student and preserve original enrollment/history IDs", async () => {
+test("Prepared registrations link only the admin-approved invited student without verifying email and preserve original enrollment/history IDs", async () => {
   const sdk = await import("firebase/firestore");
   const { prepareRegistrationInvite, claimRegistrationInvite } =
     await import("../src/services/registration-invites.js");
@@ -85,7 +85,7 @@ test("Prepared registrations activate only the verified invited student and pres
   const verified = env
     .authenticatedContext(uid, {
       email: "PREPARED@EXAMPLE.TEST",
-      email_verified: true,
+      email_verified: false,
     })
     .firestore();
   await assertFails(getDoc(doc(unverified, "registrationInvites", row.email)));
@@ -105,7 +105,18 @@ test("Prepared registrations activate only the verified invited student and pres
       updatedAt: serverTimestamp(),
     }),
   );
-  const user = { uid, email: "PREPARED@EXAMPLE.TEST", emailVerified: true };
+  const user = { uid, email: "PREPARED@EXAMPLE.TEST", emailVerified: false };
+  assert.equal(
+    await claimRegistrationInvite(user, async () => ({
+      db: verified,
+      firestore: sdk,
+    })),
+    false,
+  );
+  await updateDoc(doc(admin, "users", uid), {
+    active: true,
+    updatedAt: serverTimestamp(),
+  });
   assert.equal(
     await claimRegistrationInvite(user, async () => ({
       db: verified,
@@ -116,7 +127,7 @@ test("Prepared registrations activate only the verified invited student and pres
   const profile = (await getDoc(doc(admin, "users", uid))).data();
   assert.equal(profile.role, "student");
   assert.equal(profile.active, true);
-  assert.equal(profile.emailVerified, true);
+  assert.equal(profile.emailVerified, false);
   assert.equal(profile.name, row.name);
   assert.equal(
     (await getDoc(doc(admin, "students", studentId))).data().ownerUid,
@@ -703,7 +714,7 @@ test("New account can create only its own inactive profile and cannot activate i
     .firestore();
   const profile = {
     name: "New user",
-    emailVerificationRequired: true,
+    emailVerificationRequired: false,
     emailVerified: false,
     email: "new@example.test",
     role: "student",
@@ -1549,13 +1560,13 @@ test("Co-teachers can query their assignments and students cannot forge lecturer
   );
 });
 
-test("Verification gate blocks new unverified accounts while preserving legacy accounts", async () => {
+test("Administrator approval grants access even when legacy email-verification flags are set", async () => {
   await env.withSecurityRulesDisabled(async (context) =>
     updateDoc(doc(context.firestore(), "users", "student-a"), {
       emailVerificationRequired: true,
     }),
   );
-  await assertFails(getDocs(collection(database("student-a"), "courses")));
+  await assertSucceeds(getDocs(collection(database("student-a"), "courses")));
   const verified = env
     .authenticatedContext("student-a", { email_verified: true })
     .firestore();

@@ -12,7 +12,7 @@ export function pendingProfile(user) {
     role: "student",
     active: false,
     departmentId: "",
-    emailVerificationRequired: true,
+    emailVerificationRequired: false,
     emailVerified: user.emailVerified === true,
   };
 }

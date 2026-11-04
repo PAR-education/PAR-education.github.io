@@ -13,24 +13,24 @@ duplicira dosjee ni upise. Postojeći upisi zadržavaju ID i povijest prisutnost
 Za istu adresu podržana je jedna priprema; nakon povezivanja druge kolegije
 administrator dodaje uobičajenim putem.
 
-Student se registrira istom e-adresom i potvrđuje poveznicu iz Firebase poruke.
-Zatim u aplikaciji klikne **Potvrdio/la sam e-adresu**. Već registriran student
-može kliknuti **Provjeri upis i pristup** ili se ponovno prijaviti. Automatski se
-povezuje samo pripremljena i potvrđena adresa. Ostali računi ostaju neaktivni do
-administratorskog odobrenja. Jednom iskorištena priprema ne može ponovno
-aktivirati račun koji administrator naknadno deaktivira.
+Student se registrira navedenom adresom. Račun ostaje neaktivan dok ga
+administrator ne otvori u **Korisnici i uloge** i klikne **Odobri pristup**.
+Nema obavezne potvrde e-adrese i poruka za potvrdu ne šalje se pri registraciji.
+Nakon odobrenja povezuje se pripremljeni upis (ako student već čeka u aplikaciji,
+bez nove prijave). Ostali korisnici također čekaju administratorsko odobrenje.
+Iskorištena priprema ne može ponovno aktivirati naknadno deaktiviran račun.
 
 ## Firebase
 
 Prije uporabe objaviti **cijeli** `firebase/firestore.rules` u ispravnoj bazi
 projekta `par-education` (aplikacija koristi zadanu Firestore bazu). Pravila se
 generiraju naredbom `node scripts/generate-rules.mjs`; ne dopisivati odvojene
-dozvole u konzoli. Pripremu može kreirati samo aktivni administrator. Vlasništvo
-adrese provjerava se kroz Firebase Auth `email_verified`, ne kroz vrijednost
-koju korisnik pošalje iz preglednika. Povezivanje profila, dosjea, upisa i
+dozvole u konzoli. Pripremu može kreirati samo aktivni administrator. Povezivanje je dopušteno samo već aktivnom studentskom računu koji je
+prethodno odobrio administrator. `email_verified` nije uvjet pristupa; provjeru
+identiteta obavlja administrator pri odobravanju. Povezivanje profila, dosjea, upisa i
 jednokratne pripreme zapisuje se jednom transakcijom.
 
-Email/Password prijava i slanje poruke za potvrdu moraju biti omogućeni u
+Email/Password prijava mora biti omogućena u
 Firebase Authentication. Cloud Functions i dodatni indeksi nisu potrebni.
 Kolekciju `registrationInvites` aplikacija stvara pri prvoj pripremi. Brisanje
 podataka ni ponovni uvoz postojećih kolegija nisu potrebni.

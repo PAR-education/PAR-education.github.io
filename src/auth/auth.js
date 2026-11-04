@@ -21,7 +21,6 @@ export async function register(name, email, password, confirmation) {
     );
     await sdk.updateProfile(credential.user, { displayName: input.name });
     await ensurePendingProfile(credential.user);
-    await sdk.sendEmailVerification(credential.user);
     return credential;
   })();
   registrationTask = operation;
@@ -57,13 +56,7 @@ export async function observeSession(callback, onError) {
       const emit = (profile) =>
         callback({
           user,
-          profile:
-            isActiveProfile(profile) &&
-            (!profile.emailVerificationRequired || user.emailVerified)
-              ? profile
-              : null,
-          verificationRequired:
-            !!profile?.emailVerificationRequired && !user.emailVerified,
+          profile: isActiveProfile(profile) ? profile : null,
           loading: false,
         });
       callback({ user, profile: null, loading: !!user });
@@ -88,7 +81,7 @@ export async function observeSession(callback, onError) {
           if (claimingInvite) return;
           if (
             !attemptedInvite &&
-            user.emailVerified &&
+            isActiveProfile(profile) &&
             profile.role === "student"
           ) {
             attemptedInvite = true;
@@ -117,13 +110,7 @@ export async function observeSession(callback, onError) {
           }
           callback({
             user,
-            profile:
-              isActiveProfile(profile) &&
-              (!profile.emailVerificationRequired || user.emailVerified)
-                ? profile
-                : null,
-            verificationRequired:
-              !!profile.emailVerificationRequired && !user.emailVerified,
+            profile: isActiveProfile(profile) ? profile : null,
             loading: false,
           });
         },
@@ -152,27 +139,4 @@ export async function logout() {
 export async function resetPassword(email) {
   const { auth, authentication } = await getFirebase();
   return authentication.sendPasswordResetEmail(auth, email.trim());
-}
-
-export async function sendVerification() {
-  const { auth, authentication: sdk } = await getFirebase();
-  if (!auth.currentUser) throw new Error("Prijavite se.");
-  await sdk.sendEmailVerification(auth.currentUser);
-}
-export async function refreshVerification() {
-  const { auth, db, authentication: sdk, firestore } = await getFirebase();
-  const user = auth.currentUser;
-  if (!user) throw new Error("Prijavite se.");
-  await user.reload();
-  await user.getIdToken(true);
-  if (!user.emailVerified)
-    throw new Error(
-      "E-adresa još nije potvrđena. Otvorite poveznicu iz poruke.",
-    );
-  await claimRegistrationInvite(user);
-  await firestore.updateDoc(firestore.doc(db, "users", user.uid), {
-    emailVerified: true,
-    updatedAt: firestore.serverTimestamp(),
-  });
-  return true;
 }

@@ -62,11 +62,13 @@ export function assertRegistrationClaim(
   user,
 ) {
   if (
-    !user.emailVerified ||
+    profile?.active !== true ||
     !invite?.enabled ||
     invite.email !== registrationEmail(user.email)
   )
-    throw new Error("Potrebna je potvrđena e-adresa s pripremljenog popisa.");
+    throw new Error(
+      "Administrator prvo mora odobriti studentski račun s pripremljenog popisa.",
+    );
   if (invite.claimedBy && invite.claimedBy !== user.uid)
     throw new Error("Ovaj upis već pripada drugom računu.");
   if (

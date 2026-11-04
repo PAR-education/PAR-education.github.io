@@ -5,8 +5,6 @@ import {
   register,
   logout,
   resetPassword,
-  sendVerification,
-  refreshVerification,
 } from "./auth/auth.js";
 import { errorMessage, theme, toggleTheme, pageURL } from "./utils/helpers.js";
 const $ = (id) => document.getElementById(id);
@@ -16,34 +14,6 @@ let mode = "login";
 let busy = false;
 let ready = false;
 let sessionUser = null;
-let verificationRequired = false;
-const verificationTools = document.createElement("div");
-verificationTools.id = "verification-tools";
-verificationTools.innerHTML =
-  '<p>Potvrdite svoju e-adresu putem poveznice iz e-pošte. Ako je vaš upis unaprijed pripremljen, račun će se povezati automatski. Ostale račune odobrava administrator.</p><button class="button" id="send-verification">Pošalji novu poveznicu</button><button class="button" id="check-verification">Potvrdio/la sam e-adresu</button>';
-$("login-status").after(verificationTools);
-$("send-verification").addEventListener("click", async (event) => {
-  event.target.disabled = true;
-  try {
-    await sendVerification();
-    show("Poveznica je poslana. Provjerite i neželjenu poštu.");
-  } catch (error) {
-    show(errorMessage(error), true);
-  } finally {
-    event.target.disabled = false;
-  }
-});
-$("check-verification").addEventListener("click", async (event) => {
-  event.target.disabled = true;
-  try {
-    await refreshVerification();
-    location.reload();
-  } catch (error) {
-    show(errorMessage(error), true);
-  } finally {
-    event.target.disabled = false;
-  }
-});
 let profileLoading = false;
 let profileFailed = false;
 function show(message, error = false) {
@@ -51,18 +21,11 @@ function show(message, error = false) {
   $("login-status").classList.toggle("error", error);
 }
 function renderControls() {
-  verificationTools.hidden = !sessionUser || profileLoading;
-  $("send-verification").hidden = !verificationRequired;
-  $("check-verification").textContent = verificationRequired
-    ? "Potvrdio/la sam e-adresu"
-    : "Provjeri upis i pristup";
   $("auth-description").textContent =
     sessionUser && profileFailed
       ? "Potrebno je dovršiti pripremu korisničkog profila."
       : sessionUser
-        ? verificationRequired
-          ? "Potvrdite e-adresu da biste nastavili."
-          : "Pripremljeni upisi povezuju se nakon potvrde e-adrese; ostale račune odobrava administrator."
+        ? "Pristup odobrava administrator."
         : mode === "register"
           ? "Izradite svoj korisnički račun."
           : "Unesite podatke svojeg PAR računa.";
@@ -86,9 +49,7 @@ function renderControls() {
       : sessionUser
         ? profileLoading
           ? "Priprema profila"
-          : verificationRequired
-            ? "Potvrda e-adrese"
-            : "Čeka odobrenje"
+          : "Čeka odobrenje"
         : mode === "login"
           ? "Prijava u sustav"
           : "Registracija";
@@ -186,35 +147,27 @@ function sessionError(error) {
     true,
   );
 }
-observeSession(
-  ({ user, profile, loading, verificationRequired: needsVerification }) => {
-    verificationRequired = !!needsVerification;
-    profileFailed = false;
-    ready = true;
-    sessionUser = user;
-    profileLoading = loading;
-    renderControls();
-    if (loading) show("Priprema korisničkog profila…");
-    else if (user && profile) location.replace(pageURL("./homepage.html"));
-    else if (user && verificationRequired)
-      show(
-        "Potvrdite e-adresu kako bi se račun mogao povezati s vašim podacima.",
-      );
-    else if (user)
-      show(
-        "Profil je spremljen i čeka odobrenje administratora. Vaš UID: " +
-          user.uid +
-          ".",
-      );
-    else
-      show(
-        mode === "register"
-          ? "Izradite račun. Pristup odobrava administrator."
-          : "Prijavite se svojom e-adresom i lozinkom.",
-      );
-  },
-  sessionError,
-).catch(sessionError);
+observeSession(({ user, profile, loading }) => {
+  profileFailed = false;
+  ready = true;
+  sessionUser = user;
+  profileLoading = loading;
+  renderControls();
+  if (loading) show("Priprema korisničkog profila…");
+  else if (user && profile) location.replace(pageURL("./homepage.html"));
+  else if (user)
+    show(
+      "Profil je spremljen i čeka odobrenje administratora. Vaš UID: " +
+        user.uid +
+        ".",
+    );
+  else
+    show(
+      mode === "register"
+        ? "Izradite račun. Pristup odobrava administrator."
+        : "Prijavite se svojom e-adresom i lozinkom.",
+    );
+}, sessionError).catch(sessionError);
 renderControls();
 
 setupLanguage();
