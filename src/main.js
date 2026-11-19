@@ -198,10 +198,9 @@ async function startApplication(
     toggle.addEventListener("click", toggleDemo);
     document.getElementById("sidebar-tools").append(toggle);
   }
-  toggle.hidden = !canUseDemo(
-    authenticatedSession?.user,
-    authenticatedSession?.profile,
-  );
+  toggle.hidden =
+    document.body.dataset.mode === "public-demo" ||
+    !canUseDemo(authenticatedSession?.user, authenticatedSession?.profile);
   toggle.textContent = demo ? "Izađi iz demo načina" : "Uključi demo";
   toggle.setAttribute("aria-pressed", String(demo));
   if (demo) {
@@ -211,7 +210,10 @@ async function startApplication(
     banner.setAttribute("role", "status");
     banner.textContent =
       "DEMO — samo vaša sesija. Promjene se ne spremaju u bazu. Osvježavanje ili izlazak odbacuje ogledne promjene.";
-    banner.textContent = "PRIVATNI DEMO · Promjene su lokalne.";
+    banner.textContent =
+      document.body.dataset.mode === "public-demo"
+        ? "DEMO · Ogledni podaci. Promjene su lokalne i nestaju osvježavanjem."
+        : "PRIVATNI DEMO · Promjene su lokalne.";
     const tools = document.createElement("div");
     tools.id = "demo-role-tools";
     tools.className = "demo-role-tools";
@@ -1580,7 +1582,12 @@ function drawHelp() {
     '<section class="panel"><div class="panel-title"><h2>Kalendar</h2></div><div class="panel-note"><p>Pod Filtri odaberite studij, grupu, semestar i akademsku godinu. Moj raspored prikazuje dodijeljenu nastavu ili odobrene upise.</p><p>Vlastitu nastavu možete povući na drugi dan ili vrijeme, u koracima od 15 minuta, ili koristiti Alt + strelice. Trajanje ostaje isto. Dvoranu mijenjate kroz Uredi ili Dvorane i dostupnost.</p></div></section>' +
     '<section class="panel"><div class="panel-title"><h2>Status integracija</h2></div><div class="panel-note"><p><strong>ISVU:</strong> ocjene su lokalna evidencija. Slanje Ministarstvu zahtijeva službeni API i zaštićenu poslužiteljsku integraciju.</p><p><strong>AI asistent:</strong> nije povezan. Za AI odgovore potreban je poslužitelj i ugovorena API usluga. U ovoj verziji nema simuliranih odgovora.</p><p><strong>PDF:</strong> otvorite ispis i odaberite „Spremi kao PDF”. Studentske potvrde trebaju odobrenje referade; ispis iz aplikacije nije službena potvrda.</p><p><strong>Plaćanja:</strong> financijski modul evidentira obveze. Ne izvršava bankovne transakcije niti generira neprovjeren barkod.</p><p><strong>Dokumenti:</strong> poveznice trebaju imati vlastitu kontrolu pristupa ako dokument nije javno objavljen. Privatna pohrana datoteka još nije povezana.</p></div></section>';
 }
+const publicDemo = document.body.dataset.mode === "public-demo";
 $("logout").addEventListener("click", async () => {
+  if (publicDemo) {
+    location.replace(pageURL("./index.html"));
+    return;
+  }
   $("logout").disabled = true;
   try {
     await logout();
@@ -1592,8 +1599,21 @@ $("logout").addEventListener("click", async () => {
     $("logout").disabled = false;
   }
 });
-// The public static shell contains no records. Data is loaded only after an active profile is confirmed.
-{
+// Public demonstrations use only the isolated in-memory repository, never Firebase auth.
+if (publicDemo) {
+  authenticatedSession = {
+    user: { uid: "public-demo", email: "demo@example.test" },
+    profile: { role: "admin", active: true, name: "Demo posjetitelj" },
+  };
+  createAdminDemo(authenticatedSession.user, authenticatedSession.profile)
+    .then((state) =>
+      startApplication(state.user, state.profile, state.repository, true),
+    )
+    .catch((error) => {
+      $("session-gate").innerHTML =
+        `<div class="notice error">${e(errorMessage(error))}</div><a href="./index.html">Povratak na prijavu</a>`;
+    });
+} else {
   observeSession(
     (session) => {
       if (session.loading) {

@@ -8,14 +8,14 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="referrer" content="strict-origin-when-cross-origin" />
-    <title>Ogledna sesija · PAR Education</title>
+    <title>Demo · Radni prostor · PAR Education</title>
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
     />
     <link rel="stylesheet" href="./assets/css/main.css" />
   </head>
-  <body data-mode="demo">
+  <body data-mode="public-demo">
     <div id="session-gate" class="session-gate" role="status">
       Provjera prijave…
     </div>
@@ -27,7 +27,7 @@
         hidden
       ></button>
       <aside id="sidebar" class="sidebar">
-        <a class="brand" href="./homepage.html"
+        <a class="brand" href="./demo.html"
           ><span class="brand-mark">PAR<span>·</span></span
           ><span><small>VISOKO UČILIŠTE</small></span></a
         >
@@ -46,6 +46,7 @@
           </button>
         </div>
         <nav id="navigation" aria-label="Glavna navigacija"></nav>
+        <div id="sidebar-tools"></div>
         <a class="sidebar-exit" href="#help"
           ><i class="fa-solid fa-circle-question" aria-hidden="true"></i> Pomoć
           i integracije</a
@@ -66,16 +67,18 @@
               <input
                 id="global-search"
                 type="search"
-                aria-label="Pretraži module"
-                placeholder="Pretraži ERP…" />
+                aria-label="Pretraživanje"
+                placeholder="Unesite pojam" />
               <div id="global-results" hidden></div></span
             ><span class="muted breadcrumb">/</span
             ><strong class="breadcrumb" id="header-title"
               >Nadzorna ploča</strong
             >
           </div>
+          <div id="page-title" hidden></div>
           <div class="header-actions">
-            <span id="mode-label" class="pill">Firestore</span
+            <div id="calendar-topbar" hidden></div>
+            <span id="mode-label" class="pill" hidden>Firestore</span
             ><button
               id="theme"
               class="icon-button theme-button"
@@ -110,6 +113,6 @@
         Za pristup sustavu potrebno je omogućiti JavaScript.
       </p></noscript
     >
-    <script type="module" src="./src/demo.js"></script>
+    <script type="module" src="./src/main.js"></script>
   </body>
 </html>

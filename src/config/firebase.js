@@ -10,6 +10,10 @@ export const firebaseConfig = Object.freeze({
 });
 let promise;
 export function getFirebase() {
+  if (globalThis.document?.body?.dataset.mode === "public-demo")
+    throw new Error(
+      "Javni demo nema pristup stvarnoj bazi ni korisničkim računima.",
+    );
   // Dynamic imports let the page show a useful error if the CDN is unavailable.
   promise ??= (async () => {
     const base = "https://www.gstatic.com/firebasejs/13.0.0/";

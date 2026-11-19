@@ -227,16 +227,19 @@ test("Cleanup cannot run from demo/non-admin sessions or delete arbitrary IDs", 
     /pregledanih/,
   );
 });
-test("Old public demo entry only redirects; main always observes the real authenticated session", () => {
-  const source = readFileSync("src/demo.js", "utf8"),
-    main = readFileSync("src/main.js", "utf8"),
+test("Public demo uses an isolated repository without observing or signing out the real session", () => {
+  const main = readFileSync("src/main.js", "utf8"),
+    shell = readFileSync("demo.html", "utf8"),
     login = readFileSync("index.html", "utf8");
-  assert.ok(source.includes("location.replace"));
-  assert.ok(!source.includes("demoData"));
-  assert.ok(!source.includes("startApplication"));
-  assert.ok(!main.includes('dataset.mode !== "demo"'));
-  assert.ok(main.includes("authenticatedSession"));
-  assert.ok(!login.includes('href="./demo.html"'));
+  assert.ok(shell.includes('data-mode="public-demo"'));
+  assert.ok(login.includes('href="./demo.html"'));
+  const branch = main.slice(
+    main.indexOf("if (publicDemo) {", main.indexOf("// Public demonstrations")),
+    main.indexOf("} else {", main.indexOf("// Public demonstrations")),
+  );
+  assert.ok(branch.includes("createAdminDemo"));
+  assert.ok(!branch.includes("observeSession("));
+  assert.ok(!branch.includes("new Records("));
 });
 
 test("Cleanup deletes only unchanged selected records and rejects concurrent edits", async () => {
@@ -492,4 +495,34 @@ test("Repository paging loads records beyond the old 250-item ceiling", async ()
   assert.equal(rows.length, 523);
   assert.equal(calls, 2);
   assert.equal(rows[522].title, "Row 522");
+});
+
+test("Public demo blocks Firebase initialization even when a live operation is called", async () => {
+  const previous = globalThis.document;
+  globalThis.document = { body: { dataset: { mode: "public-demo" } } };
+  try {
+    const { getFirebase } = await import("../src/config/firebase.js");
+    assert.throws(() => getFirebase(), /Javni demo/);
+    const first = await createAdminDemo(
+      { uid: "public-demo" },
+      profile,
+      async () => ({
+        students: [{ id: "s", name: "Demo" }],
+        calendarEvents: [],
+      }),
+    );
+    const second = await createAdminDemo(
+      { uid: "public-demo" },
+      profile,
+      async () => ({
+        students: [{ id: "s", name: "Demo" }],
+        calendarEvents: [],
+      }),
+    );
+    await first.repository.save("students", { name: "Changed" }, "s");
+    assert.equal((await second.repository.listAll("students"))[0].name, "Demo");
+  } finally {
+    if (previous === undefined) delete globalThis.document;
+    else globalThis.document = previous;
+  }
 });
