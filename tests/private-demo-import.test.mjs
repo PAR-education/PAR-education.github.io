@@ -237,7 +237,7 @@ test("Public demo uses an isolated repository without observing or signing out t
     main.indexOf("if (publicDemo) {", main.indexOf("// Public demonstrations")),
     main.indexOf("} else {", main.indexOf("// Public demonstrations")),
   );
-  assert.ok(branch.includes("createAdminDemo"));
+  assert.ok(branch.includes("createPublicDemo"));
   assert.ok(!branch.includes("observeSession("));
   assert.ok(!branch.includes("new Records("));
 });
@@ -525,4 +525,32 @@ test("Public demo blocks Firebase initialization even when a live operation is c
     if (previous === undefined) delete globalThis.document;
     else globalThis.document = previous;
   }
+});
+
+test("Public demo offers only student and professor with their scoped records", async () => {
+  const { createPublicDemo, publicDemoRoles } =
+    await import("../src/services/admin-demo.js");
+  assert.deepEqual(publicDemoRoles, ["student", "profesor"]);
+  const load = async () => ({
+    users: [
+      { id: "s", role: "student", active: true },
+      { id: "p", role: "profesor", active: true },
+    ],
+    enrollments: [
+      { id: "one", ownerUid: "s" },
+      { id: "other", ownerUid: "else" },
+    ],
+    calendarEvents: [],
+  });
+  const student = await createPublicDemo(undefined, null, load);
+  assert.equal(student.profile.role, "student");
+  assert.equal((await student.repository.list("enrollments")).length, 1);
+  const professor = await createPublicDemo("profesor", student);
+  assert.equal(professor.profile.role, "profesor");
+  await assert.rejects(() => professor.repository.list("users"));
+  for (const role of ["admin", "administracija_par", "alumni", "dept_head"])
+    await assert.rejects(
+      () => createPublicDemo(role, student),
+      /samo studenta/,
+    );
 });

@@ -71,3 +71,17 @@ export function createRolePreview(realUser, realProfile, demoContext, role) {
   repository.previewOwnerUid = realUser.uid;
   return { user, profile, repository, demo: true };
 }
+
+export const publicDemoRoles = Object.freeze(["student", "profesor"]);
+export async function createPublicDemo(
+  role = "student",
+  existing = null,
+  load = demoData,
+) {
+  if (!publicDemoRoles.includes(role))
+    throw new Error("Javni demo podržava samo studenta i profesora.");
+  const user = { uid: "public-demo", email: "demo@example.test" };
+  const profile = { role: "admin", active: true };
+  const initial = existing || (await createAdminDemo(user, profile, load));
+  return createRolePreview(user, profile, initial, role);
+}

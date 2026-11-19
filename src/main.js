@@ -74,6 +74,8 @@ import {
   canUseDemo,
   createAdminDemo,
   createRolePreview,
+  createPublicDemo,
+  publicDemoRoles,
 } from "./services/admin-demo.js";
 import { mountTemplateCleanup } from "./components/template-cleanup.js";
 const $ = (id) => document.getElementById(id);
@@ -178,6 +180,11 @@ async function startApplication(
       repository.previewOwnerUid !== authenticatedSession.user.uid)
   )
     throw new Error("Demo je dostupan samo administratoru.");
+  if (
+    document.body.dataset.mode === "public-demo" &&
+    (!demo || !publicDemoRoles.includes(profile.role))
+  )
+    throw new Error("Javni demo podržava samo studenta i profesora.");
   version++;
   closeDialog();
   context = {
@@ -220,6 +227,11 @@ async function startApplication(
     tools.innerHTML = `<label>Pregled kao uloga<select id="demo-role">${Object.entries(
       roles,
     )
+      .filter(
+        ([key]) =>
+          document.body.dataset.mode !== "public-demo" ||
+          publicDemoRoles.includes(key),
+      )
       .map(
         ([key, label]) =>
           `<option value="${key}" ${profile.role === key ? "selected" : ""}>${e(label)}</option>`,
@@ -234,12 +246,15 @@ async function startApplication(
         const real = authenticatedSession,
           before = context;
         try {
-          const state = createRolePreview(
-            real.user,
-            real.profile,
-            before,
-            event.target.value,
-          );
+          const state =
+            document.body.dataset.mode === "public-demo"
+              ? await createPublicDemo(event.target.value, before)
+              : createRolePreview(
+                  real.user,
+                  real.profile,
+                  before,
+                  event.target.value,
+                );
           await startApplication(
             state.user,
             state.profile,
@@ -255,9 +270,15 @@ async function startApplication(
         role = context.profile.role,
         before = context;
       try {
-        const initial = await createAdminDemo(real.user, real.profile);
+        const initial =
+          document.body.dataset.mode === "public-demo"
+            ? await createPublicDemo(role)
+            : await createAdminDemo(real.user, real.profile);
         if (context !== before) return;
-        const state = createRolePreview(real.user, real.profile, initial, role);
+        const state =
+          document.body.dataset.mode === "public-demo"
+            ? initial
+            : createRolePreview(real.user, real.profile, initial, role);
         await startApplication(
           state.user,
           state.profile,
@@ -1605,7 +1626,7 @@ if (publicDemo) {
     user: { uid: "public-demo", email: "demo@example.test" },
     profile: { role: "admin", active: true, name: "Demo posjetitelj" },
   };
-  createAdminDemo(authenticatedSession.user, authenticatedSession.profile)
+  createPublicDemo()
     .then((state) =>
       startApplication(state.user, state.profile, state.repository, true),
     )
