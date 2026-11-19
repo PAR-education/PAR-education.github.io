@@ -694,11 +694,11 @@
     },
     {
       "id": 2,
-      "name": "prof. dr. sc. Sven Maričić",
+      "name": "Ivan Horvat",
       "role": "Pročelnik",
       "dept": "Katedra inovacije",
       "type": "Nastavnik",
-      "email": "sven@par.hr",
+      "email": "ivan.horvat@example.test",
       "goUsed": 18,
       "sickLeave": 5,
       "travelOrders": 8,
@@ -710,7 +710,7 @@
       ],
       "papers": {
         "drafting": [
-          "Analiza trendova u obrazovanju (prof. dr. sc. Sven Maričić)",
+          "Analiza trendova u obrazovanju (Ivan Horvat)",
           "Digitalna transformacija"
         ],
         "review": [
@@ -932,7 +932,7 @@
         "WP1: Vođenje projekta"
       ],
       "professors": [
-        "prof. dr. sc. Sven Maričić"
+        "Ivan Horvat"
       ],
       "students": [
         "Filip Horvat"
@@ -1097,7 +1097,7 @@
       "id": 3,
       "title": "Poduzetništvo i inovacije",
       "ects": 6,
-      "prof": "prof. dr. sc. Sven Maričić",
+      "prof": "Ivan Horvat",
       "sem": "Ljetni",
       "tip": "Obvezni",
       "opterećenje": "30P + 30V",
@@ -1158,7 +1158,7 @@
       "id": 6,
       "title": "Strateški menadžment",
       "ects": 6,
-      "prof": "prof. dr. sc. Sven Maričić",
+      "prof": "Ivan Horvat",
       "sem": "Zimski",
       "tip": "Obvezni",
       "opterećenje": "30P + 30V",
@@ -1447,7 +1447,7 @@
     },
     {
       "id": 2,
-      "employee": "prof. dr. sc. Sven Maričić",
+      "employee": "Ivan Horvat",
       "period": "01.09 - 10.09",
       "status": "Na čekanju",
       "days": 8
@@ -2091,7 +2091,7 @@
     {
       "id": 1,
       "title": "AI Integration in EU Higher Education",
-      "authors": "Maričić, S., Nikolić, G.",
+      "authors": "Horvat, I., Nikolić, G.",
       "status": "Drafting",
       "link": "CreativeAIHub"
     },
@@ -2105,7 +2105,7 @@
     {
       "id": 3,
       "title": "Entrepreneurial Mindset of Business Students",
-      "authors": "Maričić, S.",
+      "authors": "Horvat, I.",
       "status": "Published",
       "link": "Springer 2025"
     }
@@ -2198,7 +2198,7 @@
     },
     {
       "empId": 2,
-      "empName": "prof. dr. sc. Sven Maričić",
+      "empName": "Ivan Horvat",
       "date": "2026-08-10",
       "day": 10,
       "activity": "Nastava",
@@ -2207,7 +2207,7 @@
     },
     {
       "empId": 2,
-      "empName": "prof. dr. sc. Sven Maričić",
+      "empName": "Ivan Horvat",
       "date": "2026-08-11",
       "day": 11,
       "activity": "Godišnji odmor (GO)",
@@ -2216,7 +2216,7 @@
     },
     {
       "empId": 2,
-      "empName": "prof. dr. sc. Sven Maričić",
+      "empName": "Ivan Horvat",
       "date": "2026-08-12",
       "day": 12,
       "activity": "Bolovanje",
@@ -2225,7 +2225,7 @@
     },
     {
       "empId": 2,
-      "empName": "prof. dr. sc. Sven Maričić",
+      "empName": "Ivan Horvat",
       "date": "2026-08-13",
       "day": 13,
       "activity": "Na poslu (Ured)",
@@ -2234,7 +2234,7 @@
     },
     {
       "empId": 2,
-      "empName": "prof. dr. sc. Sven Maričić",
+      "empName": "Ivan Horvat",
       "date": "2026-08-14",
       "day": 14,
       "activity": "Nastava",
@@ -2243,7 +2243,7 @@
     },
     {
       "empId": 2,
-      "empName": "prof. dr. sc. Sven Maričić",
+      "empName": "Ivan Horvat",
       "date": "2026-08-15",
       "day": 15,
       "activity": "Slobodan dan",
@@ -2252,7 +2252,7 @@
     },
     {
       "empId": 2,
-      "empName": "prof. dr. sc. Sven Maričić",
+      "empName": "Ivan Horvat",
       "date": "2026-08-16",
       "day": 16,
       "activity": "Slobodan dan",
@@ -2544,7 +2544,7 @@
     {
       "id": 104,
       "empId": 2,
-      "empName": "prof. dr. sc. Sven Maričić",
+      "empName": "Ivan Horvat",
       "category": "Znanstveni rad pisanje",
       "date": "2026-08-03",
       "hours": 8,
