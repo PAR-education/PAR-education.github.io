@@ -527,30 +527,51 @@ test("Public demo blocks Firebase initialization even when a live operation is c
   }
 });
 
-test("Public demo offers only student and professor with their scoped records", async () => {
+test("Public demo exposes all roles while isolating edits and resets", async () => {
   const { createPublicDemo, publicDemoRoles } =
     await import("../src/services/admin-demo.js");
-  assert.deepEqual(publicDemoRoles, ["student", "profesor"]);
+  const { roles } = await import("../src/auth/permissions.js");
+  assert.deepEqual(publicDemoRoles, Object.keys(roles));
   const load = async () => ({
-    users: [
-      { id: "s", role: "student", active: true },
-      { id: "p", role: "profesor", active: true },
-    ],
-    enrollments: [
-      { id: "one", ownerUid: "s" },
-      { id: "other", ownerUid: "else" },
-    ],
+    users: [],
+    students: [{ id: "s", name: "Fiction" }],
     calendarEvents: [],
   });
-  const student = await createPublicDemo(undefined, null, load);
-  assert.equal(student.profile.role, "student");
-  assert.equal((await student.repository.list("enrollments")).length, 1);
-  const professor = await createPublicDemo("profesor", student);
-  assert.equal(professor.profile.role, "profesor");
-  await assert.rejects(() => professor.repository.list("users"));
-  for (const role of ["admin", "administracija_par", "alumni", "dept_head"])
-    await assert.rejects(
-      () => createPublicDemo(role, student),
-      /samo studenta/,
+  const first = await createPublicDemo(undefined, null, load);
+  assert.equal(first.profile.role, "admin");
+  await first.repository.save("students", { name: "Temporary" }, "s");
+  assert.equal(
+    (await first.repository.listAll("students"))[0].name,
+    "Temporary",
+  );
+  const reset = await createPublicDemo(undefined, null, load);
+  assert.equal((await reset.repository.listAll("students"))[0].name, "Fiction");
+  for (const role of publicDemoRoles)
+    assert.equal((await createPublicDemo(role, first)).profile.role, role);
+  await assert.rejects(() => createPublicDemo("invalid", first), /Nepoznata/);
+});
+
+test("Demo fixture uses fictional contacts and preserves person references", () => {
+  const text = readFileSync("src/data/prototype-fixtures.json", "utf8");
+  const data = JSON.parse(text);
+  const emails =
+    text.match(/[A-Za-z0-9_.+-]+@[A-Za-z0-9.-]+\.[A-Za-z]+/g) || [];
+  assert.ok(emails.length > 0);
+  assert.ok(emails.every((email) => email.endsWith("@example.test")));
+  for (const row of data.employeeSchedules)
+    assert.equal(
+      row.empName,
+      data.employees.find((e) => e.id === row.empId).name,
     );
+  for (const name of [
+    "Sven",
+    "Maričić",
+    "Nikolić",
+    "Karanović",
+    "Srdoč",
+    "Jurković",
+    "Turčić",
+    "Kučić",
+  ])
+    assert.ok(!text.includes(name));
 });

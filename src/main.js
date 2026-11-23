@@ -184,7 +184,7 @@ async function startApplication(
     document.body.dataset.mode === "public-demo" &&
     (!demo || !publicDemoRoles.includes(profile.role))
   )
-    throw new Error("Javni demo podržava samo studenta i profesora.");
+    throw new Error("Nepoznata uloga javnog demo prikaza.");
   version++;
   closeDialog();
   context = {

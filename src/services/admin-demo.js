@@ -72,14 +72,14 @@ export function createRolePreview(realUser, realProfile, demoContext, role) {
   return { user, profile, repository, demo: true };
 }
 
-export const publicDemoRoles = Object.freeze(["student", "profesor"]);
+export const publicDemoRoles = Object.freeze(Object.keys(roles));
 export async function createPublicDemo(
-  role = "student",
+  role = "admin",
   existing = null,
   load = demoData,
 ) {
   if (!publicDemoRoles.includes(role))
-    throw new Error("Javni demo podržava samo studenta i profesora.");
+    throw new Error("Nepoznata uloga javnog demo prikaza.");
   const user = { uid: "public-demo", email: "demo@example.test" };
   const profile = { role: "admin", active: true };
   const initial = existing || (await createAdminDemo(user, profile, load));
